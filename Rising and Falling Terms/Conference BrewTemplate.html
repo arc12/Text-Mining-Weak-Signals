@@ -1,0 +1,348 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+<head>
+<title>Conference Scan: <%=title%> <%=conf.year.recent%></title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<meta name="AUTHOR" content="Adam Cooper"/>
+<!--
+## ***Made available using the The MIT License (MIT)***
+# Copyright (c) 2011, Adam Cooper
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+## ************ end licence ***************
+-->
+<!--adopt styles from TELMap. -->
+<style type="text/css">
+html, body, div, span, table, td, tr, th, tbody, tfoot, frame, iframe, object {
+	margin-top: 20px;
+	margin-bottom: 20px;		
+	font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+	font-size: 13px;
+	color: #404040;
+}
+
+a:link, a:hover {
+	color: #23a0d2;
+	text-decoration: none;
+}
+
+a:visited {
+	color: #066890;
+	text-decoration: none;
+}
+
+h2 {
+	color: #e2a12c;
+	font-size: 30px;
+	font-family: "Times New Roman", Times, serif;
+}
+
+h3 {
+	color: #494949;
+	font-family: "Times New Roman", Times, serif;
+	font-size: 16px;
+	text-transform: uppercase;	
+}
+</style>	
+	
+<!--additional style for plot boxing and captioning-->
+<style type="text/css">
+.cap-img { background-color: #F9F9F9; border: 1px solid #CCCCCC; padding: 3px; font: 11px/1.4em Arial, sans-serif; 
+margin: 0.5em 0.8em 0.5em 0.1em; float:left; width:504px;}
+.cap-sd { background-color: #F9F9F9; border: 1px solid #CCCCCC; padding: 3px; font: 11px/1.4em Arial, sans-serif; 
+margin: 0.5em 0.8em 0.5em 0.1em; float:left; width:804px;}
+.clear { clear: both;} 
+.cap-img img { border: 1px solid #CCCCCC; vertical-align:middle; margin-bottom: 3px;} 
+</style>
+
+<!-- style for abstracts -->
+<style type="text/css">
+dt{text-decoration:underline;}
+</style>
+
+<!-- Stuff for the SeaDragon node browser -->
+        <script src="Gephi/SeaDragon/js/seadragon-min.js" type="text/javascript"></script>
+        <script type="text/javascript">
+            Seadragon.Config.imagePath = "Gephi/SeaDragon/img/";
+            // Start the viewer
+            function start() {
+                var viewer = new Seadragon.Viewer("seadragon");
+                viewer.openDzi("Gephi/SeaDragon/map/map.xml");
+            }
+        </script>
+
+        <style type="text/css">
+            body {
+                margin: 0px;
+            }
+            #seadragon {
+                width: 800px;
+                height: 600px;
+                background-color: Black;
+                border: 1px solid #CCCCCC; margin-bottom: 3px;
+            }
+        </style>
+        <!-- End -->
+</head>
+<body  onload="start();">
+<h1>Conference Scan: <%=title%> <%=conf.year.recent%></h1>
+<%figure<-1%>
+<p>This is an un-interpreted and automatically-generated report on emerging, rising and falling terms from the abstracts of the 
+<%if(length(conference.title)==1){%>
+ <%=conference.title%>
+<%}else{
+ for(i in 1:length(conference.title)){%>
+  if(i==length(conference.title)){%>
+   and <%=conference.title[i]%>
+ <%}else{%>
+ , <%=conference.title[i]%>
+ <%}#end loop>
+<%}#end if>
+
+It is one part of the <a href="http://blogs.cetis.ac.uk/adam/2011/05/12/weak-signals-and-text-mining-i-an-introduction-to-weak-signals/">&quot;Weak Signals Analysis&quot; work of the TEL-Map Project</a>. The same analytical method is also applied to blogs, hence the term "document" is used in plots; this is identical to an abstract.</p>
+
+<p><em>All plots will open in a new window/tab as 1000x1000 pixed images if clicked on.</em></p>
+<h2>The Method</h2>
+<p>The analysis involves the application of text mining to the abstracts of the conference proceedings. The target year (<%=conf.year.recent%>) is contrasted against the previous <%=conf.years.in_past%> previous years. The details of the text mining are <a href="http://blogs.cetis.ac.uk/adam/2011/05/12/weak-signals-and-text-mining-ii-text-mining-background-and-application-ideas/">available elsewhere</a> but for the purpose of interpretation it should be noted that &quot;stemming&quot; and &quot;stop-word&quot; removal has been used. &quot;Stop-word&quot; removal means that common words are removed before beginning the analysis. &quot;Stemming&quot; involves the conversion of similar words that differ only by their ending into a truncated form that is used as the &quot;term&quot; in the analysis. For the purpose of readability the shortest word that produces the term is generally given, although sometimes the algorithm fails and the stemmed version is shown. This should be born in mind when examining the results.</p>
+
+<p>Four views on the differences between the target and previous years' abstracts are presented:
+<ul>
+   <li><strong>New Terms</strong>, where this report highlights terms that appear at least <%=new.thresh%> times in the target year's abstracts and in at least <%=doc_count.thresh%> different abstracts but not at all in the previous years.</li>
+   <li><strong>Nearly-new Terms</strong>, where terms appearing between 1 and <%=n_new.thresh%> times in the previous years are considered. They must appear <%=n_new.thresh+new.thresh%> times and in at least <%=doc_count.thresh%> different abstracts in the target set to be highlighted.</li>
+   <li><strong>Rising Terms</strong>, where term frequency rises are calculated and rises of more than <%=rise.pc.thresh%>% are highlighted. A term must appear at least <%=enough.thresh.rise%> times in the previous years set for a term to be considered.</li>
+   <li><strong>Falling Terms</strong>, are obtained similarly to Rising Terms but only the top 10% of terms in the previous years set are considered and a change of <%=fall.pc.thresh%>% is needed for the term to be highlighted in the results.</li>
+</ul>
+<em>For Rising and Falling Terms, the change is calculated on the proportion of all stemmed words that are the term in question. For example if 2.00% of stemmed words in the previous years set was &quot;learn&quot; and 2.12% pertains to the current set, then the rise is 6%.</em>
+</p>
+
+<h2>Statistics and Overall Pattern</h2>
+<h3>Corpus Statistics</h3>
+<p>There are <%=sum(!past.doc_ids.bool)%> abstracts in <%=conf.year.recent%> and <%=sum(past.doc_ids.bool)%> in the <%=conf.years.in_past%> previous years. Within these abstracts, which define the corpus, there are <%=length(Terms(dtm.tf))%> distinct terms after removing stop words and applying stemming.The summary statistics for the number of times each term appears in the corpus are: mean=<%=summary(dtm.tf.sums)[["Mean"]]%>, median=<%=summary(dtm.tf.sums)[["Median"]]%>, maximum=<%=summary(dtm.tf.sums)[["Max."]]%>.</p>
+
+<p>For the set of New Terms:
+<ul>
+   <li>the number of times each term appears in the target set has: mean=<%=summary(term.sums.new)[["Mean"]]%>, median=<%=summary(term.sums.new)[["Median"]]%>, maximum=<%=summary(term.sums.new)[["Max."]]%>.</li>
+   <li>after selecting terms that appear at least <%=new.thresh%> times and in at least <%=doc_count.thresh%> different abstracts, there are <%=length(Terms(dtm.tf.new))%> terms in scope which appear in <%=length(Docs(dtm.tf.new))%> out of the <%=sum(!past.doc_ids.bool)%> target abstracts.</li>
+</ul>
+
+For the set of Nearly-New Terms:
+<ul>
+   <li>the number of times each term appears in the target set has: mean=<%=summary(term.sums.n_new)[["Mean"]]%>, median=<%=summary(term.sums.n_new)[["Median"]]%>, maximum=<%=summary(term.sums.n_new)[["Max."]]%>.</li>
+   <li>after selecting terms that appear at least <%=new.thresh+n_new.thresh%> times and in at least <%=doc_count.thresh%> different abstracts, there are <%=length(Terms(dtm.tf.n_new))%> terms in scope which appear in <%=length(Docs(dtm.tf.n_new))%> out of the <%=sum(!past.doc_ids.bool)%> target abstracts.</li>
+</ul>
+
+For the set of Rising Terms:
+<ul>
+   <li>the % rise from the previous years to the target year has: mean=<%=summary(rise.ratio)[["Mean"]]%>, median=<%=summary(rise.ratio)[["Median"]]%>, maximum=<%=summary(rise.ratio)[["Max."]]%>.</li>
+   <li>after selecting terms that rise by at least <%=rise.pc.thresh%>%, there are <%=length(Terms(dtm.tf.rising))%> terms in scope which appear in <%=length(Docs(dtm.tf.rising))%> out of the <%=sum(!past.doc_ids.bool)%> target abstracts.</li>
+</ul>
+
+The set of Falling Terms (the % fall from the previous years to the target year) has summary statistics of: mean=<%=summary(fall.ratio)[["Mean"]]%>, median=<%=summary(fall.ratio)[["Median"]]%>, maximum=<%=summary(fall.ratio)[["Max."]]%>.
+</p>
+
+<h3>New and Nearly-New Terms</h3>
+<div class="cap-img"><a href="Images/NewTermFrequencies.png" target="image_win"><img src="Images/NewTermFrequencies.png" alt="New Term Frequencies" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: The number of terms that appear 1,2,3... times in the target year set not at all in the previous years. In this case there are <%=term.sums.new.t[2]%> new terms that appear twice.</div>
+<div class="cap-img"><a href="Images/NearlyNewTermFrequencies.png" target="image_win"><img src="Images/NearlyNewTermFrequencies.png" alt="Nearly-New Term Frequencies" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: The number of terms that appear 1,2,3... times in the target year set and only between 1 and <%=n_new.thresh%> times in the previous years.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<h3>Rising and Falling Terms</h3>
+<div class="cap-img"><a href="Images/RisingTerm_Distribution.png" target="image_win"><img src="Images/RisingTerm_Distribution.png" alt="Rising Term Distribution" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: Number of terms with a given % rise, limited to the terms appearing at least <%=enough.thresh.rise%> times in the previous years set.</div>
+<div class="cap-img"><a href="Images/FallingTerm_Distribution.png" target="image_win"><img src="Images/FallingTerm_Distribution.png" alt="Falling Term Distribution" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: Number of terms with a given % fall, limited to the most frequent 10% of terms in the previous years set of abstracts. For the current corpus, this means the term must occur at least <%=enough.thresh.fall%> times in the previous <%=conf.years.in_past%> years. A 100% fall indicates that the term does not appear in the target year's abstracts.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<h2>Highlighted New Terms</h2>
+<div>Highlighted New Terms appear for the first time and with at least <%=new.thresh%> occurrences in the target year of <%=conf.year.recent%>. <%=in_themes.msg.new%></div>
+
+<div class="cap-img"><a href="Images/NewTermFrequencies_Selected.png" target="image_win"><img src="Images/NewTermFrequencies_Selected.png" alt="New Term Frequencies" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: Frequencies of occurrence of the New Terms in the target year.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<div class="cap-img"><a href="Images/NewTerm_DocOccurrence_Bar.png" target="image_win"><img src="Images/NewTerm_DocOccurrence_Bar.png" alt="New Terms: Document Occurrence" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: The number of abstracts containing each New Term. A New Term that appears in a large number of abstracts is likely to be a stronger indication of a new trend that a New Term that is concentrated in a single abstract.</div>
+<div class="cap-img"><a href="Images/NewTerm_DocOccurrence_Heat.png" target="image_win"><img src="Images/NewTerm_DocOccurrence_Heat.png" alt="Heatmap of Nearly-New Terms: Document Occurrence" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: Heatmap to show the distribution of the New Terms among abstracts. Red cells indicate the term does not appear. Orange cells indicate a relatively less-frequent term and yellow cells indicate terms that are relatively more frequent <em>among the New Terms in a given document</em>. This also shows how terms may be clustered according to their occurrence and how abstracts may be clustered according to the Terms within them. The numbers are the identifiers assigned to each paper.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+<p><em>Note: In plots such as the above, where terms are shown they will usually be a short word but may occasionally be truncated or have an unusual ending. This is a consequence of the stemming process, where related words are rendered into a single form that is used in the processing. The word that actually occurs in a given abstract may be one of the related forms. The unusual endings occur when the reverse-lookup algorithm fails. It should also be noted that punctuation is removed so hyphenated forms become concatenated. An unfamiliar term may be an abbreviation or project/product acronym.</em></p>
+
+<h3>Abstracts Containing the Highlighted New Terms</h3>
+<em>The title of of the paper relating to each abstract containing a given New Term is listed, whereas abstracts are only shown for the most frequent New Terms. See the end of this report for information about the <a href="#credits">source of abstracts and access to the conference proceedings</a>.</em>
+<%for (i in 1:length(new.doclist)){%>
+<h4>Papers Containing &quot;<%=names(new.doclist[i])%>&quot;</h4>
+<dl>
+<%df<-new.doclist[[i]]%>
+<%for (j in 1:length(df[,1])){%>
+<dt><%=df[j,"heading"]%></dt>
+<dd>
+<em><%=df[j,"authors"]%>, <%=paste(df[j,"origin"],df[j,"date"])%> (id=<%=df[j,"id"]%>)</em><br/>
+<%if(i<=4){%>
+<%=df[j,"abstract"]%>
+<%}#endif%>
+</dd>
+<%}#j-loop%>
+</dl>
+<%}#i-loop%>
+
+<h2>Highlighted Nearly-New Terms</h2>
+<div>Highlighted Nearly New Terms appear between 1 and <%=n_new.thresh%> times in the previous years and at least <%=n_new.thresh+new.thresh%> times in the target year of <%=conf.year.recent%>.
+<%=in_themes.msg.n_new%></div>
+
+<div class="cap-img"><a href="Images/NearlyNewTermFrequencies_Selected.png" target="image_win"><img src="Images/NearlyNewTermFrequencies_Selected.png" alt="Nearly-New Term Frequencies" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: Frequenies of occurrence of the Nearly New Terms in the target year.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<div class="cap-img"><a href="Images/NearlyNewTerm_DocOccurrence_Bar.png" target="image_win"><img src="Images/NearlyNewTerm_DocOccurrence_Bar.png" alt="Nearly-New Terms: Document Occurrence" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: The number of abstracts containing each Nearly New Term.  A Nearly New Term that appears in a large number of abstracts is likely to be a stronger indication of a new trend that a Nearly New Term that is concentrated in a single abstract.</div>
+<div class="cap-img"><a href="Images/NearlyNewTerm_DocOccurrence_Heat.png" target="image_win"><img src="Images/NearlyNewTerm_DocOccurrence_Heat.png" alt="Heatmap of Nearly-New Terms: Document Occurrence" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: Heatmap to show the distribution of the Nearly New Terms among abstracts. Red cells indicate the term does not appear. Orange cells indicate a relatively less-frequent term and yellow cells indicate terms that are relatively more frequent <em>in a given document</em>. This also shows how terms may be clustered according to their occurrence and how abstracts may be clustered according to the Terms within them. The numbers are the identifiers assigned to each paper.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<h3>Abstracts Containing the Highlighted Nearly New Terms</h3>
+<em>The title of of the paper relating to each abstract containing a given Nearly New Term is listed, whereas abstracts are only shown for the most frequent Nearly New Terms. See the end of this report for information about the <a href="#credits">source of abstracts and access to the conference proceedings</a>.</em>
+<%for (i in 1:length(n_new.doclist)){%>
+<h4>Papers Containing &quot;<%=names(n_new.doclist[i])%>&quot;</h4>
+<dd>
+<%df<-n_new.doclist[[i]]%>
+<%for (j in 1:length(df[,1])){%>
+<dt><%=df[j,"heading"]%></dt>
+<dd>
+<em><%=df[j,"authors"]%>, <%=paste(df[j,"origin"],df[j,"date"])%> (id=<%=df[j,"id"]%>)</em><br/>
+<%if(i<=4){%>
+<%=df[j,"abstract"]%>
+<%}#endif%>
+</dd>
+<%}#j-loop%>
+</dl>
+<%}#i-loop%>
+
+<h2>Highlighted Rising Terms</h2>
+<div>Highlighted Rising Terms are those that appear at least <%=enough.thresh.rise%> times in the previous years set and have risen by more than <%=rise.pc.thresh%>% in the target year of <%=conf.year.recent%>.
+<%=in_themes.msg.rising%></div>
+
+<div class="cap-img"><a href="Images/RisingTerms_PC.png" target="image_win"><img src="Images/RisingTerms_PC.png" alt="Rising Terms - Percentage Rises.png" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: Highlighted rising terms and their percentage of rise. Colour coding matches the % rise.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<div class="cap-img"><a href="Images/RisingTerms_PastRecent_Counts.png" target="image_win"><img src="Images/RisingTerms_PastRecent_Counts.png" alt="Rising Terms Past and Recent Counts" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: The number of occurrences of the Rising Terms in the past and target sets of abstracts.</div>
+<div class="cap-img"><a href="Images/RisingTerms_PastRecent_PC.png" target="image_win"><img src="Images/RisingTerms_PastRecent_PC.png" alt="Rising Terms Past and Recent Percentages" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stemmed words that are the term in question in both the previous and target year.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<div class="cap-img"><a href="Images/RisingTerm_DocOcurrence_Bar.png" target="image_win"><img src="Images/RisingTerm_DocOcurrence_Bar.png" alt="Rising Terms: Document Ocurrence" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: The number of abstracts containing each highlighted Rising Term. The colour coding matches the % rise in the proportion of term occurrence.  A Term that appears in a large number of abstracts is likely to be a stronger indication of a new trend that a Term that is concentrated in a single abstract.</div>
+<div class="cap-img"><a href="Images/RisingTerm_DocOcurrence_Heat.png" target="image_win"><img src="Images/RisingTerm_DocOcurrence_Heat.png" alt="Rising Terms: Document Ocurrenc Heatmap" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: Heatmap to show the distribution of the Rising Terms among abstracts. Red cells indicate the term does not appear. Orange cells indicate a relatively less-frequent term and yellow cells indicate terms that are relatively more frequent <em>in a given document</em>. This also shows how terms may be clustered according to their occurrence and how abstracts may be clustered according to the Terms within them. The numbers are the identifiers assigned to each paper.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<h3>Abstracts Containing the Highlighted Rising Terms</h3>
+<em>The title of of the paper relating to each abstract containing a given Rising Term is listed, whereas abstracts are only shown for the most rising terms.  See the end of this report for information about the <a href="#credits">source of abstracts and access to the conference proceedings</a>.</em>
+<%for (i in 1:length(rising.doclist)){%>
+<h4>Papers Containing &quot;<%=names(rising.doclist[i])%>&quot;</h4>
+<dl>
+<%df<-rising.doclist[[i]]%>
+<%for (j in 1:length(df[,1])){%>
+<dt><%=df[j,"heading"]%></dt>
+<dd>
+<em><%=df[j,"authors"]%>, <%=paste(df[j,"origin"],df[j,"date"])%> (id=<%=df[j,"id"]%>)</em><br/>
+<%if(i<=4){%>
+<%=df[j,"abstract"]%>
+<%}#endif%>
+</dd>
+<%}#j-loop%>
+</dl>
+<%}#i-loop%>
+
+
+<h3>Correlation Between Rising Terms</h3>
+<p>This shows how highlighted rising terms appear together in abstracts. The visualisation is created using <a href="http://gephi.org/">Gephi</a> (v0.8 alpha). Using Gephi provides for good interactivity; the <a href="Gephi/RisingTerm Co-occurrence.gephi">RisingTerm-Co-occurrence.gephi</a> file can be downloaded and used in Gephi.</p>
+
+<p>The most-frequently co-occurrance of a pair of terms is <%=max.cooccurrence%> out of <%=sum(!past.doc_ids.bool)%> abstracts (<%=conf.year.recent%> set) and the minimum in the highlighted set is <%=min.cooccurrence%>. The mean co-occurrence (measured over all distinct pairs of terms) is <%=mean.cooccurrence%>.
+<%if(length(max.edges.df[,1])==1){%>
+The most frequently co-occuring pair of terms is &quot;<%=as.character(max.edges.df[1,"Source"])%>&quot; and  &quot;<%=as.character(max.edges.df[1,"Target"])%>&quot;.
+<%}else{%>
+The most frequently co-occuring pair of terms are:
+<ul>
+<%for(i in 1:length(max.edges.df[,1])){%>
+<li>
+&quot;<%=as.character(max.edges.df[i,"Source"])%>&quot; and  &quot;<%=as.character(max.edges.df[i,"Target"])%>&quot;
+</li>
+<%}#end loop%>
+</ul>
+<%}%>
+</p>
+
+<div class="cap-sd"><div id="seadragon"></div><BR/>
+Figure <%=figure%><%figure<-figure+1%>: Rising Term Co-occurrence Map. The node area is proportional to the % rise and the colour is related to the number of other rising terms that it appears with (the terms are arranged around the circle in this order). The connecting line width is proportional to the number of abstracts where both terms appear together.<BR/><em>This image can be zoomed-in on and panned.<em></em></em></div>
+
+<div class="clear"/>
+
+<h2>Highlighted Falling Terms</h2>
+<div><em>Highlighted Falling Terms are those that are the 10% most frequent terms in the abstracts from previous years and have fallen by at least <%=fall.pc.thresh%>% in the target year of <%=conf.year.recent%>.</em></div>
+
+<div class="cap-img"><a href="Images/FallingTerms_PC.png" target="image_win"><img src="Images/FallingTerms_PC.png" alt="Falling Terms - Percentage Falls.png" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: Highlighted falling terms and their percentage of fall. Colour coding matches the % fall.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<div class="cap-img"><a href="Images/FallingTerms_PastRecent_Counts.png" target="image_win"><img src="Images/FallingTerms_PastRecent_Counts.png" alt="Falling Terms Past and Recent Counts" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: The number of occurrences of the Falling Terms in the past and target sets of abstracts.</div>
+
+<div class="cap-img"><a href="Images/FallingTerms_PastRecent_PC.png" target="image_win"><img src="Images/FallingTerms_PastRecent_PC.png" alt="Falling Terms Past and Recent Percentage" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stemmed words that are the term in question in both the previous and target year.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<a name="credits"/>
+<h2>Copyright, Licence and Credits</h2>
+<table>
+<tr>
+	<td><a rel="license" href="http://creativecommons.org/licenses/by/3.0/"><img alt="Creative Commons Licence" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/88x31.png" /></a></td>
+	<td>This work, its images and original text are &copy;2011 Adam Cooper, Institute for Educational Cybernetics, University of Bolton, UK.<BR/><span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Adam Cooper</span> has licenced it under a <a rel="license" href="http://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0 Unported License</a></td>
+</tr>
+</table>
+
+<%if(length(conference.name)==1){%>
+<p>Quoted abstracts are &copy; the publisher, <%=publisher.series%>. Papers and a full set of abstracts may be <a href="<%=publisher.url%>">found on the publisher's website</a> and other information may be found on the <a href="<%=last.conference.url%>">conference website</a>.</p>
+<%}else{%>
+<p>Quoted abstracts are &copy; the respective publisher, as follows:</p>
+<ul>
+<%for(conf in 1:length(conference.name)){%>
+<li><%=conference.name[conf]%>, <a href="<%=publisher.url[conf]%>">papers and a full set of abstracts</a> (<%=publisher.series[conf]%>), <a href="<%=last.conference.url[conf]%>">conference website</a>.</li>
+<%}#end loop%>
+</ul>
+<%}#end if%>
+
+<p>This work was undertaken as part of the <a href="http://www.telmap.org">TEL-Map Project</a>; TEL-Map is a support and coordination action within EC IST FP7 Technology Enhanced Learning.<img src="http://www.learningfrontiers.eu/sites/all/themes/learningfrontiers/images/footer-EU-logo.jpg" /></p>
+<HR/>
+<em>Generated using Brew with &quot;Conference BrewTemplate.html&quot; v0.2.</em>
+
+</body>
+</html>

@@ -1,0 +1,1883 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+<head>
+<title>Conference Scan: Rising and Falling Terms - Conference Proceedings from ICALT, ECTEL and ICWL 2010</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<meta name="AUTHOR" content="Adam Cooper"/>
+<!--
+## ***Made available using the The MIT License (MIT)***
+# Copyright (c) 2011, Adam Cooper
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+## ************ end licence ***************
+-->
+<!--adopt styles from TELMap. -->
+<style type="text/css">
+html, body, div, span, table, td, tr, th, tbody, tfoot, frame, iframe, object {
+	margin-top: 20px;
+	margin-bottom: 20px;		
+	font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+	font-size: 13px;
+	color: #404040;
+}
+
+a:link, a:hover {
+	color: #23a0d2;
+	text-decoration: none;
+}
+
+a:visited {
+	color: #066890;
+	text-decoration: none;
+}
+
+h2 {
+	color: #e2a12c;
+	font-size: 30px;
+	font-family: "Times New Roman", Times, serif;
+}
+
+h3 {
+	color: #494949;
+	font-family: "Times New Roman", Times, serif;
+	font-size: 16px;
+	text-transform: uppercase;	
+}
+</style>	
+	
+<!--additional style for plot boxing and captioning-->
+<style type="text/css">
+.cap-img { background-color: #F9F9F9; border: 1px solid #CCCCCC; padding: 3px; font: 11px/1.4em Arial, sans-serif; 
+margin: 0.5em 0.8em 0.5em 0.1em; float:left; width:504px;}
+.cap-sd { background-color: #F9F9F9; border: 1px solid #CCCCCC; padding: 3px; font: 11px/1.4em Arial, sans-serif; 
+margin: 0.5em 0.8em 0.5em 0.1em; float:left; width:804px;}
+.clear { clear: both;} 
+.cap-img img { border: 1px solid #CCCCCC; vertical-align:middle; margin-bottom: 3px;} 
+</style>
+
+<!-- style for abstracts -->
+<style type="text/css">
+dt{text-decoration:underline;}
+</style>
+
+<!-- Stuff for the SeaDragon node browser -->
+        <script src="Gephi/SeaDragon/js/seadragon-min.js" type="text/javascript"></script>
+        <script type="text/javascript">
+            Seadragon.Config.imagePath = "Gephi/SeaDragon/img/";
+            // Start the viewer
+            function start() {
+                var viewer = new Seadragon.Viewer("seadragon");
+                viewer.openDzi("Gephi/SeaDragon/map/map.xml");
+            }
+        </script>
+
+        <style type="text/css">
+            body {
+                margin: 0px;
+            }
+            #seadragon {
+                width: 800px;
+                height: 600px;
+                background-color: Black;
+                border: 1px solid #CCCCCC; margin-bottom: 3px;
+            }
+        </style>
+        <!-- End -->
+</head>
+<body  onload="start();">
+<h1>Conference Scan: Rising and Falling Terms - Conference Proceedings from ICALT, ECTEL and ICWL 2010</h1>
+
+<p>This is an un-interpreted and automatically-generated report on emerging, rising and falling terms from the abstracts of the IEEE International Conference on Advanced Learning Technolgies European Conference on Technology Enhanced Learning International Conference on Web-based Learning. It is one part of the <a href="http://blogs.cetis.ac.uk/adam/2011/05/12/weak-signals-and-text-mining-i-an-introduction-to-weak-signals/">&quot;Weak Signals Analysis&quot; work of the TEL-Map Project</a>. The same analytical method is also applied to blogs, hence the term "document" is used in plots; this is identical to an abstract.</p>
+
+<p><em>All plots will open in a new window/tab as 1000x1000 pixed images if clicked on.</em></p>
+<h2>The Method</h2>
+<p>The analysis involves the application of text mining to the abstracts of the conference proceedings. The target year (2010) is contrasted against the previous 4 previous years. The details of the text mining are <a href="http://blogs.cetis.ac.uk/adam/2011/05/12/weak-signals-and-text-mining-ii-text-mining-background-and-application-ideas/">available elsewhere</a> but for the purpose of interpretation it should be noted that &quot;stemming&quot; and &quot;stop-word&quot; removal has been used. &quot;Stop-word&quot; removal means that common words are removed before beginning the analysis. &quot;Stemming&quot; involves the conversion of similar words that differ only by their ending into a truncated form that is used as the &quot;term&quot; in the analysis. For the purpose of readability the shortest word that produces the term is generally given, although sometimes the algorithm fails and the stemmed version is shown. This should be born in mind when examining the results.</p>
+
+<p>Four views on the differences between the target and previous years' abstracts are presented:
+<ul>
+   <li><strong>New Terms</strong>, where this report highlights terms that appear at least 4 times in the target year's abstracts and in at least 2 different abstracts but not at all in the previous years.</li>
+   <li><strong>Nearly-new Terms</strong>, where terms appearing between 1 and 2 times in the previous years are considered. They must appear 6 times and in at least 2 different abstracts in the target set to be highlighted.</li>
+   <li><strong>Rising Terms</strong>, where term frequency rises are calculated and rises of more than 180% are highlighted. A term must appear 8 times in the previous years set for a term to be considered.</li>
+   <li><strong>Falling Terms</strong>, are obtained similarly to Rising Terms but only the top 10% of terms in the previous years set are considered and a change of -80% is needed for the term to be highlighted in the results.</li>
+</ul>
+<em>For Rising and Falling Terms, the change is calculated on the proportion of all stemmed words that are the term in question. For example if 2.00% of stemmed words in the previous years set was &quot;learn&quot; and 2.12% pertains to the current set, then the rise is 6%.</em>
+</p>
+
+<h2>Statistics and Overall Pattern</h2>
+<h3>Corpus Statistics</h3>
+<p>There are 363 abstracts in 2010 and 1601 in the 4 previous years. Within these abstracts, which define the corpus, there are 6294 distinct terms after removing stop words and applying stemming.The summary statistics for the number of times each term appears in the corpus are: mean=17.87, median=2, maximum=4296.</p>
+
+<p>For the set of New Terms:
+<ul>
+   <li>the number of times each term appears in the target set has: mean=1.437, median=1, maximum=10.</li>
+   <li>after selecting terms that appear at least 4 times and in at least 2 different abstracts, there are 13 terms in scope which appear in 28 out of the 363 target abstracts.</li>
+</ul>
+
+For the set of Nearly-New Terms:
+<ul>
+   <li>the number of times each term appears in the target set has: mean=1.526, median=1, maximum=9.</li>
+   <li>after selecting terms that appear at least 6 times and in at least 2 different abstracts, there are 4 terms in scope which appear in 13 out of the 363 target abstracts.</li>
+</ul>
+
+For the set of Rising Terms:
+<ul>
+   <li>the % rise from the previous years to the target year has: mean=52.11, median=33.82, maximum=640.6.</li>
+   <li>after selecting terms that rise by at least 180%, there are 19 terms in scope which appear in 125 out of the 363 target abstracts.</li>
+</ul>
+
+The set of Falling Terms (the % fall from the previous years to the target year) has summary statistics of: mean=-30.87, median=-27.7, maximum=-0.03885.
+</p>
+
+<h3>New and Nearly-New Terms</h3>
+<div class="cap-img"><a href="Images/NewTermFrequencies.png" target="image_win"><img src="Images/NewTermFrequencies.png" alt="New Term Frequencies" width="500" height="500" /></a><BR/>
+Figure 1: The number of terms that appear 1,2,3... times in the target year set not at all in the previous years. In this case there are 98 new terms that appear twice.</div>
+<div class="cap-img"><a href="Images/NearlyNewTermFrequencies.png" target="image_win"><img src="Images/NearlyNewTermFrequencies.png" alt="Nearly-New Term Frequencies" width="500" height="500" /></a><BR/>
+Figure 2: The number of terms that appear 1,2,3... times in the target year set and only between 1 and 2 times in the previous years.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<h3>Rising and Falling Terms</h3>
+<div class="cap-img"><a href="Images/RisingTerm_Distribution.png" target="image_win"><img src="Images/RisingTerm_Distribution.png" alt="Rising Term Distribution" width="500" height="500" /></a><BR/>
+Figure 3: Number of terms with a given % rise, limited to the terms appearing at least 8 times in the previous years set.</div>
+<div class="cap-img"><a href="Images/FallingTerm_Distribution.png" target="image_win"><img src="Images/FallingTerm_Distribution.png" alt="Falling Term Distribution" width="500" height="500" /></a><BR/>
+Figure 4: Number of terms with a given % fall, limited to the most frequent 10% of terms in the previous years set of abstracts. For the current corpus, this means the term must occur at least 24 times in the previous 4 years. A 100% fall indicates that the term does not appear in the target year's abstracts.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<h2>Highlighted New Terms</h2>
+<div>Highlighted New Terms appear for the first time and with at least 4 occurrences in the target year of 2010. </div>
+
+<div class="cap-img"><a href="Images/NewTermFrequencies_Selected.png" target="image_win"><img src="Images/NewTermFrequencies_Selected.png" alt="New Term Frequencies" width="500" height="500" /></a><BR/>
+Figure 5: Frequenies of occurrence of the New Terms in the target year.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<div class="cap-img"><a href="Images/NewTerm_DocOccurrence_Bar.png" target="image_win"><img src="Images/NewTerm_DocOccurrence_Bar.png" alt="New Terms: Document Occurrence" width="500" height="500" /></a><BR/>
+Figure 6: The number of abstracts containing each New Term. A New Term that appears in a large number of abstracts is likely to be a stronger indication of a new trend that a New Term that is concentrated in a single abstract.</div>
+<div class="cap-img"><a href="Images/NewTerm_DocOccurrence_Heat.png" target="image_win"><img src="Images/NewTerm_DocOccurrence_Heat.png" alt="Heatmap of Nearly-New Terms: Document Occurrence" width="500" height="500" /></a><BR/>
+Figure 7: Heatmap to show the distribution of the New Terms among abstracts. Red cells indicate the term does not appear. Orange cells indicate a relatively less-frequent term and yellow cells indicate terms that are relatively more frequent <em>among the New Terms in a given document</em>. This also shows how terms may be clustered according to their occurrence and how abstracts may be clustered according to the Terms within them. The numbers are the identifiers assigned to each paper.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+<p><em>Note: In plots such as the above, where terms are shown they will usually be a short word but may occasionally be truncated or have an unusual ending. This is a consequence of the stemming process, where related words are rendered into a single form that is used in the processing. The word that actually occurs in a given abstract may be one of the related forms. The unusual endings occur when the reverse-lookup algorithm fails. It should also be noted that punctuation is removed so hyphenated forms become concatenated. An unfamiliar term may be an abbreviation or project/product acronym.</em></p>
+
+<h3>Abstracts Containing the Highlighted New Terms</h3>
+<em>The title of of the paper relating to each abstract containing a given New Term is listed, whereas abstracts are only shown for the most frequent New Terms. See the end of this report for information about the <a href="#credits">source of abstracts and access to the conference proceedings</a>.</em>
+
+<h4>Papers Containing &quot;flickr&quot;</h4>
+<dl>
+
+
+<dt>Identifying Animals with Dynamic Location-aware and Semantic Hierarchy-Based Image Browsing for Different Cognitive Style Learners.</dt>
+<dd>
+<em>Dunwei Wen, Ming-Chi Liu, Yueh-Min Huang, Kinshuk, Pi-Hsia Hung, ICALT 2010 (id=1387)</em><br/>
+
+Lack of overall ecological knowledge structure is a critical reason for learners' failure in keyword-based search. To address this issue, this paper firstly presents the dynamic location-aware and semantic hierarchy (DLASH) designed for the learners to browse images, which aims to identify learners' current interesting sights and provide adaptive assistance accordingly in ecological learning. The main idea is based on the observation that the species of plants and animals are discontinuously distributed around the planet, and hence their semantic hierarchy, besides its structural similarity with WordNet, is related to location information. This study then investigates how different cognitive styles of the learners influence the use of DLASH in their image browsing. The preliminary results show that the learners perform better when using DLASH based image browsing than using the Flickr one. In addition, cognitive styles have more effects on image browsing in the DLASH version than in the Flickr one.
+
+</dd>
+
+<dt>The Detection of Scene Features in Flickr</dt>
+<dd>
+<em>Chunjie Zhou, Pengfei Dai and Jianxun Liu, ICWL 2010 (id=2387)</em><br/>
+
+Detecting events from web resources has attracted increasing research interests in recent years. Flickr is one of Web resources, which is used to share photos. Complex event detection on Flickr includes the detection of tourist features, user’s interest, and so on. With the increasing user requirements of efficient and personalized services, the detection of scene features in Flickr is urgently needed. In this paper we propose a novel method to detect tourist features of every scene, and its difference in different seasons as a probabilistic combination of tags. The use of topic models enables the automatic detection of such patterns, which can translate unstructured tag information into structured event form. The experimental evaluation using real datasets in Flickr show the feasibility and efficiency of the proposed method.
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;leader&quot;</h4>
+<dl>
+
+
+<dt>A Chorus Learning Support System Based on the Tutoring Knowledge of the Chorus Leader.</dt>
+<dd>
+<em>Mizue Kayama, Kazunori Itoh, Kazushi Asanuma, Masami Hashimoto, Makoto Otani, ICALT 2010 (id=1495)</em><br/>
+
+The purpose of this study is to explore a chorus learning support environment based on the tutoring knowledge of the chorus leader. In general chorus practice, a chorus leader tends to instruct his chorus members based not on score information, but a chorus leader's sense of value and/or his musical philosophy. We try to extract the tutoring knowledge necessary to evaluate/review a singing voice from the chorus leader. The extracted knowledge is expressed in a computational form and implemented in a learning support system. In this paper, a chorus learning support system is proposed. At first, the tutoring knowledge of a chorus leader is described. Next, the architecture and functions of the proposed system are shown. Finally, we evaluate the adequacy of the extracted knowledge and the effectiveness of chorus learning with our system.
+
+</dd>
+
+<dt>Deepthink: A Second Life Environment for Part-time Research Students at a Distance.</dt>
+<dd>
+<em>Lucia Rapanotti, Leonor Barroca, Maria Vargas-Vera, Ahmad J. Reeves, ICALT 2010 (id=1595)</em><br/>
+
+This paper reports on the design of a Second Life campus for a new innovative post-graduate research programme at the Open University, UK, a world leader in supported distance higher education. The programme, launched in October 2009, is a part-time Master of Philosophy (MPhil) to be delivered at a distance, supported by a blend of synchronous and asynchronous Internet technologies. This paper briefly discusses the pedagogical thinking behind the Second Life campus, and the way the implementation was designed to meet the pedagogy. The paper also reports on the outcome of an early evaluation we have conducted.
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;circulatori&quot;</h4>
+<dl>
+
+
+<dt>Learning Biology with the Animated Agent in Game Based Learning Environment.</dt>
+<dd>
+<em>Hsin I Yung, ICALT 2010 (id=1519)</em><br/>
+
+The paper delineates the design of the animated agent with using Socratic dialogue to facilitate learning in game based learning environment (the biology adventure). Especially, the biology adventure is designed to model virtual scenarios of the human circulatory system. It presents natural phenomena and inquiry prompts to emphasize the conceptual knowledge of the human circulatory system. Specifically, the spatial aesthetics attract students in the interactive environment that represents the complex biology structure. It is the spirit of the game which students play as the biologist. Through the exploration, students interact with the animated agent to examine their concepts continuously as well as organize their mental models.
+
+</dd>
+
+<dt>Collaborative Development of an Augmented Reality Application for Digestive and Circulatory Systems Teaching.</dt>
+<dd>
+<em>David C. Pérez López, Manuel Contero, Mariano Alcañiz Raya, ICALT 2010 (id=1635)</em><br/>
+
+Augmented Reality (AR) appears as a promising technology to improve students motivation and interest and support the learning and teaching process in educational contexts. We present the collaborative development of an AR application to support the teaching of the digestive and circulatory systems. We developed this system with the support of a private Spanish school. The main objective of the application is to show the student in primary school, in the most accurate way, digestive and circulatory systems. By other hand, we also develop our own AR library, HUMANAR, in order to ensure the integration of AR into our game engine and to overcome some drawbacks present in some public libraries. Moreover, our system provides several advantages over the traditional learning as books, videos or practice with animal organs.
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;decentralized&quot;</h4>
+<dl>
+
+
+<dt>Ultra-Personalization and Decentralization: The Potential of Multi-Agent Systems in Personal and Informal Learning</dt>
+<dd>
+<em>Ali M. Aseere, David E. Millard and Enrico H. Gerding, ECTEL 2010 (id=1908)</em><br/>
+
+Agents are autonomous software components that work with one another in a decentralized fashion to achieve some end. Agent systems have been used in Technology Enhanced Learning (TEL) before, but these applications seldom take advantage of the fact that each agent may have its own goals and strategies, which makes agent systems an attractive way of providing personalized learning. In particular, since agents can solve problems in a decentralized way, this makes them an attractive way of supporting informal learning. In this paper we use scenarios to examine how common problem solving techniques from the agents world (voting, coalition formation and auction systems) map to significant challenges for personalized and informal learning in the TEL world. Through an agent simulation we then show how an agent system might perform in one of those scenarios and explore how different agent strategies might influence the outcome. Based on this work we argue that agent systems provide a way of providing ultra-personalization of the learning process in a decentralized way and highlight equitability and scrutability as two key challenges for future investigation.
+
+</dd>
+
+<dt>QoS-Based Probabilistic Fault-Diagnosis Method for Exception Handling</dt>
+<dd>
+<em>Zhen Zhu and Wanchun Dou, ICWL 2010 (id=2388)</em><br/>
+
+Fault-diagnosis is an essential prerequisite for exception handling. There are several attempts to apply it in the decentralized systems like Web Service. However, few of them discuss the fault-diagnosis technics along with QoS. In this paper, we base our work on an existing framework, and employ the Bayesian Network which takes QoS under consideration to operate a probabilistic analysis. We aim to evaluate the precedence of each diagnosis returned after the diagnostic procedure with a posterior probability and thus provide more support for exception handling.
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;fingerprint&quot;</h4>
+<dl>
+
+
+<dt>Web Tests in LMS Using Fingerprint Identification.</dt>
+<dd>
+<em>Charo Gil, Manuel Castro, Mudasser F. Wyne, Russ Meier, ICALT 2010 (id=1475)</em><br/>
+
+</dd>
+
+<dt>Automatic Detection of Local Reuse</dt>
+<dd>
+<em>Arno Mittelbach, Lasse Lehmann, Christoph Rensing and Ralf Steinmetz, ECTEL 2010 (id=1921)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;girls&quot;</h4>
+<dl>
+
+
+<dt>Spatializing Social Practices in Mobile Game-Based Learning.</dt>
+<dd>
+<em>Susan Gwee, Yam San Chee, Ek Ming Tan, ICALT 2010 (id=1480)</em><br/>
+
+</dd>
+
+<dt>Offering Early Success Experiences in Software Construction: Experiences Teaching Dynamic Website Development to High School Girls.</dt>
+<dd>
+<em>Mary Beth Rosson, Hansa Sinha, Tisha Hansford, Jan Mahar, ICALT 2010 (id=1572)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;locationawar&quot;</h4>
+<dl>
+
+
+<dt>Identifying Animals with Dynamic Location-aware and Semantic Hierarchy-Based Image Browsing for Different Cognitive Style Learners.</dt>
+<dd>
+<em>Dunwei Wen, Ming-Chi Liu, Yueh-Min Huang, Kinshuk, Pi-Hsia Hung, ICALT 2010 (id=1387)</em><br/>
+
+</dd>
+
+<dt>A Collaborative Ubiquitous Learning Approach for Conducting Personal Computer-Assembling Activities.</dt>
+<dd>
+<em>Judy C. R. Tseng, Chih-Hsiang Wu, Gwo-Jen Hwang, ICALT 2010 (id=1558)</em><br/>
+
+</dd>
+
+<dt>A Narrative Architecture for Story-Driven Location-Based Mobile Games</dt>
+<dd>
+<em>Katsiaryna Naliuka, Tara Carrigy, Natasa Paterson and Mads Haahr, ICWL 2010 (id=2365)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;selfreport&quot;</h4>
+<dl>
+
+
+<dt>A Preliminary Study on Learners Physiological Measurements in Educational Hypermedia.</dt>
+<dd>
+<em>Nikos Tsianos, Panagiotis Germanakos, Zacharias Lekkas, Anna Saliarou, Costas Mourlas, George Samaras, ICALT 2010 (id=1573)</em><br/>
+
+</dd>
+
+<dt>An Analysis of Students' Intention to Use Ubiquitous Video Game-Based Learning System.</dt>
+<dd>
+<em>Chun-Yi Shen, Han-Bin Chang, Wen-Chih Chang, Te-Hua Wang, ICALT 2010 (id=1576)</em><br/>
+
+</dd>
+
+<dt>Who Students Interact With? A Social Network Analysis Perspective on the Use of Twitter in Language Learning</dt>
+<dd>
+<em>Carsten Ullrich, Kerstin Borau and Karen Stepanyan, ECTEL 2010 (id=1938)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;skin&quot;</h4>
+<dl>
+
+
+<dt>Prediction of Players Motivational States Using Electrophysiological Measures during Serious Game Play.</dt>
+<dd>
+<em>Lotfi Derbali, Claude Frasson, ICALT 2010 (id=1428)</em><br/>
+
+</dd>
+
+<dt>Self-Esteem Conditioning for Learning Conditioning.</dt>
+<dd>
+<em>Imene Jraidi, Maher Chaouachi, Claude Frasson, ICALT 2010 (id=1540)</em><br/>
+
+</dd>
+
+<dt>A Preliminary Study on Learners Physiological Measurements in Educational Hypermedia.</dt>
+<dd>
+<em>Nikos Tsianos, Panagiotis Germanakos, Zacharias Lekkas, Anna Saliarou, Costas Mourlas, George Samaras, ICALT 2010 (id=1573)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;string&quot;</h4>
+<dl>
+
+
+<dt>Duplicate Page Detection Algorithm Based on the Field Characteristic Clustering</dt>
+<dd>
+<em>Feiyue Ye, Junlei Liu, Bing Liu and Kun Chai, ICWL 2010 (id=2372)</em><br/>
+
+</dd>
+
+<dt>Designing Personalized Learning Difficulty for Online Learners</dt>
+<dd>
+<em>Guangli Zhu, Wenjuan Liu and Shunxiang Zhang, ICWL 2010 (id=2392)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;uptake&quot;</h4>
+<dl>
+
+
+<dt>A Formative eAssessment Co-Design Case Study.</dt>
+<dd>
+<em>David A. Bacigalupo, W. I. Warburton, E. A. Draffan, Pei Zhang, Lester Gilbert, Gary B. Wills, ICALT 2010 (id=1505)</em><br/>
+
+</dd>
+
+<dt>Investigating Teachers’ Understanding of IMS Learning Design: Yes They Can!</dt>
+<dd>
+<em>Michael Derntl, Susanne Neumann, Dai Griffiths and Petra Oberhuemer, ECTEL 2010 (id=1910)</em><br/>
+
+</dd>
+
+<dt>Visualizing Activities for Self-reflection and Awareness</dt>
+<dd>
+<em>Sten Govaerts, Katrien Verbert, Joris Klerkx and Erik Duval, ICWL 2010 (id=2329)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;wave&quot;</h4>
+<dl>
+
+
+<dt>Prediction of Players Motivational States Using Electrophysiological Measures during Serious Game Play.</dt>
+<dd>
+<em>Lotfi Derbali, Claude Frasson, ICALT 2010 (id=1428)</em><br/>
+
+</dd>
+
+<dt>Students' Competitive Preferences on Multiuser Wireless Sensor Classroom Interactive Environment.</dt>
+<dd>
+<em>Ben Chang, Chien Wen Chen, ICALT 2010 (id=1523)</em><br/>
+
+</dd>
+
+<dt>Using Social Software for Teamwork and Collaborative Project Management in Higher Education</dt>
+<dd>
+<em>Na Li, Carsten Ullrich, Sandy El Helou and Denis Gillet, ICWL 2010 (id=2336)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;weather&quot;</h4>
+<dl>
+
+
+<dt>Facilitating Learning Interests Through Mobile Information Visualization.</dt>
+<dd>
+<em>Yuan Xun Gu, Raymond Koon Chuan Koh, Vivian Hsueh-hua Chen, Henry Been-Lirn Duh, ICALT 2010 (id=1450)</em><br/>
+
+</dd>
+
+<dt>Using Tangible Learning Companions in English Education.</dt>
+<dd>
+<em>Yi Hsuan Wang, Shelley Shwu-Ching Young, Jyh-Shing Roger Jang, ICALT 2010 (id=1601)</em><br/>
+
+</dd>
+
+<dt>A Narrative Architecture for Story-Driven Location-Based Mobile Games</dt>
+<dd>
+<em>Katsiaryna Naliuka, Tara Carrigy, Natasa Paterson and Mads Haahr, ICWL 2010 (id=2365)</em><br/>
+
+</dd>
+
+</dl>
+
+
+<h2>Highlighted Nearly-New Terms</h2>
+<div>Highlighted Nearly New Terms appear between 1 and 2 times in the previous years and at least 6 times in the target year of 2010.
+</div>
+
+<div class="cap-img"><a href="Images/NearlyNewTermFrequencies_Selected.png" target="image_win"><img src="Images/NearlyNewTermFrequencies_Selected.png" alt="Nearly-New Term Frequencies" width="500" height="500" /></a><BR/>
+Figure 8: Frequenies of occurrence of the Nearly New Terms in the target year.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<div class="cap-img"><a href="Images/NearlyNewTerm_DocOccurrence_Bar.png" target="image_win"><img src="Images/NearlyNewTerm_DocOccurrence_Bar.png" alt="Nearly-New Terms: Document Occurrence" width="500" height="500" /></a><BR/>
+Figure 9: The number of abstracts containing each Nearly New Term.  A Nearly New Term that appears in a large number of abstracts is likely to be a stronger indication of a new trend that a Nearly New Term that is concentrated in a single abstract.</div>
+<div class="cap-img"><a href="Images/NearlyNewTerm_DocOccurrence_Heat.png" target="image_win"><img src="Images/NearlyNewTerm_DocOccurrence_Heat.png" alt="Heatmap of Nearly-New Terms: Document Occurrence" width="500" height="500" /></a><BR/>
+Figure 10: Heatmap to show the distribution of the Nearly New Terms among abstracts. Red cells indicate the term does not appear. Orange cells indicate a relatively less-frequent term and yellow cells indicate terms that are relatively more frequent <em>in a given document</em>. This also shows how terms may be clustered according to their occurrence and how abstracts may be clustered according to the Terms within them. The numbers are the identifiers assigned to each paper.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<h3>Abstracts Containing the Highlighted Nearly New Terms</h3>
+<em>The title of of the paper relating to each abstract containing a given Nearly New Term is listed, whereas abstracts are only shown for the most frequent Nearly New Terms. See the end of this report for information about the <a href="#credits">source of abstracts and access to the conference proceedings</a>.</em>
+
+<h4>Papers Containing &quot;eassess&quot;</h4>
+<dd>
+
+
+<dt>A Formative eAssessment Co-Design Case Study.</dt>
+<dd>
+<em>David A. Bacigalupo, W. I. Warburton, E. A. Draffan, Pei Zhang, Lester Gilbert, Gary B. Wills, ICALT 2010 (id=1505)</em><br/>
+
+Formative eAssessment can be very helpful in providing high quality higher education assignments. However, there are obstacles restricting the uptake of formative eAssessment in higher education including both cultural and technical issues. When a university is encouraging the uptake of formative eAssessment internally it is useful to have case studies from academic schools detailing how academics enthusiastic about formative eAssessment have used it in their modules. It is particularly helpful if these case studies document: i.) the principle obstacles that these champions had to deal with, ii.) a cooperative-design process through which these obstacles have been dealt with by the champions (with assistance from e.g. learning technologists), and iii.) an evaluation of the effectiveness of the resulting formative eAssessments. However there is a shortage of such real-world long-term case studies. This paper helps fill this gap in the literature by describing the case of a Modern Languages module within a Russell Group university (Southampton). The formative eAssessment solution resulting from the case study utilises our QTI, mobile QTI, accessibility, and web 2.0 tools and can be positioned at the cutting edge of formative eAssessment practice. We have evaluated this with undergraduate student volunteers from Spanish modules and received positive feedback.
+
+</dd>
+
+<dt>A Set of Software Tools to Build an Author Assessment Package on Moodle: Implementing the AEEA Proposal.</dt>
+<dd>
+<em>Beatriz E. Florián G, Silvia Baldiris, Ramón Fabregat, Alexis De la Hoz Manotas, ICALT 2010 (id=1550)</em><br/>
+
+A set of new types of assessment is required for learning management systems (LMSs), and there is a need for a way to assess lifelong adaptive competencies. Proposed solutions to these problems need to preserve the interoperability, reusability, efficiency and abstract modeling already present in LMSs. This paper introduces a set of software tools for an author assessment package on the LMS Mooddle being developed as part of adaptive e-learning engine architecture (AEEA). The principal features of this set are: 1) The set avoid editing items for a 360-degree feedback evaluation, 2) Whole items and tests are linked to levels of competencies acquisition, 3) The competency-based e-assessment data model are based on e-learning specification and complemented with XML data on the appraised competencies, 4) Items and tests are storage in repositories, and 5) The tools are integrated within Moodle to facilitate the design of an assessment plan.
+
+</dd>
+
+<dt>Case-Based Medical E-assessment System.</dt>
+<dd>
+<em>Rozemary Scarlat, Liana Stanescu, Elvira Popescu, Dumitru Dan Burdescu, ICALT 2010 (id=1570)</em><br/>
+
+This paper presents the design, development and testing of an e-assessment system, focusing on the practical part of the Medical School training. It also discusses several important aspects that need to be taken into consideration when creating an e-learning application for the medical domain. For example, the application must accustom the student with certain procedure protocols, it must be available to as many scholars as possible and it must be appealing in order for the students to exercise a greater amount of time. The results indicate that case-bcase-based virtual patient systemsased virtual patient systems can help prepare experts in the medical field with low costs and without allowing patients to be treated by still-training doctors.
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;gameplay&quot;</h4>
+<dd>
+
+
+<dt>Spatializing Social Practices in Mobile Game-Based Learning.</dt>
+<dd>
+<em>Susan Gwee, Yam San Chee, Ek Ming Tan, ICALT 2010 (id=1480)</em><br/>
+
+The objectives of this paper are to explore the characteristics of patterns of participation in social and game-play spaces outside the classroom of 10 fifteen-year-olds engaging in mobile game-based learning, and to determine whether there are gender differences in their use of social and game-play spaces. The data indicate some evidence of gender differences in their use. The boys in the study tended to engage in mobile game-based learning more than girls in game-play spaces. The girls tended to use the social space more than the boys and were especially more active in their use of the in-game chat system.
+
+</dd>
+
+<dt>Game-play as Knowledge Transformation Process for Learning.</dt>
+<dd>
+<em>Ming-Puu Chen, Chun-Yi Shen, ICALT 2010 (id=1603)</em><br/>
+
+Through a pedagogically meaningful process of game-play, content, skills and attitudes can be integrated in the gaming environment to engage learners and enhance learning by game-play. This study examined the process of game-play from the perspective of knowledge transformation. Pedagogical perspectives were proposed to serve as learning frameworks for learning from game-play. It is suggested that effective knowledge transformation in the learners can be achieved by means of deliberate design of the game-play process as well as the role of the learners.
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;oral&quot;</h4>
+<dd>
+
+
+<dt>Extending Open Space Technology for Blended Learning.</dt>
+<dd>
+<em>Isabel Pereira, Antonio Dias Figueiredo, ICALT 2010 (id=1525)</em><br/>
+
+This paper presents a pedagogical strategy for the exploration of blended-learning in higher education. A key component is the adoption of Open Space Technology (OST) to group students according to their motivation for the topics to be studied and tasks to be performed, rather than following their personal affinities. We have developed and tested the strategy throughout two academic years. In the first year, we explored OST in its regular, face-to-face, approach. Although the results were good, we felt that learning could be further improved with a period of on-line discussion after the face-to-face session. With this in mind, in the following year we explored a combination of face-to-face and on-line activities, in what we called blended-OST (or b-OST). We concluded that this approach could lead to a deeper discussion of the proposed tasks, to the emergence of additional possible tasks, and to the participation of students who tended to shy away from expressing their opinions orally. The data collected shows that the involvement of the students increased in the second year. In our view, the use of blended-OST has contributed to the creation of a better learning context. The students' opinions, collected after the course, also support this view.
+
+</dd>
+
+<dt>An Audio Book Platform for Early EFL Oral Reading Fluency.</dt>
+<dd>
+<em>Kuo-Ping Liu, Cheng-Chung Liu, Chih-Hsin Huang, Kuo-Chun Hung, Chia-Jung Chang, ICALT 2010 (id=1531)</em><br/>
+
+Oral reading fluency is essential to overall reading achievements and repeat reading has been found to be an effective strategy for oral reading fluency. Choral reading is the most authentic use of repeated readings in the EFL primary grades. However, teachers have neither sufficient time nor adequate expertise to deal with non-fluent readers. Hence, challenges with oral reading fluency and motivation have long been considered a common characteristic for teacher and students. Hence, this study proposed a one-to-one Audio Book Platform incorporating repeated reading strategy and record-play function. An intact sample of two classes of the sixth graders in Taiwan were randomly assigned and treated as experimental group and control (choral reading) group. An empirical study is conducted to assess whether there are differences in the effectiveness of enhancing oral reading fluency. A questionnaire elicited information concerning motivation included (1) anxiety, (2) intrinsic goal orientation, (3) extrinsic goal orientation, (4) task value, and (5) self-regulation is also conducted. Although no significant difference was uncovered in oral reading fluency and motivation, the findings could serve as some general principles for researchers who would like to experiment with one-to-one repeated reading in similar contexts.
+
+</dd>
+
+<dt>Winkball for Schools: An Advanced Video Modelling Technology for Learning Visual and Oral Communication Skills.</dt>
+<dd>
+<em>James Ohene-Djan, ICALT 2010 (id=1584)</em><br/>
+
+Although the potential benefits of using digital video in educational settings is well researched, little work has been conducted into how video modelling and messaging technologies can be devised and implemented to support teaching in educational settings. Video is generally used as a passive medium  whereby students watch a video presentation to ascertain information. In this paper we present Winkball for Schools, a new internet-based video messaging and broadcasting technology designed to support the teaching of oral and visual communication skills in schools. Through the use of video modelling instructional techniques and video messaging communications technologies we show how video can be deployed as an active medium to engage students when learning communication skills. Using Winkball for Schools students can record, send and share video messages with other students in classroom settings, at home and with students at different schools. Students can also create and post content to video notice boards for group viewing. It is hoped that through the wide scale adoption of Winkball technology the teaching of oral and visual communication skills within schools can benefit, and relationships between students in different countries can be further established.
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;risk&quot;</h4>
+<dd>
+
+
+<dt>Towards a Competence Based System for Recommending Study Materials (CBSR).</dt>
+<dd>
+<em>Athitaya Nitchot, Lester Gilbert, Gary B. Wills, ICALT 2010 (id=1465)</em><br/>
+
+Most e-learning systems require intervention from a teacher. The development of adaptive hypermedia systems, such as intelligent tutoring systems, aimed to reduce the teachers' task. However, such systems are still at risk of inconsistently modelling the user when estimating a learner's knowledge level. We propose a system called CBSR (Competence based System for Recommending Study Materials) which recommends appropriate study materials from the Web without requiring teacher intervention, based upon a competency model. This has the benefit of an improved pedagogical approach to e-learning, and a more consistent profile of learners' competences which can persist though their life.
+
+</dd>
+
+<dt>Checking Semantic Consistency of SCORM like Learning Objects.</dt>
+<dd>
+<em>Ramzi Farhat, Bruno Defude, Mohamed Jemni, ICALT 2010 (id=1504)</em><br/>
+
+Semantic metadata are not yet fully integrated in most learning metadata profiles. Moreover, when it is supported it is only used to improve the quality of results returned by search engines in LOR (learning object repositories) and LMS (Learning Management Systems). Within the framework of APOGE project, we want to demonstrate the usability of semantic metadata, when they are provided, during the authoring phase to assist authors to improve the consistency of new designed learning objects. The added value of our approach is maximized in the case of SCORM (Sharable Content Object Reference Model) like learning objects' authoring. Indeed, when we have learning objects designed by reuse of existing ones there is risks to have weaknesses mainly due to a bad understanding of the true nature of the reused objects. To overcome those risks we have defined an automated authoring assistance approach. In this paper we put the emphasis on two semantic based methods used in our approach: semantic consistency checking and learning object's semantic space analysis.
+
+</dd>
+
+<dt>Modelling Computer Game Based Educational Experience for Teaching Children about Emergencies.</dt>
+<dd>
+<em>Mario Rafael Ruiz Vargas, Telmo Zarraonandia, Paloma Díaz, Ignacio Aedo, ICALT 2010 (id=1516)</em><br/>
+
+The aim of this work is to support educators in the design process of computer game based learning experiences for teaching children about the risks of emergency. As an educational experience can be tailored to different student needs, the risk characteristics of emergency at hand, and the educational purpose of the experience, the proposed model includes the necessary elements to provide all this information. In this way the teacher can specify the requirements of the educational experience, and based on this information to propose possible configurations of the elements of the game.
+
+</dd>
+
+<dt>Towards an Ergonomics of Knowledge Systems: Improving the Design of Technology Enhanced Learning</dt>
+<dd>
+<em>David E. Millard and Yvonne Howard, ECTEL 2010 (id=1960)</em><br/>
+
+As Technology Enhanced Learning (TEL) systems become more essential to education there is an increasing need for their creators to reduce risk and to design for success. We argue that by taking an ergonomic perspective it is possible to better understand why TEL systems succeed or fail, as it becomes possible to analyze how well they are aligned with their users and environment. We present three TEL case studies that demonstrate these ideas, and show how an ergonomic analysis can help frame the problems faced in a useful way. In particular we propose using a variant of ergonomics that emphasizes the expression, communication and use of knowledge within the system, we call this approach Knowledge System Ergonomics.
+
+</dd>
+
+<dt>A Story on Internet Safety: Experiences from Developing a VR Gaming Environment</dt>
+<dd>
+<em>Maria Fountana, Dimitris Kalaitzis, Eftychios Valeontis and Vasilis Delis, ICWL 2010 (id=2366)</em><br/>
+
+This work presents the authors’ on-going experience in implementing an online VR platform targeted to young pupils with the aim to achieve an in-depth understanding regarding Internet safety risks, protective measures and actions, primarily within the school and family environment. We a) outline design and technical considerations with respect to ‘SimSafety’ development, b) present technical prospects and limitations related to the provision of conceptually ‘rich’ activities to support our educational goals and c) briefly discuss SimSafety’s pilot application so far, under the “story telling” paradigm.
+
+</dd>
+
+</dl>
+
+
+<h2>Highlighted Rising Terms</h2>
+<div>Highlighted Rising Terms are those that appear at least 8 times in the previous years set and have risen by more than 180% in the target year of 2010.
+</div>
+
+<div class="cap-img"><a href="Images/RisingTerms_PC.png" target="image_win"><img src="Images/RisingTerms_PC.png" alt="Rising Terms - Percentage Rises.png" width="500" height="500" /></a><BR/>
+Figure 11: Highlighted rising terms and their percentage of rise. Colour coding matches the % rise.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<div class="cap-img"><a href="Images/RisingTerms_PastRecent_Counts.png" target="image_win"><img src="Images/RisingTerms_PastRecent_Counts.png" alt="Rising Terms Past and Recent Counts" width="500" height="500" /></a><BR/>
+Figure 12: The number of occurences of the Rising Terms in the past and target sets of abstracts.</div>
+<div class="cap-img"><a href="Images/RisingTerms_PastRecent_PC.png" target="image_win"><img src="Images/RisingTerms_PastRecent_PC.png" alt="Rising Terms Past and Recent Percentages" width="500" height="500" /></a><BR/>
+Figure 13: Comparison of the proportion of all stemmed words that are the term in question in both the previous and target year.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<div class="cap-img"><a href="Images/RisingTerm_DocOcurrence_Bar.png" target="image_win"><img src="Images/RisingTerm_DocOcurrence_Bar.png" alt="Rising Terms: Document Ocurrence" width="500" height="500" /></a><BR/>
+Figure 14: The number of abstracts containing each highlighted Rising Term. The colour coding matches the % rise in the proportion of term occurrence.  A Term that appears in a large number of abstracts is likely to be a stronger indication of a new trend that a Term that is concentrated in a single abstract.</div>
+<div class="cap-img"><a href="Images/RisingTerm_DocOcurrence_Heat.png" target="image_win"><img src="Images/RisingTerm_DocOcurrence_Heat.png" alt="Rising Terms: Document Ocurrenc Heatmap" width="500" height="500" /></a><BR/>
+Figure 15: Heatmap to show the distribution of the Rising Terms among abstracts. Red cells indicate the term does not appear. Orange cells indicate a relatively less-frequent term and yellow cells indicate terms that are relatively more frequent <em>in a given document</em>. This also shows how terms may be clustered according to their occurrence and how abstracts may be clustered according to the Terms within them. The numbers are the identifiers assigned to each paper.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<h3>Abstracts Containing the Highlighted Rising Terms</h3>
+<em>The title of of the paper relating to each abstract containing a given Rising Term is listed, whereas abstracts are only shown for the most rising terms.  See the end of this report for information about the <a href="#credits">source of abstracts and access to the conference proceedings</a>.</em>
+
+<h4>Papers Containing &quot;serious&quot;</h4>
+<dl>
+
+
+<dt>Prediction of Players Motivational States Using Electrophysiological Measures during Serious Game Play.</dt>
+<dd>
+<em>Lotfi Derbali, Claude Frasson, ICALT 2010 (id=1428)</em><br/>
+
+This study investigated players' motivation during serious game play. It is based on a theoretical model of motivation. Statistical analysis showed a significant increase of motivation during the game. This study tried to dissect predictors of Players' Motivational States. Multiple linear regression showed statistical significance of specific electrophysiological data. The theta wave in the frontal regions and motivation were positively correlated. High-beta wave in the left-center region was also a significant predictor for high level of motivation. Skin conductance was also a significant predictor for motivation. However, we could not find a significant correlation between players' motivation and their heart rate responses.
+
+</dd>
+
+<dt>SeGAE: A Serious Game Authoring Environment.</dt>
+<dd>
+<em>Amel Yessad, Jean-Marc Labat, François Kermorvant, ICALT 2010 (id=1449)</em><br/>
+
+Game-based learning or serious game is becoming an important trend in e-learning research area because it seems address several typical e-learning problems such as high dropout rates due to frustration and the lack of motivation to continue studying and the cognitive overload of the learner. However, an important problem of serious games is the difficulty for instructors to adapt the storyboard, the scripts and the game levels of the videogame to new pedagogical objectives once the game development is achieved. This paper presents SeGAE, an author-friendly environment that offers to instructors a set of editors in order to modify the game design by defining new characters, objectives, victory conditions, authorised actions among other objects in the serious games even after the development stage. Particularly, we apply our authoring approach on Blossom Flowers, a serious game developed by Ktm Advance. This paper presents SeGAE, an author-friendly environment that offers to instructors a set of editors in order to modify the game design by defining new characters, objectives, victory conditions, authorised actions among other objects in the serious games even after the development stage. Particularly, we apply our authoring approach on Blossom Flowers, a serious game developed by Ktm Advance.
+
+</dd>
+
+<dt>Playing Games on the Screen: Adapting Mouse Interaction at Early Ages.</dt>
+<dd>
+<em>Juan Enrique Agudo, Héctor Sánchez, Mercedes Rico, ICALT 2010 (id=1498)</em><br/>
+
+Technology is changing the way today's children learn. Based on our experience in the development of educational software for children, it is our belief that computer interaction should consider the factors that affect children's cognitive abilities and take an active part in the realm of the methodological process of hypermedia design. Departing from the results of a preliminary study with pre-school children, serious difficulties regarding mouse interaction when playing computer games are detected, mainly in the movements requiring more complex psychomotor abilities, such as double click and interactions leading to dragging the cursor. The evaluation reports on the need to adapt the mouse interaction to children's cognitive development, from point-and-click to drag-and-drop, and the suitability of introducing intermediate variations adapted to young learners' needs.
+
+</dd>
+
+<dt>Disaster Readiness through Education - Training Soft Skills to Crisis Units by Means of Serious Games in Virtual Environments</dt>
+<dd>
+<em>Nina Haferkamp and Nicole C. Krämer, ECTEL 2010 (id=1950)</em><br/>
+
+The training of soft skills in organizational settings has become very important for an effective communicative exchange between members of staff. Especially in companies where the line of communication has to be fast and unmistakable, e.g. in crisis management units, the regular training of communication skills is therefore indispensable. The DREAD-ED project proposes a technology-based teaching methodology to meet these needs. The methodology provides a serious game which enables its users to train soft skills in a virtual environment under safe conditions. The current paper presents the results of two trials conducted with crisis managers and university students.
+
+</dd>
+
+<dt>Supporting Reflection in an Immersive 3D Learning Environment Based on Role-Play</dt>
+<dd>
+<em>Nils Malzahn, Hanno Buhmes, Sabrina Ziebarth and H. Ulrich Hoppe, ECTEL 2010 (id=1956)</em><br/>
+
+This paper presents a framework for creating and conducting serious games. It focuses on role-playing game based learning scenarios in 3D environments. The feasibility of the presented approach is demonstrated by a training scenario for apprenticeship job interviews. Based on the assumption that reflection phases as an important part of successful learning processes are to be adequately supported, we show how phases of immersion during the role-play are connected to separate phases of reflection.
+
+</dd>
+
+<dt>Evaluation of Learning Outcomes</dt>
+<dd>
+<em>Sylvia Encheva, ICWL 2010 (id=2327)</em><br/>
+
+A lot of research has been done with respect to automated evaluation of students’ knowledge. Learning outcomes have been of serious interest to many research communities as well. In this article we apply dominance relations in rough sets approximations for assessing knowledge obtained in active learning environments.
+
+</dd>
+
+<dt>Collaborative Learning by Means of Multiplayer Serious Games</dt>
+<dd>
+<em>Viktor Wendel, Felix Hertin, Stefan Göbel and Ralf Steinmetz, ICWL 2010 (id=2349)</em><br/>
+
+The field of collaborative learning has been researched for many years with a focus on evaluation of the circumstances under which collaborative learning provides better learning effectiveness compared to individual learning. Traditional collaborative learning has been taking place as group work or discussions in a class. Recently, Serious Games for learning and Digital Educational Games (DEGs) have been established as a promising alternative to the traditional one-to-many teaching as it is still standard in today’s classrooms and with the uprising technology of Multiplayer Online Games (MOGs), new ways of collaborative learning are possible. In this paper we examine various chances and challenges for collaborative learning which arise by the use of Multiplayer Serious Games. Section[1] motivates this work, followed by a description of some important aspects of MOGs and collaboration in Section[2]. In Section[3] the concept of collaborative learning is explained and important concepts and methods for a collaborative game design are analyzed and discussed in Section[4], using some examples of collaborative Serious Games. Finally, we briefly introduce our own approach of a collaborative Serious MOG in Section[5]. In Section[6] the results are summarized and further work is pointed out.
+
+</dd>
+
+<dt>Using the Petri Nets for the Learner Assessment in Serious Games</dt>
+<dd>
+<em>Amel Yessad, Pradeepa Thomas, Bruno Capdevila and Jean-Marc Labat, ICWL 2010 (id=2354)</em><br/>
+
+Game-based learning or serious games is becoming an important trend in the e-learning research area and seems address several typical e-learning problems such as high dropout rates, due to the lack of motivation to continue studying. In serious games, it is very hard to define and mix the learning situations with the game characteristics, and to integrate an assessment and guidance process of the learner without disturbing the game progress and maintain the intrinsic characteristics of the video game: fun, player motivation, immersion and interaction. In this paper, we consider the serious game as an asynchronous and concurrent system, and we propose an approach based on a Petri net to assess learners and detect misconceptions. In the game design stage, a discussion between domain experts, learning experts, and game designers is engaged in order to identify the actions in the game that imply knowledge acquisition and allow achieving the learning objectives of levels. Therefore, in our approach, the Petri net models only game actions allowing the learner to acquire knowledge. We use the reachability graph of the Petri net to track the learner in order to detect, in real time, the learner’s misconceptions, improve learner assessment and provide an accurate feed back for both the learner and the instructor.
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;qti&quot;</h4>
+<dl>
+
+
+<dt>E-learning Authoring with Docbook and SMIL.</dt>
+<dd>
+<em>Alberto González Téllez, ICALT 2010 (id=1486)</em><br/>
+
+E-learning content material can be classified as text and multimedia. A common practice is to use text as backbone and multimedia as components to enrich the otherwise text-and-still-images-only documents. Nowadays e-learning content delivery over learning management systems (LMS) is becoming a common practice in academic institutions. Common authoring tools like office suites are good to generate printing format but at present they do not generate easily the interoperable standards used today in LMS (i.e. SCORM, IMS CP and IMS QTI). We propose a user friendly authoring environment to produce IMS interoperable formats, able to be imported in our Sakai based LMS named PoliformaT. We follow the text-based-multimedia-enriched document paradigm using Docbook for text and SMIL for multimedia composition. Both Docbook and SMIL are independent and XML compliant. Docbook's simple and well structured markup simplifies interoperability with other XML compliant languages, particularly those related to e-learning. In the multimedia side SMIL offers an open and flexible composition capability to author multimedia content for e-learning. The problem that we face with the proposed approaches is the lack of friendly and productive authoring tools. This is the issue we intend to contribute to with this work.
+
+</dd>
+
+<dt>An Online Arabic Learning Environment Based on IMS-QTI.</dt>
+<dd>
+<em>Abdelkader Abdelkarim, Dalila Souilem Boumisa, Rafik Braham, ICALT 2010 (id=1487)</em><br/>
+
+E-Learning is the modern model of education, transferring the classical text books to an electronic medium giving us the opportunity to learn almost anytime, anywhere. It has become an important stream of education in present and has a promising future. Successful e-learning applications for efficient language teaching require various corpora and Natural Language Processing (NLP) technologies. This paper deals with the application of NLP technology and IMS QTI standard to construct an online Arabic learning environment for learners. Our work is an integration of two areas: linguistics computer science. It focuses on three objectives: the development of linguistics resources and tools for the automatic processing of Arabic, the building of ontology for the Arabic language and the application and extension of the IMS-QTI for Arabic grammar as well.
+
+</dd>
+
+<dt>A Formative eAssessment Co-Design Case Study.</dt>
+<dd>
+<em>David A. Bacigalupo, W. I. Warburton, E. A. Draffan, Pei Zhang, Lester Gilbert, Gary B. Wills, ICALT 2010 (id=1505)</em><br/>
+
+Formative eAssessment can be very helpful in providing high quality higher education assignments. However, there are obstacles restricting the uptake of formative eAssessment in higher education including both cultural and technical issues. When a university is encouraging the uptake of formative eAssessment internally it is useful to have case studies from academic schools detailing how academics enthusiastic about formative eAssessment have used it in their modules. It is particularly helpful if these case studies document: i.) the principle obstacles that these champions had to deal with, ii.) a cooperative-design process through which these obstacles have been dealt with by the champions (with assistance from e.g. learning technologists), and iii.) an evaluation of the effectiveness of the resulting formative eAssessments. However there is a shortage of such real-world long-term case studies. This paper helps fill this gap in the literature by describing the case of a Modern Languages module within a Russell Group university (Southampton). The formative eAssessment solution resulting from the case study utilises our QTI, mobile QTI, accessibility, and web 2.0 tools and can be positioned at the cutting edge of formative eAssessment practice. We have evaluated this with undergraduate student volunteers from Spanish modules and received positive feedback.
+
+</dd>
+
+<dt>dinsEditor: A Browser Extension for QTI-Compliant Assessment Item Authoring.</dt>
+<dd>
+<em>Sungjae Han, Jinjoo Kim, Youngseok Lee, Jaehyuk Cha, Byung-Uk Choi, ICALT 2010 (id=1589)</em><br/>
+
+Many users want to author assessment items directly from web pages. Existing authoring tools usually use the clipboard to perform the `select-copy-paste' operation on web pages. Because web pages have complicated structures and can include invisible resources, the clipboard-based approach has several limitations: 1) it cannot keep the resource in its original form, 2) it cannot select invisible resources, and 3) it may have to select unnecessary resources. To overcome these limitations, this paper proposes dinsEditor as a browser-based approach for assessment item authoring tools. It is offered as a browser extension that allows the authoring environment to make full use of the resources of web pages and to utilize the exact resources user want. It enables web resources to be maintained in their original form during the assessment item authoring process. The assessment items created through dinsEditor observe the QTI standard by using the QTI Translator.
+
+</dd>
+
+<dt>Tool for Generation IMS-QTI v2.1 Files with Java Server Faces.</dt>
+<dd>
+<em>Antonio García-Cabot, Roberto Barchino, Luis de Marcos, Eva García, José Ramón Hilera, José María Gutiérrez, Salvador Otón, José-Javier Martínez, José Antonio Gutiérrez, ICALT 2010 (id=1636)</em><br/>
+
+This paper presents a web tool that uses Java Server Faces to design questions graphically, to test the outcome in a learning environment and to export them using the QTI v2.1 specification in order to ensure interoperability between different learning systems.
+
+</dd>
+
+<dt>Delivering QTI Self-tests to Personal Learning Environments Using Wookie Widgets</dt>
+<dd>
+<em>Vladimir Tomberg, Raido Kuli, Mart Laanpere and Peeter Normak, ICWL 2010 (id=2345)</em><br/>
+
+Although online tests are a quite popular form of assessing learning outcomes in traditional Learning Management Systems, it is quite difficult to deliver the wealth of existing re-usable QTI-compliant tests into Web 2.0 style Personal Learning Environments. This paper addresses both pedagogical scenarios and technical solution for using QTI self-tests in blogs, personal e-portfolios and social media platforms. The empirical part describes the development of the original QTI Assessment Proxy Service and QTI self-test player based on the Wookie widget engine.
+
+</dd>
+
+<dt>Modelling Text File Evaluation Processes</dt>
+<dd>
+<em>José Paulo Leal and Ricardo Queirós, ICWL 2010 (id=2371)</em><br/>
+
+Text file evaluation is an emergent topic in e-learning that responds to the shortcomings of the assessment based on questions with predefined answers. Questions with predefined answers are formalized in languages such as IMS Question & Test Interoperability Specification (QTI) and supported by many e-learning systems. Complex evaluation domains justify the development of specialized evaluators that participate in several business processes. The goal of this paper is to formalize the concept of a text file evaluation in the scope of the E-Framework – a service oriented framework for development of e-learning systems maintained by a community of practice. The contribution includes an abstract service type and a service usage model. The former describes the generic capabilities of a text file evaluation service. The later is a business process involving a set of services such as repositories of learning objects and learning management systems.
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;book&quot;</h4>
+<dl>
+
+
+<dt>An Online Arabic Learning Environment Based on IMS-QTI.</dt>
+<dd>
+<em>Abdelkader Abdelkarim, Dalila Souilem Boumisa, Rafik Braham, ICALT 2010 (id=1487)</em><br/>
+
+E-Learning is the modern model of education, transferring the classical text books to an electronic medium giving us the opportunity to learn almost anytime, anywhere. It has become an important stream of education in present and has a promising future. Successful e-learning applications for efficient language teaching require various corpora and Natural Language Processing (NLP) technologies. This paper deals with the application of NLP technology and IMS QTI standard to construct an online Arabic learning environment for learners. Our work is an integration of two areas: linguistics computer science. It focuses on three objectives: the development of linguistics resources and tools for the automatic processing of Arabic, the building of ontology for the Arabic language and the application and extension of the IMS-QTI for Arabic grammar as well.
+
+</dd>
+
+<dt>An Audio Book Platform for Early EFL Oral Reading Fluency.</dt>
+<dd>
+<em>Kuo-Ping Liu, Cheng-Chung Liu, Chih-Hsin Huang, Kuo-Chun Hung, Chia-Jung Chang, ICALT 2010 (id=1531)</em><br/>
+
+Oral reading fluency is essential to overall reading achievements and repeat reading has been found to be an effective strategy for oral reading fluency. Choral reading is the most authentic use of repeated readings in the EFL primary grades. However, teachers have neither sufficient time nor adequate expertise to deal with non-fluent readers. Hence, challenges with oral reading fluency and motivation have long been considered a common characteristic for teacher and students. Hence, this study proposed a one-to-one Audio Book Platform incorporating repeated reading strategy and record-play function. An intact sample of two classes of the sixth graders in Taiwan were randomly assigned and treated as experimental group and control (choral reading) group. An empirical study is conducted to assess whether there are differences in the effectiveness of enhancing oral reading fluency. A questionnaire elicited information concerning motivation included (1) anxiety, (2) intrinsic goal orientation, (3) extrinsic goal orientation, (4) task value, and (5) self-regulation is also conducted. Although no significant difference was uncovered in oral reading fluency and motivation, the findings could serve as some general principles for researchers who would like to experiment with one-to-one repeated reading in similar contexts.
+
+</dd>
+
+<dt>Collaborative Development of an Augmented Reality Application for Digestive and Circulatory Systems Teaching.</dt>
+<dd>
+<em>David C. Pérez López, Manuel Contero, Mariano Alcañiz Raya, ICALT 2010 (id=1635)</em><br/>
+
+Augmented Reality (AR) appears as a promising technology to improve students motivation and interest and support the learning and teaching process in educational contexts. We present the collaborative development of an AR application to support the teaching of the digestive and circulatory systems. We developed this system with the support of a private Spanish school. The main objective of the application is to show the student in primary school, in the most accurate way, digestive and circulatory systems. By other hand, we also develop our own AR library, HUMANAR, in order to ensure the integration of AR into our game engine and to overcome some drawbacks present in some public libraries. Moreover, our system provides several advantages over the traditional learning as books, videos or practice with animal organs.
+
+</dd>
+
+<dt>Building the Association Catalog for Books Based on Association Linked Network</dt>
+<dd>
+<em>Xiao Wei, Wei Wu, Jiyan Xu and Zheng Xu, ICWL 2010 (id=2375)</em><br/>
+
+Current library catalogs, such as author catalog, title catalog and so on, index the books from one aspect but cannot reflect the relations among relevant book classifications. In this paper, the association relations among book classifications are mined from a large amount of borrowing logs of readers. Based on the mined relations, the Association Linked Network of book classifications is built to present the association relations among book classifications. A new type of library catalog named Association Catalog for books (ACB) is proposed based on the association linked network of book classifications. By means of ACB readers can also get the books about the related disciplines, which are closely related to this book. The experiment results show that ACB can help the readers retrieve the related books in interdisciplinary learning and researching.
+
+</dd>
+
+<dt>Semantic Annotation of Educational Resources through Linked Data</dt>
+<dd>
+<em>Estefanía Otero-García, Juan C. Vidal, Manuel Lama, Alberto Bugarín and José E. Domenech, ICWL 2010 (id=2396)</em><br/>
+
+In this paper a context-based algorithm to semantically annotate e-learning contents is presented. This algorithm explores the DBpedia graph and uses both syntactic and semantic analysis techniques to identify the RDF triples which annotate the relevant terms that characterize the educational content. This algorithm has been applied to annotate learning fruits which are learning pills presented as web books that provide links to access to complementary and relevant information about the course.This work was supported by the Ministerio de Educación y Ciencia and the Xunta de Galicia under the projects TSI2007-65677C02-02 and 09SIN065E respectively.
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;hybrid&quot;</h4>
+<dl>
+
+
+<dt>An Evaluation of Diagnosis in a Learning Environment for Object-Oriented Modeling.</dt>
+<dd>
+<em>Ludovic Auxepaules, Dominique Py, ICALT 2010 (id=1446)</em><br/>
+
+This paper reports the first evaluation of a diagnostic module, called ACDC (Automatic Class Diagrams Comparator) since its integration into Diagram, a learning environment for UML class diagrams. ACDC is an hybrid matcher that compares the student diagram with a reference diagram and tries to match them. It produces a list of structural and content differences between these two diagrams. These differences are then analysed by the pedagogical component of Diagram for producing appropriate feedbacks. The evaluation of ACDC system was conducted using diagnosis traces and student diagrams collected in a Diagram experimentation during Fall 2008 with students in a UML course. For evaluating the quality of ACDC, we use four match quality measures: Precision, Recall, F-Measure and Overall. The evaluation results show that the diagnosis are fairly well but requires to be improved in some specific situations.
+
+</dd>
+
+<dt>Recommending Learning Objects According to a Teachers’ Contex Model</dt>
+<dd>
+<em>Jorge Bozo, Rosa Alarcón and Sebastian Iribarra, ECTEL 2010 (id=1944)</em><br/>
+
+Several online repositories make available learning resources known as Learning Objects (LOs), and tasks such as identifying useful metadata, diminishing the annotation effort, and facilitating LOs discovery and retrieval, remain still as open challenges. Advanced searching techniques such as recommending systems have been studied to address these issues, though mainly focused on students. We focus on teachers and exploit their context in order to identify metadata that describes LOs content. Teachers’ profiles consider also such metadata in a hybrid approach for recommending LOs to teachers and instructors.
+
+</dd>
+
+<dt>Improving Hybrid Learning of Physical Education by Video Review</dt>
+<dd>
+<em>Yajun Pang, ICWL 2010 (id=2343)</em><br/>
+
+Hybrid Learning is becoming one of important applications by integrating e-learning and traditional face-to-face instruction together. As an introduction to the reader the challenges in hybrid learning of physical education and architecture of Physical Education Hybrid Learning Platform (PEHLP) are firstly provided. The main character of PEHLP is using video instead of textual information as learning material. Then Video Review Module (VRM) is presented. Through the annotation composing functionality of VRM, the teacher can review the student’s actions video, pick out the wrong actions and add still annotations, which for now are either text or specific graphic symbols or audio-recording. And through the annotation viewing/browsing functionality, the student can watch annotated video, find out mistakes and get instructions. In order to control over bandwidths and promote video annotation, the geometry primitives of video annotation graphic symbols are presented in Geometry Primitive Language (GPL) in XML. The experiment shows that the annotation data is 0.37% of the annotation data in JPG format. The user case of this paper shows that 80.9% out of students think that the video review can afford the hybrid learning of physical education, but only 66.7% of them think the hybrid learning instruction mode can attain the same teaching effect in contrasted F2F instruction mode. So we suggest that the proportion of e-learning should be less than 60% in hybrid learning of physical education course.
+
+</dd>
+
+<dt>Hybrid Filtering-Based Personalized Recommender System for Revitalization of Jeju Water Industry</dt>
+<dd>
+<em>Jungwon Cho, Eui-young Kang, Hanil Kim, Hyungchul Kim and Youngseok Lee, et al., ICWL 2010 (id=2370)</em><br/>
+
+Information filtering is one of the core technologies in a recommender system for personalized services. Each filtering technology has such shortcomings as new user problems and sparsity. Moreover, a recommender system dependent on items decreases reusability. In order to solve these problems, we developed a personalized recommender framework with hybrid filtering. This framework consists of reusable and flexible modules for recommended items. Further, this framework improves the productivity of programming. As an application of this framework, we implemented a personalized tourist recommender system and analyzed it. Also, we applied the system to Jeju beer recommender system. The results show the performance of the framework proposed in this paper.
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;public&quot;</h4>
+<dl>
+
+
+<dt>Active Sharing of Contextual Learning Experiences among Users in Personal Learning Environments Using a Peer-to-Peer Network.</dt>
+<dd>
+<em>Amel Bouzeghoub, Ngoc-Kien Do, ICALT 2010 (id=1467)</em><br/>
+
+</dd>
+
+<dt>3D Digital Simulations in Participative Design of the Boulevard in Putrajaya: Implications on Academic, Organizational, and Informal Learning.</dt>
+<dd>
+<em>Rashidah Ab. Rahman, ICALT 2010 (id=1515)</em><br/>
+
+</dd>
+
+<dt>Increasing Students In-Class Engagement through Public Commenting: An Exploratory Study.</dt>
+<dd>
+<em>Honglu Du, Hao Jiang, Mary Beth Rosson, John M. Carroll, ICALT 2010 (id=1617)</em><br/>
+
+</dd>
+
+<dt>Collaborative Development of an Augmented Reality Application for Digestive and Circulatory Systems Teaching.</dt>
+<dd>
+<em>David C. Pérez López, Manuel Contero, Mariano Alcañiz Raya, ICALT 2010 (id=1635)</em><br/>
+
+</dd>
+
+<dt>Audience Interactivity as Leverage for Effective Learning in Gaming Environments for Dome Theaters</dt>
+<dd>
+<em>Panagiotis Apostolellis and Thanasis Daradoumis, ECTEL 2010 (id=1941)</em><br/>
+
+</dd>
+
+<dt>Components of a Research 2.0 Infrastructure</dt>
+<dd>
+<em>Thomas Daniel Ullmann, Fridolin Wild, Peter Scott, Erik Duval and Bram Vandeputte, et al., ECTEL 2010 (id=1964)</em><br/>
+
+</dd>
+
+<dt>Assisting the Authoring Process of IMS-LD Using Web Parsing Technique</dt>
+<dd>
+<em>Ka-shing Chan and Lam-for Kwok, ICWL 2010 (id=2322)</em><br/>
+
+</dd>
+
+<dt>Internet GIS and System Dynamic Modeling in Urban Public Safety and Security Studies: A Conceptual Framework</dt>
+<dd>
+<em>Danlin Yu and Jingyuan Yin, ICWL 2010 (id=2386)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;authentic&quot;</h4>
+<dl>
+
+
+<dt>Web Tests in LMS Using Fingerprint Identification.</dt>
+<dd>
+<em>Charo Gil, Manuel Castro, Mudasser F. Wyne, Russ Meier, ICALT 2010 (id=1475)</em><br/>
+
+</dd>
+
+<dt>An Audio Book Platform for Early EFL Oral Reading Fluency.</dt>
+<dd>
+<em>Kuo-Ping Liu, Cheng-Chung Liu, Chih-Hsin Huang, Kuo-Chun Hung, Chia-Jung Chang, ICALT 2010 (id=1531)</em><br/>
+
+</dd>
+
+<dt>Authenticity in Learning Game: How It Is Designed and Perceived</dt>
+<dd>
+<em>Celso Gonçalves, Marie-Caroline Croset, Muriel Ney, Nicolas Balacheff and Jean-Luc Bosson, ECTEL 2010 (id=1913)</em><br/>
+
+</dd>
+
+<dt>Exploring Mediums of Pedagogical Support in an across Contexts Mobile Learning Activity</dt>
+<dd>
+<em>Jalal Nouri, Johan Eliasson, Fredrik Rutz and Robert Ramberg, ECTEL 2010 (id=1935)</em><br/>
+
+</dd>
+
+<dt>Ambient Displays and Game Design Patterns</dt>
+<dd>
+<em>Sebastian Kelle, Dirk Börner, Marco Kalz and Marcus Specht, ECTEL 2010 (id=1951)</em><br/>
+
+</dd>
+
+<dt>Exploring the Benefits of Open Standard Initiatives for Supporting Inquiry-Based Science Learning</dt>
+<dd>
+<em>Bahtijar Vogel, Arianit Kurti, Daniel Spikol and Marcelo Milrad, ECTEL 2010 (id=1965)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;negative&quot;</h4>
+<dl>
+
+
+<dt>Students' Perceptions of the Factors Leading to Unsuccessful Group Collaboration.</dt>
+<dd>
+<em>Shuangyan Liu, Mike Joy, Nathan Griffiths, ICALT 2010 (id=1431)</em><br/>
+
+</dd>
+
+<dt>Using Feedback Tags and Sentiment Analysis to Generate Sharable Learning Resources Investigating Automated Sentiment Analysis of Feedback Tags in a Programming Course.</dt>
+<dd>
+<em>Stephen Cummins, Liz Burd, Andrew Hatch, ICALT 2010 (id=1503)</em><br/>
+
+</dd>
+
+<dt>Design and Evaluation of an Affective Interface of the E-learning Systems.</dt>
+<dd>
+<em>Hui-Chun Chuang, Chin-Yeh Wang, Gwo-Dong Chen, Chen-Chung Liu, Baw-Jhiune Liu, ICALT 2010 (id=1545)</em><br/>
+
+</dd>
+
+<dt>Learning by Pet-training Competition: Alleviating Negative Influences of Direction Competition by Training Pets to Compete in Game-Based Environments.</dt>
+<dd>
+<em>Zhi-Hong Chen, Calvin C. Y. Liao, Tak-Wai Chan, ICALT 2010 (id=1588)</em><br/>
+
+</dd>
+
+<dt>Content, Social, and Metacognitive Statements: An Empirical Study Comparing Human-Human and Human-Computer Tutorial Dialogue</dt>
+<dd>
+<em>Myroslava O. Dzikovska, Natalie B. Steinhauser, Johanna D. Moore, Gwendolyn E. Campbell and Katherine M. Harrison, et al., ECTEL 2010 (id=1912)</em><br/>
+
+</dd>
+
+<dt>Free-Riding in Collaborative Diagrams Drawing</dt>
+<dd>
+<em>Furio Belgiorno, Ilaria Manno, Giuseppina Palmieri and Vittorio Scarano, ECTEL 2010 (id=1942)</em><br/>
+
+</dd>
+
+<dt>An Emotion Regulation Model in an E-Learning Environment</dt>
+<dd>
+<em>Jiwei Qin, Qinghua Zheng, Haifei Li and Huisan Zhang, ICWL 2010 (id=2344)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;etrain&quot;</h4>
+<dl>
+
+
+<dt>Technology-enhanced Training for All: Evaluation Results from the Use of the e-Access2Learn Framework.</dt>
+<dd>
+<em>Demetrios G. Sampson, Panayiotis Zervas, ICALT 2010 (id=1419)</em><br/>
+
+</dd>
+
+<dt>Pedagogical Deigns and Principles in Vocational Training: The Case of ELEVATE.</dt>
+<dd>
+<em>Iraklis Paraskakis, Andreas Konstantinidis, Ikaros Tsantekidis, ICALT 2010 (id=1611)</em><br/>
+
+</dd>
+
+<dt>e-Training DS: An Authoring Tool for Integrating Portable Computer Science Games in e-Learning</dt>
+<dd>
+<em>Roberto Tornero, Javier Torrente, Pablo Moreno-Ger and Baltasar Fernández Manjón, ICWL 2010 (id=2346)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;foreign&quot;</h4>
+<dl>
+
+
+<dt>A Perspective on Listening Comprehension: How ICT Enable a Chinese as a Foreign Language (CFL) Learner to Achieve Learning Metacognition.</dt>
+<dd>
+<em>Mei Jen Audrey Shih, Jie-Chi Yang, ICALT 2010 (id=1506)</em><br/>
+
+</dd>
+
+<dt>Emotional Strategies for Vocabulary Learning.</dt>
+<dd>
+<em>Ramla Ghali, Claude Frasson, ICALT 2010 (id=1520)</em><br/>
+
+</dd>
+
+<dt>An Integrated Model of Synchronous Cyber Assessment and Blended Learning Environment for Foreign Language Learners.</dt>
+<dd>
+<em>Sabrina Leone, Tommaso Leo, Nian-Shing Chen, ICALT 2010 (id=1560)</em><br/>
+
+</dd>
+
+<dt>Taking Advantage of Web 2.0 and Video Resources for Developing a Social Service: Babelium Project, the Web Community for Foreign Language Speaking Practice.</dt>
+<dd>
+<em>Silvia Sanz-Santamaría, Juan Antonio Pereira Varela, Julián Gutiérrez Serrano, ICALT 2010 (id=1633)</em><br/>
+
+</dd>
+
+<dt>Supporting Active Learning in CLIL through Collaborative Search</dt>
+<dd>
+<em>Ivana Marenzi, Rita Kupetz, Wolfgang Nejdl and Sergej Zerr, ICWL 2010 (id=2340)</em><br/>
+
+</dd>
+
+<dt>Educational Game Design for Teaching Chinese as a Foreign Language by Effective Learning Environment, Flow, Motivation</dt>
+<dd>
+<em>Yi Zhang, Liming Shan and Shixiang Li, ICWL 2010 (id=2364)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;gamebas&quot;</h4>
+<dl>
+
+
+<dt>SeGAE: A Serious Game Authoring Environment.</dt>
+<dd>
+<em>Amel Yessad, Jean-Marc Labat, François Kermorvant, ICALT 2010 (id=1449)</em><br/>
+
+</dd>
+
+<dt>Spatializing Social Practices in Mobile Game-Based Learning.</dt>
+<dd>
+<em>Susan Gwee, Yam San Chee, Ek Ming Tan, ICALT 2010 (id=1480)</em><br/>
+
+</dd>
+
+<dt>Personalized Game Based Mobile Learning to Assist High School Students with Mathematics.</dt>
+<dd>
+<em>Vani Kalloo, Kinshuk, Permanand Mohan, ICALT 2010 (id=1521)</em><br/>
+
+</dd>
+
+<dt>An Analysis of Students' Intention to Use Ubiquitous Video Game-Based Learning System.</dt>
+<dd>
+<em>Chun-Yi Shen, Han-Bin Chang, Wen-Chih Chang, Te-Hua Wang, ICALT 2010 (id=1576)</em><br/>
+
+</dd>
+
+<dt>Learning by Pet-training Competition: Alleviating Negative Influences of Direction Competition by Training Pets to Compete in Game-Based Environments.</dt>
+<dd>
+<em>Zhi-Hong Chen, Calvin C. Y. Liao, Tak-Wai Chan, ICALT 2010 (id=1588)</em><br/>
+
+</dd>
+
+<dt>Designing Game-Based Learning Framework - A Motivation-Driven Approach.</dt>
+<dd>
+<em>Kuo-chen Li, Jia-Chi Huang, Jia-Sheng Heh, Cheng-Ting Chen, Hui-Chih Wang, Shiou-Wen Yeh, ICALT 2010 (id=1596)</em><br/>
+
+</dd>
+
+<dt>Pilot Study of Past Decade Game-Based Learning Journal Papers Survey from the Technology Perspective.</dt>
+<dd>
+<em>Ben Chang, ICALT 2010 (id=1610)</em><br/>
+
+</dd>
+
+<dt>Using Game Quests to Incorporate Learning Tasks within a Virtual World.</dt>
+<dd>
+<em>Zhi-Hong Chen, Tak-Wai Chan, ICALT 2010 (id=1612)</em><br/>
+
+</dd>
+
+<dt>Authenticity in Learning Game: How It Is Designed and Perceived</dt>
+<dd>
+<em>Celso Gonçalves, Marie-Caroline Croset, Muriel Ney, Nicolas Balacheff and Jean-Luc Bosson, ECTEL 2010 (id=1913)</em><br/>
+
+</dd>
+
+<dt>Using the Petri Nets for the Learner Assessment in Serious Games</dt>
+<dd>
+<em>Amel Yessad, Pradeepa Thomas, Bruno Capdevila and Jean-Marc Labat, ICWL 2010 (id=2354)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;perceive&quot;</h4>
+<dl>
+
+
+<dt>Relationships between E-Learning Systems and Learning Outcomes: A Path Analysis Model.</dt>
+<dd>
+<em>Sean Eom, ICALT 2010 (id=1204)</em><br/>
+
+</dd>
+
+<dt>Using Feedback Tags and Sentiment Analysis to Generate Sharable Learning Resources Investigating Automated Sentiment Analysis of Feedback Tags in a Programming Course.</dt>
+<dd>
+<em>Stephen Cummins, Liz Burd, Andrew Hatch, ICALT 2010 (id=1503)</em><br/>
+
+</dd>
+
+<dt>Perceptions and Illusions about Adaptivity and Their Effects on Learning Outcomes.</dt>
+<dd>
+<em>Mieke Vandewaetere, Geraldine Clarebout, ICALT 2010 (id=1546)</em><br/>
+
+</dd>
+
+<dt>An Analysis of Students' Intention to Use Ubiquitous Video Game-Based Learning System.</dt>
+<dd>
+<em>Chun-Yi Shen, Han-Bin Chang, Wen-Chih Chang, Te-Hua Wang, ICALT 2010 (id=1576)</em><br/>
+
+</dd>
+
+<dt>Tangible Cubes Used as the User Interface in an Augmented Reality Game for Edutainment.</dt>
+<dd>
+<em>Carmen M. Juan, Giacomo Toffetti, Francisco Abad, Juan Cano, ICALT 2010 (id=1586)</em><br/>
+
+</dd>
+
+<dt>Authenticity in Learning Game: How It Is Designed and Perceived</dt>
+<dd>
+<em>Celso Gonçalves, Marie-Caroline Croset, Muriel Ney, Nicolas Balacheff and Jean-Luc Bosson, ECTEL 2010 (id=1913)</em><br/>
+
+</dd>
+
+<dt>GVIS: A Facility for Adaptively Mashing Up and Representing Open Learner Models</dt>
+<dd>
+<em>Luca Mazzola and Riccardo Mazza, ECTEL 2010 (id=1958)</em><br/>
+
+</dd>
+
+<dt>Factors Affecting Lifelong Learners’ Intention to Continue Using E-Learning Website: An Empirical Study</dt>
+<dd>
+<em>Hsiu-Li Liao, Su-Houn Liu, Shih-Ming Pi and You-Jie Chou, ICWL 2010 (id=2376)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;emotion&quot;</h4>
+<dl>
+
+
+<dt>Modelling Affect in Learning Environments - Motivation and Methods.</dt>
+<dd>
+<em>Shazia Afzal, Peter Robinson, ICALT 2010 (id=1432)</em><br/>
+
+</dd>
+
+<dt>Students Attitude and Learning Effectiveness of Emotional Agents.</dt>
+<dd>
+<em>Konstantina Chatzara, C. J. Karagiannidis, Demosthenes Stamatis, ICALT 2010 (id=1470)</em><br/>
+
+</dd>
+
+<dt>Monitoring Learning Experiences and Styles: The Socio-emotional Level.</dt>
+<dd>
+<em>Chiara Spadavecchia, Carlo Giovannella, ICALT 2010 (id=1484)</em><br/>
+
+</dd>
+
+<dt>Emotional Strategies for Vocabulary Learning.</dt>
+<dd>
+<em>Ramla Ghali, Claude Frasson, ICALT 2010 (id=1520)</em><br/>
+
+</dd>
+
+<dt>Self-Esteem Conditioning for Learning Conditioning.</dt>
+<dd>
+<em>Imene Jraidi, Maher Chaouachi, Claude Frasson, ICALT 2010 (id=1540)</em><br/>
+
+</dd>
+
+<dt>Design and Evaluation of an Affective Interface of the E-learning Systems.</dt>
+<dd>
+<em>Hui-Chun Chuang, Chin-Yeh Wang, Gwo-Dong Chen, Chen-Chung Liu, Baw-Jhiune Liu, ICALT 2010 (id=1545)</em><br/>
+
+</dd>
+
+<dt>A Preliminary Study on Learners Physiological Measurements in Educational Hypermedia.</dt>
+<dd>
+<em>Nikos Tsianos, Panagiotis Germanakos, Zacharias Lekkas, Anna Saliarou, Costas Mourlas, George Samaras, ICALT 2010 (id=1573)</em><br/>
+
+</dd>
+
+<dt>The Emotional Machine: A Machine Learning Approach to Online Prediction of User's Emotion and Intensity.</dt>
+<dd>
+<em>Amine Trabelsi, Claude Frasson, ICALT 2010 (id=1579)</em><br/>
+
+</dd>
+
+<dt>Representing Contextual Features of Subtitles in an Educational Context.</dt>
+<dd>
+<em>Marion A. Hersh, James Ohene-Djan, ICALT 2010 (id=1602)</em><br/>
+
+</dd>
+
+<dt>An Emotion Regulation Model in an E-Learning Environment</dt>
+<dd>
+<em>Jiwei Qin, Qinghua Zheng, Haifei Li and Huisan Zhang, ICWL 2010 (id=2344)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;besides&quot;</h4>
+<dl>
+
+
+<dt>Identifying Animals with Dynamic Location-aware and Semantic Hierarchy-Based Image Browsing for Different Cognitive Style Learners.</dt>
+<dd>
+<em>Dunwei Wen, Ming-Chi Liu, Yueh-Min Huang, Kinshuk, Pi-Hsia Hung, ICALT 2010 (id=1387)</em><br/>
+
+</dd>
+
+<dt>A Flexible Mechanism for Providing Adaptivity Based on Learning Styles in Learning Management Systems.</dt>
+<dd>
+<em>Sabine Graf, Kinshuk, Cindy Ives, ICALT 2010 (id=1440)</em><br/>
+
+</dd>
+
+<dt>An Approach for Designing and Implementing a Computerized Adaptive Testing Tool for Applicants with Disabilities.</dt>
+<dd>
+<em>Monjia Balloumi, Mohsen Laâbidi, Mohamed Jemni, ICALT 2010 (id=1468)</em><br/>
+
+</dd>
+
+<dt>A Proposal to Improve the Simple Query Interface (SQI) of Learning Objects Repositories.</dt>
+<dd>
+<em>Salvador Otón, José Ramón Hilera, Eva García, Antonio García-Cabot, Luis de Marcos, Antonio Ortiz, José Antonio Gutiérrez de Mesa, José-Javier Martínez, José María Gutiérrez, Roberto Barchino, ICALT 2010 (id=1471)</em><br/>
+
+</dd>
+
+<dt>Integration of External Tools in Virtual Learning Environments: Main Design Issues and Alternatives.</dt>
+<dd>
+<em>Carlos Alario-Hoyos, Juan I. Asensio-Pérez, Miguel L. Bote-Lorenzo, Eduardo Gómez-Sánchez, Guillermo Vega-Gorgojo, Adolfo Ruiz-Calleja, ICALT 2010 (id=1477)</em><br/>
+
+</dd>
+
+<dt>3D Digital Simulations in Participative Design of the Boulevard in Putrajaya: Implications on Academic, Organizational, and Informal Learning.</dt>
+<dd>
+<em>Rashidah Ab. Rahman, ICALT 2010 (id=1515)</em><br/>
+
+</dd>
+
+<dt>Emotional Strategies for Vocabulary Learning.</dt>
+<dd>
+<em>Ramla Ghali, Claude Frasson, ICALT 2010 (id=1520)</em><br/>
+
+</dd>
+
+<dt>Smart Timetable Plate for Classroom.</dt>
+<dd>
+<em>Yuan-Chih Yu, Shing-chern D. You, Dwen-Ren Tsai, ICALT 2010 (id=1534)</em><br/>
+
+</dd>
+
+<dt>Re-engineering of Pedagogical Scenarios Using the Data Combination Language and Usage Tracking Language.</dt>
+<dd>
+<em>Diem Pham Thi Ngoc, Sébastien Iksal, Christophe Choquet, ICALT 2010 (id=1585)</em><br/>
+
+</dd>
+
+<dt>Using Tangible Learning Companions in English Education.</dt>
+<dd>
+<em>Yi Hsuan Wang, Shelley Shwu-Ching Young, Jyh-Shing Roger Jang, ICALT 2010 (id=1601)</em><br/>
+
+</dd>
+
+<dt>TAO – A Versatile and Open Platform for Technology-Based Assessment</dt>
+<dd>
+<em>Eric Ras, Judith Swietlik, Patrick Plichart and Thibaud Latour, ECTEL 2010 (id=1973)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;path&quot;</h4>
+<dl>
+
+
+<dt>Relationships between E-Learning Systems and Learning Outcomes: A Path Analysis Model.</dt>
+<dd>
+<em>Sean Eom, ICALT 2010 (id=1204)</em><br/>
+
+</dd>
+
+<dt>How to See Training Paths in Learning Management Systems?</dt>
+<dd>
+<em>Philippe Teutsch, Jean-François Bourdet, ICALT 2010 (id=1461)</em><br/>
+
+</dd>
+
+<dt>Personalizing Learning Processes by Data Mining.</dt>
+<dd>
+<em>Rainer Knauf, Yoshitaka Sakurai, Kouhei Takada, Setsuo Tsuruta, ICALT 2010 (id=1481)</em><br/>
+
+</dd>
+
+<dt>Kernel for a Semantic Learning Platform with Adapted Suggestions.</dt>
+<dd>
+<em>Ioan Szilagyi, Radu Balog-Crisan, Ioan Roxin, ICALT 2010 (id=1488)</em><br/>
+
+</dd>
+
+<dt>From Mini Rover Programs to Algebraic Expressions.</dt>
+<dd>
+<em>G. Barbara Demo, ICALT 2010 (id=1496)</em><br/>
+
+</dd>
+
+<dt>An Integrated Approach to Learning Object Sequencing.</dt>
+<dd>
+<em>Battur Tugsgerel, Rachid Anane, Georgios K. Theodoropoulos, ICALT 2010 (id=1507)</em><br/>
+
+</dd>
+
+<dt>A New Approach Based on Modelled Traces to Compute Collaborative and Individual Indicators Human Interaction.</dt>
+<dd>
+<em>Tarek Djouad, Alain Mille, Christophe Reffay, Mohamed Benmohammed, ICALT 2010 (id=1530)</em><br/>
+
+</dd>
+
+<dt>Enabling the Use of Real World Objects to Improve Learning.</dt>
+<dd>
+<em>Katja Niemann, Martin Wolpers, ICALT 2010 (id=1532)</em><br/>
+
+</dd>
+
+<dt>An Interoperable ePortfolio Tool for All</dt>
+<dd>
+<em>Fabrizio Giorgini, ECTEL 2010 (id=1949)</em><br/>
+
+</dd>
+
+<dt>Extending Learning Objects by Means of Social Networking</dt>
+<dd>
+<em>Julià Minguillón, M. Elena Rodríguez and Jordi Conesa, ICWL 2010 (id=2342)</em><br/>
+
+</dd>
+
+<dt>An Open Model for Learning Path Construction</dt>
+<dd>
+<em>Fan Yang, Frederick W. B. Li and Rynson W. H. Lau, ICWL 2010 (id=2352)</em><br/>
+
+</dd>
+
+<dt>Story Telling for Cultural Knowledge Sharing</dt>
+<dd>
+<em>Cat Kutay and Peter Ho, ICWL 2010 (id=2367)</em><br/>
+
+</dd>
+
+<dt>A Knowledge-Driven Approach to Web-Based Learning for Formal Algorithm Development</dt>
+<dd>
+<em>Yujun Zheng, Haihe Shi and Jinyun Xue, ICWL 2010 (id=2389)</em><br/>
+
+</dd>
+
+<dt>Groupized Learning Path Discovery Based on Member Profile</dt>
+<dd>
+<em>Xiuzhen Feng, Haoran Xie, Yang Peng, Wei Chen and Huamei Sun, ICWL 2010 (id=2395)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;detect&quot;</h4>
+<dl>
+
+
+<dt>Playing Games on the Screen: Adapting Mouse Interaction at Early Ages.</dt>
+<dd>
+<em>Juan Enrique Agudo, Héctor Sánchez, Mercedes Rico, ICALT 2010 (id=1498)</em><br/>
+
+</dd>
+
+<dt>Automatic Detection of Local Reuse</dt>
+<dd>
+<em>Arno Mittelbach, Lasse Lehmann, Christoph Rensing and Ralf Steinmetz, ECTEL 2010 (id=1921)</em><br/>
+
+</dd>
+
+<dt>Studying the Factors Influencing Automatic User Task Detection on the Computer Desktop</dt>
+<dd>
+<em>Andreas S. Rath, Didier Devaurs and Stefanie N. Lindstaedt, ECTEL 2010 (id=1925)</em><br/>
+
+</dd>
+
+<dt>Learning from Erroneous Examples: When and How Do Students Benefit from Them?</dt>
+<dd>
+<em>Dimitra Tsovaltzi, Erica Melis, Bruce M. McLaren, Ann-Kristin Meyer and Michael Dietrich, et al., ECTEL 2010 (id=1929)</em><br/>
+
+</dd>
+
+<dt>An Advanced Learning Environment Aided by Recognition of Multi-modal Social Signals</dt>
+<dd>
+<em>Jingying Chen, Dan Chen, Lizhe Wang and Oliver Lemon, ICWL 2010 (id=2324)</em><br/>
+
+</dd>
+
+<dt>Gap Detection in Web-Based Adaptive Educational Systems</dt>
+<dd>
+<em>Dominik Jednoralski, Erica Melis, Sergey Sosnovsky and Carsten Ullrich, ICWL 2010 (id=2331)</em><br/>
+
+</dd>
+
+<dt>Using the Petri Nets for the Learner Assessment in Serious Games</dt>
+<dd>
+<em>Amel Yessad, Pradeepa Thomas, Bruno Capdevila and Jean-Marc Labat, ICWL 2010 (id=2354)</em><br/>
+
+</dd>
+
+<dt>Duplicate Page Detection Algorithm Based on the Field Characteristic Clustering</dt>
+<dd>
+<em>Feiyue Ye, Junlei Liu, Bing Liu and Kun Chai, ICWL 2010 (id=2372)</em><br/>
+
+</dd>
+
+<dt>OCL-Based Testing for E-Learning Web Service</dt>
+<dd>
+<em>Jin Liu, Xiaoming Lu, Xiguang Feng and Jianxun Liu, ICWL 2010 (id=2381)</em><br/>
+
+</dd>
+
+<dt>The Detection of Scene Features in Flickr</dt>
+<dd>
+<em>Chunjie Zhou, Pengfei Dai and Jianxun Liu, ICWL 2010 (id=2387)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;game&quot;</h4>
+<dl>
+
+
+<dt>Prediction of Players Motivational States Using Electrophysiological Measures during Serious Game Play.</dt>
+<dd>
+<em>Lotfi Derbali, Claude Frasson, ICALT 2010 (id=1428)</em><br/>
+
+</dd>
+
+<dt>SeGAE: A Serious Game Authoring Environment.</dt>
+<dd>
+<em>Amel Yessad, Jean-Marc Labat, François Kermorvant, ICALT 2010 (id=1449)</em><br/>
+
+</dd>
+
+<dt>Interactive Widgets for Regualtion in Learning Games.</dt>
+<dd>
+<em>Thibault Carron, Jean-Charles Marty, Stephane Talbot, ICALT 2010 (id=1462)</em><br/>
+
+</dd>
+
+<dt>Learning Words Using Augmented Reality.</dt>
+<dd>
+<em>M. Carmen Juan, Edith Llop, Francisco Abad, Javier Lluch, ICALT 2010 (id=1485)</em><br/>
+
+</dd>
+
+<dt>Playing Games on the Screen: Adapting Mouse Interaction at Early Ages.</dt>
+<dd>
+<em>Juan Enrique Agudo, Héctor Sánchez, Mercedes Rico, ICALT 2010 (id=1498)</em><br/>
+
+</dd>
+
+<dt>A Game Based Learning Content for Tutoring in Simplifying Boolean Functions.</dt>
+<dd>
+<em>Yong Suk Choi, ICALT 2010 (id=1508)</em><br/>
+
+</dd>
+
+<dt>Modelling Computer Game Based Educational Experience for Teaching Children about Emergencies.</dt>
+<dd>
+<em>Mario Rafael Ruiz Vargas, Telmo Zarraonandia, Paloma Díaz, Ignacio Aedo, ICALT 2010 (id=1516)</em><br/>
+
+</dd>
+
+<dt>Learning Biology with the Animated Agent in Game Based Learning Environment.</dt>
+<dd>
+<em>Hsin I Yung, ICALT 2010 (id=1519)</em><br/>
+
+</dd>
+
+<dt>Personalized Game Based Mobile Learning to Assist High School Students with Mathematics.</dt>
+<dd>
+<em>Vani Kalloo, Kinshuk, Permanand Mohan, ICALT 2010 (id=1521)</em><br/>
+
+</dd>
+
+<dt>An Adaptive Method for Selecting Question Pools Using C4.5.</dt>
+<dd>
+<em>Ahmad Mustafa Seet, Imran A. Zualkernan, ICALT 2010 (id=1528)</em><br/>
+
+</dd>
+
+<dt>Towards the Generalization of Game-Based Learning: Integrating Educational Video Games in LAMS.</dt>
+<dd>
+<em>Ángel del Blanco, Javier Torrente, Pablo Moreno-Ger, Baltasar Fernández-Manjón, ICALT 2010 (id=1543)</em><br/>
+
+</dd>
+
+<dt>Tangible Cubes Used as the User Interface in an Augmented Reality Game for Edutainment.</dt>
+<dd>
+<em>Carmen M. Juan, Giacomo Toffetti, Francisco Abad, Juan Cano, ICALT 2010 (id=1586)</em><br/>
+
+</dd>
+
+<dt>Learning by Pet-training Competition: Alleviating Negative Influences of Direction Competition by Training Pets to Compete in Game-Based Environments.</dt>
+<dd>
+<em>Zhi-Hong Chen, Calvin C. Y. Liao, Tak-Wai Chan, ICALT 2010 (id=1588)</em><br/>
+
+</dd>
+
+<dt>Designing Game-Based Learning Framework - A Motivation-Driven Approach.</dt>
+<dd>
+<em>Kuo-chen Li, Jia-Chi Huang, Jia-Sheng Heh, Cheng-Ting Chen, Hui-Chih Wang, Shiou-Wen Yeh, ICALT 2010 (id=1596)</em><br/>
+
+</dd>
+
+<dt>A 3D Educational Mobile Game to Enhance Student's Spatial Skills.</dt>
+<dd>
+<em>Norena Martin-Dorta, Isabel Sanchez-Berriel, Miguel Bravo, Juan Hernandez, José Luís Saorín, Manuel Contero, ICALT 2010 (id=1599)</em><br/>
+
+</dd>
+
+<dt>Game-play as Knowledge Transformation Process for Learning.</dt>
+<dd>
+<em>Ming-Puu Chen, Chun-Yi Shen, ICALT 2010 (id=1603)</em><br/>
+
+</dd>
+
+<dt>Pilot Study of Past Decade Game-Based Learning Journal Papers Survey from the Technology Perspective.</dt>
+<dd>
+<em>Ben Chang, ICALT 2010 (id=1610)</em><br/>
+
+</dd>
+
+<dt>Using Game Quests to Incorporate Learning Tasks within a Virtual World.</dt>
+<dd>
+<em>Zhi-Hong Chen, Tak-Wai Chan, ICALT 2010 (id=1612)</em><br/>
+
+</dd>
+
+<dt>Prete-a-apprendre+: Towards Ubiquitous Wearable Learning.</dt>
+<dd>
+<em>Imran A. Zualkernan, Nihal Al-Khunaizi, Sara Najar, Nour Nour, ICALT 2010 (id=1620)</em><br/>
+
+</dd>
+
+<dt>Design for Off-task Interaction - Rethinking Pedagogy in Technology Enhanced Learning.</dt>
+<dd>
+<em>Agneta Gulz, Annika Silvervarg, Björn Sjödén, ICALT 2010 (id=1627)</em><br/>
+
+</dd>
+
+<dt>Collaborative Development of an Augmented Reality Application for Digestive and Circulatory Systems Teaching.</dt>
+<dd>
+<em>David C. Pérez López, Manuel Contero, Mariano Alcañiz Raya, ICALT 2010 (id=1635)</em><br/>
+
+</dd>
+
+<dt>Instructional Design with PoEML in a E-learning-as-a-Service Model. Mixing Web and IPTV Learning Experiencies.</dt>
+<dd>
+<em>Manuel Caeiro Rodríguez, Jorge Fontenla González, Roberto Perez-Rodriguez, Luis E. Anido-Rifón, ICALT 2010 (id=1638)</em><br/>
+
+</dd>
+
+<dt>Authenticity in Learning Game: How It Is Designed and Perceived</dt>
+<dd>
+<em>Celso Gonçalves, Marie-Caroline Croset, Muriel Ney, Nicolas Balacheff and Jean-Luc Bosson, ECTEL 2010 (id=1913)</em><br/>
+
+</dd>
+
+<dt>Audience Interactivity as Leverage for Effective Learning in Gaming Environments for Dome Theaters</dt>
+<dd>
+<em>Panagiotis Apostolellis and Thanasis Daradoumis, ECTEL 2010 (id=1941)</em><br/>
+
+</dd>
+
+<dt>Disaster Readiness through Education - Training Soft Skills to Crisis Units by Means of Serious Games in Virtual Environments</dt>
+<dd>
+<em>Nina Haferkamp and Nicole C. Krämer, ECTEL 2010 (id=1950)</em><br/>
+
+</dd>
+
+<dt>Ambient Displays and Game Design Patterns</dt>
+<dd>
+<em>Sebastian Kelle, Dirk Börner, Marco Kalz and Marcus Specht, ECTEL 2010 (id=1951)</em><br/>
+
+</dd>
+
+<dt>Supporting Reflection in an Immersive 3D Learning Environment Based on Role-Play</dt>
+<dd>
+<em>Nils Malzahn, Hanno Buhmes, Sabrina Ziebarth and H. Ulrich Hoppe, ECTEL 2010 (id=1956)</em><br/>
+
+</dd>
+
+<dt>The Complexity of Integrating Technology Enhanced Learning in Special Math Education – A Case Study</dt>
+<dd>
+<em>Ann Nilsson and Lena Pareto, ECTEL 2010 (id=1972)</em><br/>
+
+</dd>
+
+<dt>e-Training DS: An Authoring Tool for Integrating Portable Computer Science Games in e-Learning</dt>
+<dd>
+<em>Roberto Tornero, Javier Torrente, Pablo Moreno-Ger and Baltasar Fernández Manjón, ICWL 2010 (id=2346)</em><br/>
+
+</dd>
+
+<dt>Collaborative Learning by Means of Multiplayer Serious Games</dt>
+<dd>
+<em>Viktor Wendel, Felix Hertin, Stefan Göbel and Ralf Steinmetz, ICWL 2010 (id=2349)</em><br/>
+
+</dd>
+
+<dt>Using the Petri Nets for the Learner Assessment in Serious Games</dt>
+<dd>
+<em>Amel Yessad, Pradeepa Thomas, Bruno Capdevila and Jean-Marc Labat, ICWL 2010 (id=2354)</em><br/>
+
+</dd>
+
+<dt>Educational Game Design for Teaching Chinese as a Foreign Language by Effective Learning Environment, Flow, Motivation</dt>
+<dd>
+<em>Yi Zhang, Liming Shan and Shixiang Li, ICWL 2010 (id=2364)</em><br/>
+
+</dd>
+
+<dt>A Narrative Architecture for Story-Driven Location-Based Mobile Games</dt>
+<dd>
+<em>Katsiaryna Naliuka, Tara Carrigy, Natasa Paterson and Mads Haahr, ICWL 2010 (id=2365)</em><br/>
+
+</dd>
+
+<dt>Community Adaptive Educational Games</dt>
+<dd>
+<em>Clement Leung, Yuanxi Li, Jiming Liu and Alfredo Milani, ICWL 2010 (id=2369)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;competitive&quot;</h4>
+<dl>
+
+
+<dt>A Diversity-Enhanced Genetic Algorithm to Characterize the Questions of a Competitive e-Learning System.</dt>
+<dd>
+<em>Elena Verdú, María Jesús Verdú, Luisa M. Regueras, Juan Pablo de Castro, ICALT 2010 (id=1369)</em><br/>
+
+</dd>
+
+<dt>Students' Competitive Preferences on Multiuser Wireless Sensor Classroom Interactive Environment.</dt>
+<dd>
+<em>Ben Chang, Chien Wen Chen, ICALT 2010 (id=1523)</em><br/>
+
+</dd>
+
+<dt>Learning by Pet-training Competition: Alleviating Negative Influences of Direction Competition by Training Pets to Compete in Game-Based Environments.</dt>
+<dd>
+<em>Zhi-Hong Chen, Calvin C. Y. Liao, Tak-Wai Chan, ICALT 2010 (id=1588)</em><br/>
+
+</dd>
+
+<dt>A Simple E-learning System Based on Classroom Competition</dt>
+<dd>
+<em>Iván Cantador and José M. Conde, ECTEL 2010 (id=1947)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;accurate&quot;</h4>
+<dl>
+
+
+<dt>Automarking: Automatic Assessment of Open Questions.</dt>
+<dd>
+<em>Laurie Ane Cutrone, Maiga Chang, ICALT 2010 (id=1438)</em><br/>
+
+</dd>
+
+<dt>The Emotional Machine: A Machine Learning Approach to Online Prediction of User's Emotion and Intensity.</dt>
+<dd>
+<em>Amine Trabelsi, Claude Frasson, ICALT 2010 (id=1579)</em><br/>
+
+</dd>
+
+<dt>Collaborative Development of an Augmented Reality Application for Digestive and Circulatory Systems Teaching.</dt>
+<dd>
+<em>David C. Pérez López, Manuel Contero, Mariano Alcañiz Raya, ICALT 2010 (id=1635)</em><br/>
+
+</dd>
+
+<dt>Automatic Detection of Local Reuse</dt>
+<dd>
+<em>Arno Mittelbach, Lasse Lehmann, Christoph Rensing and Ralf Steinmetz, ECTEL 2010 (id=1921)</em><br/>
+
+</dd>
+
+<dt>Using the Petri Nets for the Learner Assessment in Serious Games</dt>
+<dd>
+<em>Amel Yessad, Pradeepa Thomas, Bruno Capdevila and Jean-Marc Labat, ICWL 2010 (id=2354)</em><br/>
+
+</dd>
+
+<dt>A Personalized Assessment System Based on Item Response Theory</dt>
+<dd>
+<em>Youngseok Lee, Jungwon Cho, Sungjae Han and Byung-Uk Choi, ICWL 2010 (id=2359)</em><br/>
+
+</dd>
+
+<dt>A Research of the Internet Based on Web Information Extraction and Data Fusion</dt>
+<dd>
+<em>Yajun Jiang, Zaoliang Wu, Zengrong Zhan and Lingyu Xu, ICWL 2010 (id=2385)</em><br/>
+
+</dd>
+
+</dl>
+
+<h4>Papers Containing &quot;cover&quot;</h4>
+<dl>
+
+
+<dt>Web Tests in LMS Using Fingerprint Identification.</dt>
+<dd>
+<em>Charo Gil, Manuel Castro, Mudasser F. Wyne, Russ Meier, ICALT 2010 (id=1475)</em><br/>
+
+</dd>
+
+<dt>Learning Technology Standards Adoption Process Improvement and Output Legitimacy.</dt>
+<dd>
+<em>Paul A. Hollins, Tore Hoel, ICALT 2010 (id=1483)</em><br/>
+
+</dd>
+
+<dt>From Mini Rover Programs to Algebraic Expressions.</dt>
+<dd>
+<em>G. Barbara Demo, ICALT 2010 (id=1496)</em><br/>
+
+</dd>
+
+<dt>On the Design of Learning Objects Classifiers.</dt>
+<dd>
+<em>Marcelo Mendoza, Carlos Becerra, ICALT 2010 (id=1564)</em><br/>
+
+</dd>
+
+<dt>Introducing Students to Aerospace Board Information Systems Using an Embedded Graphics System Simulator.</dt>
+<dd>
+<em>Pavel Paces, Martin Sipos, ICALT 2010 (id=1583)</em><br/>
+
+</dd>
+
+<dt>Using Interactive Videoconference to Promote Active Learning in a Blended Learning Environment.</dt>
+<dd>
+<em>Covadonga Rodrigo, José Luis Delgado, Jorge Vega, ICALT 2010 (id=1624)</em><br/>
+
+</dd>
+
+<dt>Automatic Detection of Local Reuse</dt>
+<dd>
+<em>Arno Mittelbach, Lasse Lehmann, Christoph Rensing and Ralf Steinmetz, ECTEL 2010 (id=1921)</em><br/>
+
+</dd>
+
+<dt>Supporting Free Collaboration and Process-Based Scripts in PoEML</dt>
+<dd>
+<em>Manuel Caeiro-Rodrguez, Luis Anido-Rifon and Roberto Perez-Rodrguez, ECTEL 2010 (id=1946)</em><br/>
+
+</dd>
+
+</dl>
+
+
+
+<h3>Correlation Between Rising Terms</h3>
+<p>This shows how highlighted rising terms appear together in abstracts. The visualisation is created using <a href="http://gephi.org/">Gephi</a> (v0.8 alpha). Using Gephi provides for good interactivity; the <a href="Gephi/RisingTerm Co-occurrence.gephi">RisingTerm-Co-occurrence.gephi</a> file can be downloaded and used in Gephi.</p>
+
+<p>The most-frequently co-occurrance of a pair of terms is 8 out of 363 abstracts (2010 set) and the minimum in the highlighted set is 0. The mean co-occurrence (measured over all distinct pairs of terms) is 0.374269.
+
+The most frequently co-occuring pair of terms is &quot;gamebas&quot; and  &quot;game&quot;.
+
+</p>
+
+<div class="cap-sd"><div id="seadragon"></div><BR/>
+Figure 16: Rising Term Co-occurrence Map. The node area is proportional to the % rise and the colour is related to the number of other rising terms that it appears with (the terms are arranged around the circle in this order). The connecting line width is proportional to the number of abstracts where both terms appear together.<BR/><em>This image can be zoomed-in on and panned.<em></em></em></div>
+
+<div class="clear"/>
+
+<h2>Highlighted Falling Terms</h2>
+<div><em>Highlighted Falling Terms are those that are the 10% most frequent terms in the abstracts from previous years and have fallen by at least -80% in the target year of 2010.</em></div>
+
+<div class="cap-img"><a href="Images/FallingTerms_PC.png" target="image_win"><img src="Images/FallingTerms_PC.png" alt="Falling Terms - Percentage Falls.png" width="500" height="500" /></a><BR/>
+Figure 17: Highlighted falling terms and their percentage of fall. Colour coding matches the % fall.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<div class="cap-img"><a href="Images/FallingTerms_PastRecent_Counts.png" target="image_win"><img src="Images/FallingTerms_PastRecent_Counts.png" alt="Falling Terms Past and Recent Counts" width="500" height="500" /></a><BR/>
+Figure 18: The number of occurences of the Falling Terms in the past and target sets of abstracts.</div>
+
+<div class="cap-img"><a href="Images/FallingTerms_PastRecent_PC.png" target="image_win"><img src="Images/FallingTerms_PastRecent_PC.png" alt="Falling Terms Past and Recent Percentage" width="500" height="500" /></a><BR/>
+Figure 19: Comparison of the proportion of all stemmed words that are the term in question in both the previous and target year.</div>
+
+<!--reset layout-->
+<div class="clear"/>
+
+<a name="credits"/>
+<h2>Copyright, Licence and Credits</h2>
+<table>
+<tr>
+	<td><a rel="license" href="http://creativecommons.org/licenses/by/3.0/"><img alt="Creative Commons Licence" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/88x31.png" /></a></td>
+	<td>This work, its images and original text are &copy;2011 Adam Cooper, Institute for Educational Cybernetics, University of Bolton, UK.<BR/><span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Adam Cooper</span> has licenced it under a <a rel="license" href="http://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0 Unported License</a></td>
+</tr>
+</table>
+
+
+<p>Quoted abstracts are &copy; the respective publisher, as follows:</p>
+<ul>
+
+<li>ICALT, <a href="http://ieeexplore.ieee.org/xpl/mostRecentIssue.jsp?punumber=5570018">papers and a full set of abstracts</a> (IEEE), <a href="http://www.ask4research.info/icalt/2010/">conference website</a>.</li>
+
+<li>ECTEL, <a href="http://www.springerlink.com/content/978-3-642-16019-6/contents/">papers and a full set of abstracts</a> (Springer Lecture Notes in Computer Science (LNCS)), <a href="http://www.ectel2010.org/">conference website</a>.</li>
+
+<li>ICWL, <a href="http://www.springer.com/computer/general+issues/book/978-3-642-17406-3">papers and a full set of abstracts</a> (Springer Lecture Notes in Computer Science (LNCS)), <a href="http://www.hkws.org/conference/icwl2010/">conference website</a>.</li>
+
+</ul>
+
+
+<p>This work was undertaken as part of the <a href="http://www.telmap.org">TEL-Map Project</a>; TEL-Map is a support and coordination action within EC IST FP7 Technology Enhanced Learning.<img src="http://www.learningfrontiers.eu/sites/all/themes/learningfrontiers/images/footer-EU-logo.jpg" /></p>
+<HR/>
+<em>Generated using Brew with &quot;Conference BrewTemplate.html&quot; v0.2.</em>
+
+</body>
+</html>
