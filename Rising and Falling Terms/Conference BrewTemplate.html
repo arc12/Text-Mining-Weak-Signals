@@ -93,15 +93,18 @@ dt{text-decoration:underline;}
 <%figure<-1%>
 <p>This is an un-interpreted and automatically-generated report on emerging, rising and falling terms from the abstracts of the 
 <%if(length(conference.title)==1){%>
- <%=conference.title%>
+ <%=conference.title%>.
 <%}else{
- for(i in 1:length(conference.title)){%>
+ for(i in 1:length(conference.title)){
   if(i==length(conference.title)){%>
-   and <%=conference.title[i]%>
+   and <%=conference.title[i]%>.
+ <%}else if (i==length(conference.title)-1){%>
+   <%=conference.title[i]%> 
  <%}else{%>
- , <%=conference.title[i]%>
- <%}#end loop>
-<%}#end if>
+   <%=conference.title[i]%>,
+ <%}#end if
+ }#end loop
+}#end if%>
 
 It is one part of the <a href="http://blogs.cetis.ac.uk/adam/2011/05/12/weak-signals-and-text-mining-i-an-introduction-to-weak-signals/">&quot;Weak Signals Analysis&quot; work of the TEL-Map Project</a>. The same analytical method is also applied to blogs, hence the term "document" is used in plots; this is identical to an abstract.</p>
 

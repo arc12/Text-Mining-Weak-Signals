@@ -1,6 +1,0 @@
-rm "Union Report 2010.odt"
-rm -r "Union Report ODT"
-cp ../"Conference BrewTemplate ODT files" ./"Union Report ODT"
-cp Images/* ./"Union Report ODT"
-mv content.xml ./"Union Report ODT"
-zip -r Union Report 2010.odt "Union Report ODT"
