@@ -1,6 +1,6 @@
 This github project is for text mining for weak signals, initially in the scope of the TELMap project.
 
-The initial "naive" approach is the "Rising and Falling Terms" method.
+The initial "naive" approach is the "Rising and Falling Terms" method. The first versions of this simply looked for high percentage rise or fall in term frequency (or new terms) and did not attempt any formal statistical hypothesis testing. This version is hived off to the no-binomial branch, which is effectively dead.
 
 The wiki will be used to link out to background material, stuff about TELMap etc.
 
