@@ -15,10 +15,14 @@ library("tm")
 library("Snowball")
 library("slam")
 library("colorspace")
+library("corpora")
 
 ##
 ## NB {data_set_name}/RF_Init.R should be run first to establish the run parameters
 ##
+
+# various plot functions, for writing to file and the normal graphics device
+source("/home/arc1/R Projects/Text Mining Weak Signals/Rising and Falling Terms/plotFunctions.R")
 
 #var to use to make some more space at the bottom of plots for long label (use par(mar=mar.bigmar) )
 mar.default<-par("mar")
@@ -79,7 +83,8 @@ cat(paste(paste(rep("-",79),collapse="")),"\n\n")
 #Here we go////
 dtm.tf<-DocumentTermMatrix(corp,
   control=list(stemming=TRUE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=TRUE))
-dtm.bin<-weightBin(dtm.tf)#used later to count docs containing at least 1 occurrence of a term
+dtm.bin<-weightBin(dtm.tf)
+terms.doc.cnt<-col_sums(dtm.bin) #the number of docs containing >=1 occurrence of the term
 #compute some corpus and term statistics FOR INFORMATION
 print("Computed Document Term Matrix, Term-Frequency")
 print(dtm.tf)
@@ -117,233 +122,213 @@ term.sums.past<-col_sums(dtm.tf[past.doc_ids.bool,])
 tsp.all<-sum(term.sums.past)
 term.sums.recent<-col_sums(dtm.tf[!past.doc_ids.bool,])
 tsr.all<-sum(term.sums.recent)
+
+#GET some boolean filters for three groups, Rising, Falling and New. No decision on significance yet!
 #term sums of 0 in the past must be new terms, since we know the corpus sum>0
-new.term_ids.bool <- (term.sums.past==0)
-#which terms should be considered in rising/falling? must occur above the "enough" theshold in both sets
-rise.term_ids.bool <-(term.sums.past>=enough.thresh.rise) & (term.sums.recent/tsr.all>term.sums.past/tsp.all)
-enough.thresh.fall <- quantile(term.sums.past, probs=0.9)#compute the enough.thresh.fall at the top 10% of past term frequencies
-print(paste("Threshold of",enough.thresh.fall,"used for the occurrence of terms in the previous set when considering falling frequencies"))
-fall.term_ids.bool <-(term.sums.past>=enough.thresh.fall) & (term.sums.recent/tsr.all<term.sums.past/tsp.all)
-# "nearly-new" terms are those that don't make the grade for the rising/falling calculation yet are not "new"
-nearly_new.term_ids.bool <- (term.sums.past<=n_new.thresh) & !new.term_ids.bool & (term.sums.recent >0)
+#ONLY select those with a mininum number of document occurrences
+new.term_ids.bool <- (term.sums.past==0) & (terms.doc.cnt>=doc_count.thresh)
+#which terms should be considered in rising/falling?
+#for rising terms (which includes the old "nearl-new" concept, again require a minimum number of documents)
+rise.term_ids.bool <- (term.sums.recent/tsr.all>term.sums.past/tsp.all) &
+                       (term.sums.past>0) & (terms.doc.cnt>=doc_count.thresh)
+fall.term_ids.bool <- (term.sums.recent/tsr.all<term.sums.past/tsp.all)
 
 ##
-## Inspect the distribution of new terms.
+## compute the term occurrences in each set (past/recent) and group (rising/falling/new)
 ##
-print("Summary of New Terms")
 dtm.tf.new<-dtm.tf[!past.doc_ids.bool,new.term_ids.bool]
-term.sums.new<-col_sums(dtm.tf.new)
-term.sums.new.t<-tabulate(term.sums.new)
-print(summary(term.sums.new))
-print("Deciles")
-print(quantile(term.sums.new, probs=seq(0.1,0.9,0.1)))
-par(mar=mar.bigmar)
-barplot(term.sums.new.t,main="New Term Occurrence", xlab="Term Frequency (count)", ylab="Number of Terms", names.arg=seq(1:max(term.sums.new)))
-# Repeat the previous to create a png
-png("Images/NewTermFrequencies.png", width=1000, height=1000,pointsize=12, res=150)
-barplot(term.sums.new.t,main="New Term Occurrence", xlab="Term Frequency (count)", ylab="Number of Terms", names.arg=seq(1:max(term.sums.new)))
-ad<-dev.off()
-#select those terms meeting the thresholds, use the binary DTM to count document occurrences
-dtm.tf.new<-dtm.tf.new[,term.sums.new>=new.thresh]
-dtm.bin.new<-weightBin(dtm.tf.new) ########################
-dtm.tf.new<-dtm.tf.new[,col_sums(dtm.bin.new)>=doc_count.thresh]
-dtm.tf.new<-dtm.tf.new[row_sums(dtm.tf.new)>0,]
-dtm.bin.new<-weightBin(dtm.tf.new)
-cnt.docs_with_new<-col_sums(dtm.bin.new)
-print(paste("Doc-Term Matrix after Filtering for New Terms Above Threshold (>=",new.thresh," occurrences)", sep=""))
-print(dtm.tf.new)
-term.sums.new.sel<-col_sums(dtm.tf.new) #########################
-corp.new<-corp[Docs(dtm.tf.new)]
-#find unstemmed words for the selected terms to make for prettier plots
-new.sel.words<-stemCompletion(names(term.sums.new.sel),corp.new,type="shortest")
-new.sel.words[is.na(new.sel.words)]<-names(new.sel.words[is.na(new.sel.words)])
-# chart the term frequency for above-thresh new terms 
-par(mar=mar.default)
-x.pos<-barplot(term.sums.new.sel,main="Above-Threshold New Terms", ylab="Term Frequency", names.arg="")
-par(srt=90)
-text(x=x.pos, y=0.1, new.sel.words, adj=c(0,0.5))# puts labels inside bars
-par(srt=0)
-# Repeat the previous plot to create png
-png("Images/NewTermFrequencies_Selected.png", width=1000, height=1000,pointsize=12, res=150)
-x.pos<-barplot(term.sums.new.sel,main="Above-Threshold New Terms", ylab="Term Frequency", names.arg="")
-par(srt=90)
-text(x=x.pos, y=0.1, new.sel.words, adj=c(0,0.5))# puts labels inside bars
-par(srt=0)
-ad<-dev.off()
-#plot the docyument occurrences
-par(mar=mar.default)
-x.pos<-barplot(cnt.docs_with_new, las=2,  main="Occurrence of New Terms",
-        ylab="Number of Docs", names.arg="", axes=FALSE)
-axis(2, las=1, at=0:max(cnt.docs_with_new))# to get integers only
-par(srt=90)
-text(x=x.pos, y=0.1, new.sel.words, adj=c(0,0.5))# puts labels inside bars
-par(srt=0)
-png("Images/NewTerm_DocOccurrence_Bar.png", width=1000, height=1000,pointsize=12, res=150)
-x.pos<-barplot(cnt.docs_with_new, las=2, main="Occurrence of New Terms",
-        ylab="Number of Docs", names.arg="", axes=FALSE)
-axis(2, las=1, at=0:max(cnt.docs_with_new))
-par(srt=90)
-text(x=x.pos, y=0.1, new.sel.words, adj=c(0,0.5))
-par(srt=0)
-ad<-dev.off()
-par(mar=mar.bigmar)        
-heatmap(as.matrix(dtm.tf.new), main="New Term Occurrence", labCol=new.sel.words, margins=c(10,5))
-png("Images/NewTerm_DocOccurrence_Heat.png", width=1000, height=1000,pointsize=12, res=150)
-heatmap(as.matrix(dtm.tf.new), main="New Term Occurrence", labCol=new.sel.words, margins=c(10,5))
-ad<-dev.off()
-
-##
-## Consider the "nearly-new" terms. These appear <enough.thresh but >0 in the past
-##
-print("Summary of \"Nearly New\" Terms")
-dtm.tf.n_new<-dtm.tf[!past.doc_ids.bool,nearly_new.term_ids.bool]
-term.sums.n_new<-col_sums(dtm.tf.n_new)
-summary(term.sums.n_new)
-print("Deciles")
-print(quantile(term.sums.n_new, probs=seq(0.1,0.9,0.1)))
-par(mar=mar.bigmar)
-barplot(tabulate(term.sums.n_new),main="Nearly-New Term Occurrence", xlab="Term Frequency (count)", ylab="Number of Terms", names.arg=seq(1:max(term.sums.n_new)))
-# Repeat the previous plot to create png
-png("Images/NearlyNewTermFrequencies.png", width=1000, height=1000,pointsize=12, res=150)
-barplot(tabulate(term.sums.n_new),main="Nearly-New Term Occurrence", xlab="Term Frequency (count)", ylab="Number of Terms", names.arg=seq(1:max(term.sums.n_new)))
-ad<-dev.off()
-#select those terms meeting the thresholds, use the binary DTM to count document occurrences
-dtm.tf.n_new<-dtm.tf.n_new[,term.sums.n_new>=(new.thresh+n_new.thresh)]
-dtm.bin.n_new<-weightBin(dtm.tf.n_new)
-dtm.tf.n_new<-dtm.tf.n_new[,col_sums(dtm.bin.n_new)>=doc_count.thresh]
-dtm.tf.n_new<-dtm.tf.n_new[row_sums(dtm.tf.n_new)>0,]
-dtm.bin.n_new<-weightBin(dtm.tf.n_new)
-cnt.docs_with_nnew<-col_sums(dtm.bin.n_new)
-print(paste("Doc-Term Matrix after Filtering for Nearly New Terms Above Threshold (>=",new.thresh+n_new.thresh," occurrences)", sep=""))
-print(dtm.tf.new)
-term.sums.n_new.sel<-col_sums(dtm.tf.n_new)
-corp.n_new<-corp[Docs(dtm.tf.n_new)]
-#find unstemmed words for the selected terms to make for prettier plots
-n_new.sel.words<-stemCompletion(names(term.sums.n_new.sel),corp.n_new,type="shortest")
-n_new.sel.words[is.na(n_new.sel.words)]<-names(n_new.sel.words[is.na(n_new.sel.words)])
-# chart the term frequency for above-thresh nearly-new terms
-par(mar=mar.default)
-barplot(term.sums.n_new.sel,main="Above-Threshold Nearly New Terms", ylab="Term Frequency", names.arg="")
-par(srt=90)
-text(x=x.pos, y=0.1, n_new.sel.words, adj=c(0,0.5))# puts labels inside bars
-par(srt=0)     
-# Repeat the previous plot to create png
-png("Images/NearlyNewTermFrequencies_Selected.png", width=1000, height=1000,pointsize=12, res=150)
-barplot(term.sums.n_new.sel,main="Above-Threshold Nearly New Terms", ylab="Term Frequency", names.arg="")
-par(srt=90)
-text(x=x.pos, y=0.1, n_new.sel.words, adj=c(0,0.5))# puts labels inside bars
-par(srt=0)
-ad<-dev.off()
-#document occurrences
-par(mar=mar.default)
-x.pos<-barplot(cnt.docs_with_nnew, las=2, 
-        main="Occurrence of Nearly New Terms", ylab="Number of Docs", names.arg="", axes=FALSE)
-axis(2, las=1, at=0:max(cnt.docs_with_nnew))# to get integers only
-par(srt=90)
-text(x=x.pos, y=0.1, n_new.sel.words, adj=c(0,0.5))# puts labels inside bars
-par(srt=0)
-png("Images/NearlyNewTerm_DocOccurrence_Bar.png", width=1000, height=1000,pointsize=12, res=150)
-x.pos<-barplot(cnt.docs_with_nnew, las=2, main="Occurrence of Nearly New Terms",
-        ylab="Number of Docs", names.arg="", axes=FALSE)
-axis(2, las=1, at=0:max(cnt.docs_with_nnew))# to get integers only
-par(srt=90)
-text(x=x.pos, y=0.1, n_new.sel.words, adj=c(0,0.5))# puts labels inside bars
-par(srt=0)
-ad<-dev.off()
-par(mar=mar.bigmar)
-heatmap(as.matrix(dtm.tf.n_new), main="Nearly New Term Occurrence", labCol=n_new.sel.words, margins=c(10,5))
-png("Images/NearlyNewTerm_DocOccurrence_Heat.png", width=1000, height=1000,pointsize=12, res=150)
-heatmap(as.matrix(dtm.tf.n_new), main="Nearly New Term Occurrence", labCol=n_new.sel.words, margins=c(10,5))
-ad<-dev.off()
-
-##
-## Inspect the distribution of rise/fall. This should indicate a choice of ratio.thresh
-## (maybe should calc the thresh as the 9th decile)
-##
+dtm.tf.rising<-dtm.tf[!past.doc_ids.bool,rise.term_ids.bool]
+term.sums.new<-term.sums.recent[new.term_ids.bool]#the "past" is 0 of course
+term.sums.past.rising<-term.sums.past[rise.term_ids.bool]
+term.sums.recent.rising<-term.sums.recent[rise.term_ids.bool]
+term.sums.past.falling<-term.sums.past[fall.term_ids.bool]
+term.sums.recent.falling<-term.sums.recent[fall.term_ids.bool]
 #calculate a rise/fall factor excluding any new terms
 #basically: (recent fraction - past fraction)/(past fraction) but rescaled to a % to give "nicer" numbers for display
-# rise and fall have different threshold frequencies for inclusion so are dealt with separately
 tsp.rise<-term.sums.past[rise.term_ids.bool]
 tsr.rise<-term.sums.recent[rise.term_ids.bool]
 rise.ratio<-(tsr.rise*tsp.all/(tsr.all*tsp.rise) -1)* 100
 tsp.fall<-term.sums.past[fall.term_ids.bool]
 tsr.fall<-term.sums.recent[fall.term_ids.bool]
 fall.ratio<-(tsr.fall*tsp.all/(tsr.all*tsp.fall) -1)* 100
+
+##
+# Some basic stats and plots of the distributions before applying significance testing
+##
+# Inspect the distribution of new terms.
+print("Summary of New Terms (only those contained in >= min number of documents)")
+print(summary(term.sums.new))
+print("Deciles")
+print(quantile(term.sums.new, probs=seq(0.1,0.9,0.1)))
+#plot the distribution of new terms that appear in at least 2 docs (whether "significant" or not)
+term.sums.new.t<-tabulate(term.sums.new)
+basic.barplot(term.sums.new.t, "New Term Occurrence", "Term Frequency (count)",
+              "Number of Terms", seq(1:max(term.sums.new)), 
+              "Images/NewTermFrequencies.png")
+
+
+##
+## Apply Pearson's Chi^2 Test to each group
+##
+p.rising<-chisq.pval(term.sums.past.rising,tsp.all ,term.sums.recent.rising, tsr.all)
+p.falling<-chisq.pval(term.sums.past.falling,tsp.all ,term.sums.recent.falling, tsr.all)
+p.new<-chisq.pval(0.0, tsp.all, term.sums.new, tsr.all)
+names(p.rising)<-names(term.sums.past.rising)
+names(p.falling)<-names(term.sums.past.falling)
+names(p.new)<-names(term.sums.new)
+# use the chosen level of significance to filter-down the DTMs
+dtm.tf.new<-dtm.tf.new[,p.new<=thresh.pval]
+dtm.tf.new<-dtm.tf.new[row_sums(dtm.tf.new)>0]
+dtm.tf.rising<-dtm.tf.rising[,p.rising<=thresh.pval]
+dtm.tf.rising<-dtm.tf.rising[row_sums(dtm.tf.rising)>0]
+#these are used later to output the relevant docs/metadata
+corp.rising<-corp[Docs(dtm.tf.rising)]
+corp.new<-corp[Docs(dtm.tf.new)]
+#filter down the vectors of the important measures
+#fall.term_ids.bool<- fall.term_ids.bool & (p.falling<=thresh.pval)
+rise.ratio<-rise.ratio[p.rising<=thresh.pval]
+fall.ratio<-fall.ratio[p.falling<=thresh.pval]
+#similarly finally truncate the p-value vectors now we have finished using them as filters
+p.rising<-p.rising[p.rising<=thresh.pval]
+p.falling<-p.falling[p.falling<=thresh.pval]
+p.new<-p.new[p.new<=thresh.pval]
+
+##
+## Output of New Terms Results
+##
+#use the binary DTM to count document occurrences
+dtm.bin.new<-weightBin(dtm.tf.new)
+cnt.docs_with_new<-col_sums(dtm.bin.new)
+print("Doc-Term Matrix after Filtering Most Statistically Significant")
+print(dtm.tf.new)
+term.sums.new.sel<-col_sums(dtm.tf.new) #########################
+#find unstemmed words for the selected terms to make for prettier plots
+new.sel.words<-stemCompletion(names(term.sums.new.sel),corp.new,type="shortest")
+new.sel.words[is.na(new.sel.words)]<-names(new.sel.words[is.na(new.sel.words)])
+# chart the term frequency for significant new terms 
+insideLabel.barplot(term.sums.new.sel, Main="Most Significant New Terms",
+                              Ylab="Term Frequency", Names=new.sel.words, 
+                              "Images/NewTermFrequencies_Selected.png")
+# do similarly for the p-values, plotting -log10 to give an "Unlikelihood power"
+insideLabel.barplot(-log10(p.new), Main="Most Significant New Terms",
+                              Ylab="Significance (-log10(p))", Names=new.sel.words, 
+                              "Images/NewTermSignificance.png")
+#plot the document occurrences
+insideLabel.barplot(cnt.docs_with_new, Main="Occurrence of New Terms",
+                              Ylab="Number of Docs", Names=new.sel.words, 
+                              "Images/NewTerm_DocOccurrence_Bar.png", ForceIntYAxis=TRUE)
+basic.heatmap(as.matrix(dtm.tf.new), Main="New Term Occurrence",
+              ColumnLabels=new.sel.words,
+              OutputFile="Images/NewTerm_DocOccurrence_Heat.png")
+
+##
+## Output of Rising Term Results 
+##
 print("Summary of Rising Terms: Distribution of % Rise")
 print(summary(rise.ratio))
 print("Deciles:")
 print(quantile(rise.ratio, probs=seq(0.1,0.9,0.1)))
-par(mar=mar.default)
-barplot(rise.ratio,main="Rising Terms", ylab="Rise Ratio (%)",names.arg="")
-png("Images/RisingTerm_Spectrum.png", width=1000, height=1000,pointsize=12, res=150)
-barplot(rise.ratio,main="Rising Terms", ylab="Rise Ratio (%)",names.arg="")
-ad<-dev.off()
-par(mar=mar.bigmar)
-hist(rise.ratio,breaks=50, main="Histogram of Rising Terms", xlab="Rise Ratio (%)", xlim=c(0, max(rise.ratio)))
-png("Images/RisingTerm_Distribution.png", width=1000, height=1000,pointsize=12, res=150)
-hist(rise.ratio,breaks=50, main="Histogram of Rising Terms", xlab="Rise Ratio (%)", xlim=c(0, max(rise.ratio)))
-ad<-dev.off()
+#plot a histogram of the % rises
+basic.hist(rise.ratio, Main="Histogram of Rising Terms (before significance test)",
+           Xlab="Rise Ratio (%)", OutputFile="Images/RisingTerm_Distribution.png")
+# Get full-words in place of stemmed terms to make for prettier presentation
+# replace NAs by the stemmed term (which is often the answer, dunno why stemCompletion doesn't do this)
+rising.selected.words<-stemCompletion(names(rise.ratio),corp.rising,type="shortest")
+rising.selected.words[is.na(rising.selected.words)]<-names(rise.ratio[is.na(rising.selected.words)])
+#prep palette for rising/falling %s
+rf.ratio.int.min<-min(as.integer(fall.ratio))
+rf.ratio.int.max<-max(as.integer(rise.ratio))
+rf.palette<-diverge_hcl(rf.ratio.int.max-rf.ratio.int.min, c = 200, l = c(40, 120), power = 1)
+rising.cols<-rf.palette[as.integer(rise.ratio)-rf.ratio.int.min-1]
+falling.cols<-rf.palette[as.integer(fall.ratio)-rf.ratio.int.min+1]
+#plot the rises as a bar chart with the most-rising coloured red/pink
+colorized.barplot(rise.ratio, Main="Rising Terms", Ylab="% Rise in Target Set",
+                  Names=rising.selected.words, Colours=rising.cols,
+                  OutputFile="Images/RisingTerms_PC.png")
+# Plot the frequency of occurrence of the rising terms in the past and recent sets as a stacked bar chart
+r.term.sums.recent<-col_sums(dtm.tf.rising)
+r.term.sums.past<-col_sums(dtm.tf[past.doc_ids.bool,Terms(dtm.tf.rising)])
+pair.barplot(X.past=r.term.sums.past/conf.years.in_past, X.target=r.term.sums.recent,
+                Main="Un-scaled Rising Terms", Ylab="Term Occurrence",
+                Names=rising.selected.words,
+                OutputFile="Images/RisingTerms_PastRecent_Counts.png")
+pair.barplot(X.past=100*r.term.sums.past/tsp.all, X.target=100*r.term.sums.recent/tsr.all,
+             Main="Rising Term Proportions", Ylab="Term Frequency (%)",
+             Names=rising.selected.words, Beside=TRUE,
+             OutputFile="Images/RisingTerms_PastRecent_PC.png")
+#prep palette for "unlikelihood power"
+up.palette<-diverge_hcl(20, c = 200, l = c(40, 120), power = 1)
+logp.rising <- -log10(p.rising)
+palette.index.rising <- (as.integer(logp.rising) + log10(thresh.pval))*4 +1
+palette.index.rising[palette.index.rising>20]<-20 #flatten off extreme peaks
+up.rising.cols <- up.palette[palette.index.rising]
+#plot the colorised significace for all rising terms
+colorized.barplot(logp.rising, Main="Rising Terms", Ylab="Significance (-log10(p))",
+                  Names=rising.selected.words, Colours=up.rising.cols,
+                  OutputFile="Images/RisingSignificance.png")
+#scatter plot significance vs %rise
+log.scatter(rise.ratio, logp.rising, Main="Rising Terms", Xlab="% Rise",
+     Ylab="Significance (-log10(p))", OutputFile="Images/RisingSigPC_Scatter.png")
+
+##
+## Output of Falling Term Results
+##
 print("Summary of Falling Terms")
 print(summary(fall.ratio))
 print("Deciles:")
 print(quantile(fall.ratio, probs=seq(0.1,0.9,0.1)))
-par(mar=mar.default)
-barplot(fall.ratio,main="Falling Terms", ylab="Fall Ratio (%)",names.arg="")
-png("Images/FallingTerm_Spectrum.png", width=1000, height=1000,pointsize=12, res=150)
-barplot(fall.ratio,main="Falling Terms", ylab="Fall Ratio (%)",names.arg="")
-ad<-dev.off()
-par(mar=mar.bigmar)
-hist(fall.ratio,breaks=50, main="Histogram of Falling Terms", xlab="Fall Ratio (%)", xlim=c(-110, max(fall.ratio)))
-png("Images/FallingTerm_Distribution.png", width=1000, height=1000,pointsize=12, res=150)
-hist(fall.ratio,breaks=50, main="Histogram of Falling Terms", xlab="Fall Ratio (%)", xlim=c(-110, max(fall.ratio)))
-ad<-dev.off()
+#plot a histogram of the % falls
+basic.hist(fall.ratio, Main="Histogram of Falling Terms",
+           Xlab="Fall Ratio (%)", OutputFile="Images/FallingTerm_Distribution.png")
+# Get full-words in place of stemmed terms to make for prettier presentation
+# replace NAs by the stemmed term (which is often the answer, dunno why stemCompletion doesn't do this)
+#NB falling use different copus argument
+falling.selected.words<-stemCompletion(names(fall.ratio),corp,type="shortest")#NB the default type is "prevalent"
+falling.selected.words[is.na(falling.selected.words)]<-names(fall.ratio[is.na(falling.selected.words)])
+
+#plot the rises as a bar chart with the most-rising coloured red/pink
+colorized.barplot(fall.ratio, Main="Falling Terms", Ylab="% Fall in Target Set",
+                  Names=falling.selected.words, Colours=falling.cols,
+                  OutputFile="Images/FallingTerms_PC.png")
+#plots showing previous/target occurrences for falling terms, sim to rising
+f.term.sums.recent<-col_sums(dtm.tf[!past.doc_ids.bool,names(p.falling)])
+f.term.sums.past<-col_sums(dtm.tf[past.doc_ids.bool,names(p.falling)])
+pair.barplot(X.past=f.term.sums.past/conf.years.in_past, X.target=f.term.sums.recent,
+                Main="Un-scaled Falling Terms", Ylab="Term Occurrence",
+                Names=falling.selected.words,
+                OutputFile="Images/FallingTerms_PastRecent_Counts.png")
+pair.barplot(X.past=100*f.term.sums.past/tsp.all, X.target=100*f.term.sums.recent/tsr.all,
+             Main="Falling Term Proportions", Ylab="Term Frequency (%)",
+             Names=falling.selected.words, Beside=TRUE,
+             OutputFile="Images/FallingTerms_PastRecent_PC.png")
+#prep palette for "unlikelihood power"
+logp.falling <- -log10(p.falling)
+palette.index.falling <- (as.integer(logp.falling) + log10(thresh.pval))*4 +1
+palette.index.falling[palette.index.falling>20]<-20 #flatten off extreme peaks
+up.falling.cols <- up.palette[palette.index.falling]
+colorized.barplot(logp.falling, Main="Falling Terms", Ylab="Significance (-log10(p))",
+                  Names=falling.selected.words, Colours=up.falling.cols,
+                  OutputFile="Images/FallingP-Vals.png")
+#scatter plot significance vs %fall
+log.scatter(fall.ratio, logp.falling, Main="Falling Terms", Xlab="% Fall",
+     Ylab="Significance (-log10(p))", OutputFile="Images/FallingSigPC_Scatter.png")
 
 ##
-## Now use the thresholds to select "interesting" results
-## 
-rising.selected<-rise.ratio[rise.ratio>=rise.pc.thresh]
-falling.selected<-fall.ratio[fall.ratio<=fall.pc.thresh]
-dtm.bin.rising<-dtm.bin[!past.doc_ids.bool,rise.term_ids.bool]#recent docs with rising terms
-dtm.bin.rising<-dtm.bin.rising[,rise.ratio>=rise.pc.thresh]#filter to >= the threshold for rising
-dtm.bin.rising<-dtm.bin.rising[row_sums(dtm.bin.rising)>0,]#remove docs without any above-thresh terms
-#get the TF doc-term-matrix to match
-dtm.tf.rising<- dtm.tf[Docs(dtm.bin.rising),rise.term_ids.bool][,rise.ratio>=rise.pc.thresh]
-corp.rising<-corp[Docs(dtm.bin.rising)]
-#no doc selection for falling as it wouldn't make sense
-
-##
-## Get full-words in place of stemmed terms to make for prettier presentation
-##replace NAs by the stemmed term (which is often the answer, dunno why stemCompletion doesn't do this)
-#NB rising and falling use different copus argument
-rising.selected.words<-stemCompletion(names(rising.selected),corp.rising,type="shortest")
-rising.selected.words[is.na(rising.selected.words)]<-names(rising.selected[is.na(rising.selected.words)])
-falling.selected.words<-stemCompletion(names(falling.selected),corp,type="shortest")#NB the default type is "prevalent"
-falling.selected.words[is.na(falling.selected.words)]<-names(falling.selected[is.na(falling.selected.words)])
-
-##
-## If theme information is available, list the new, nearly-new and rising terms mentioned
+## If theme information is available, list the new and rising terms mentioned
 ##
 in_themes.msg.new<-""
-in_themes.msg.n_new<-""
 in_themes.msg.rising<-""
 if(!is.na(recent.themes.txt)){
    # match returns a vector with elements containing either NA or an integer.
    # an integer i in position k indicates that themes.tf[k] has name = that of rising.selected[i]
    new.terms.in_themes <- na.exclude(match(names(themes.tf), names(term.sums.new.sel)))
-   n_new.terms.in_themes <- na.exclude(match(names(themes.tf), names(term.sums.n_new.sel)))
    rising.terms.in_themes <- na.exclude(match(names(themes.tf), names(rising.selected)))
    if(length(new.terms.in_themes)>0){
       in_themes.msg.new<-paste("The following are matches between the conference theme description and above-threshold New Terms:",paste(as.character(new.sel.words[new.terms.in_themes]),collapse=", "))
    }else{
       in_themes.msg.new<-"No terms in the conference theme appear as above-threshold New Terms"
    }
-   print(in_themes.msg.new)
-   if(length(n_new.terms.in_themes)>0){
-       in_themes.msg.n_new<-paste("The following are matches between the conference theme description and above-threshold Nearly New Terms:", paste(as.character(n_new.sel.words[n_new.terms.in_themes]),collapse=", "))
-   }else{
-      in_themes.msg.n_new<-"No terms in the conference theme appear as above-threshold Nearly New Terms"
-   }
-   print(in_themes.msg.n_new)                                          
+   print(in_themes.msg.new)                                        
    if(length(rising.terms.in_themes)>0){
         in_themes.msg.rising<-paste("The following are matches between the conference theme description and above-threshold Rising Terms:", paste(as.character(rising.selected.words[rising.terms.in_themes]),collapse=", "))
    }else{
@@ -352,65 +337,6 @@ if(!is.na(recent.themes.txt)){
    print(in_themes.msg.rising)     
 }
 
-##
-##Plot the interesting results (above-thresh risers & fallers)
-##
-#prep palette for rising/falling
-rf.ratio.int.min<-min(as.integer(fall.ratio))
-rf.ratio.int.max<-max(as.integer(rise.ratio))
-cols<-diverge_hcl(rf.ratio.int.max-rf.ratio.int.min, c = 200, l = c(40, 120), power = 1)
-# rising
-par(mar=mar.bigmar)
-barplot(rising.selected, las=2, cex.names=0.7, col=cols[as.integer(rising.selected)-rf.ratio.int.min-1],
-        main="Rising Terms", ylab="% Rise in Target Set", names.arg=rising.selected.words)
-png("Images/RisingTerms_PC.png", width=1000, height=1000,pointsize=12, res=150)
-barplot(rising.selected, las=2, cex.names=0.7, col=cols[as.integer(rising.selected)-rf.ratio.int.min-1],
-        main="Rising Terms", ylab="% Rise in Target Set", names.arg=rising.selected.words)
-ad<-dev.off()
-# Plot the frequency of occurrence of the rising terms in the past and recent sets as a stacked bar chart
-r.term.sums.recent<-col_sums(dtm.tf[!past.doc_ids.bool,rise.term_ids.bool][,rise.ratio>=rise.pc.thresh])
-r.term.sums.past<-col_sums(dtm.tf[past.doc_ids.bool,rise.term_ids.bool][,rise.ratio>=rise.pc.thresh])
-barplot(rbind(r.term.sums.past,r.term.sums.recent),las=2, cex.names=0.7,
-        names.arg=rising.selected.words, main="Un-scaled Rising Terms",
-        legend.text=c("Previous","Target"), ylab="Term Occurrence")
-png("Images/RisingTerms_PastRecent_Counts.png", width=1000, height=1000,pointsize=12, res=150)
-barplot(rbind(r.term.sums.past,r.term.sums.recent),las=2, cex.names=0.7,
-        names.arg=rising.selected.words, main="Un-scaled Rising Terms",
-        legend.text=c("Previous","Target"), ylab="Term Occurrence")
-ad<-dev.off()
-barplot(100*rbind(r.term.sums.past/tsp.all,r.term.sums.recent/tsr.all),las=2, cex.names=0.7,
-        names.arg=rising.selected.words, main="Re-scaled Rising Terms",
-        legend.text=c("Previous","Target"), beside=TRUE, ylab="Term Frequency (%)")
-png("Images/RisingTerms_PastRecent_PC.png", width=1000, height=1000,pointsize=12, res=150)
-barplot(100*rbind(r.term.sums.past/tsp.all,r.term.sums.recent/tsr.all),las=2, cex.names=0.7,
-        names.arg=rising.selected.words, main="Re-scaled Rising Terms",
-        legend.text=c("Previous","Target"), beside=TRUE, ylab="Term Frequency (%)")
-ad<-dev.off()
-# falling
-barplot(falling.selected, las=2, cex.names=0.7, col=cols[as.integer(falling.selected)-rf.ratio.int.min+1],
-        main="Falling Terms", ylab="% Fall in Target Set", names.arg=falling.selected.words)
-png("Images/FallingTerms_PC.png", width=1000, height=1000,pointsize=12, res=150)
-barplot(falling.selected, las=2, cex.names=0.7, col=cols[as.integer(falling.selected)-rf.ratio.int.min+1],
-        main="Falling Terms", ylab="% Fall in Target Set", names.arg=falling.selected.words)
-ad<-dev.off()
-f.term.sums.recent<-col_sums(dtm.tf[!past.doc_ids.bool,fall.term_ids.bool][,fall.ratio<=fall.pc.thresh])
-f.term.sums.past<-col_sums(dtm.tf[past.doc_ids.bool,fall.term_ids.bool][,fall.ratio<=fall.pc.thresh])
-barplot(rbind(f.term.sums.past,f.term.sums.recent),las=2, cex.names=0.7,
-        names.arg=falling.selected.words, main="Un-scaled Falling Terms",
-        legend.text=c("Previous","Target"), ylab="Term Occurrence")
-png("Images/FallingTerms_PastRecent_Counts.png", width=1000, height=1000,pointsize=12, res=150)
-barplot(rbind(f.term.sums.past,f.term.sums.recent),las=2, cex.names=0.7,
-        names.arg=falling.selected.words, main="Un-scaled Falling Terms",
-        legend.text=c("Previous","Target"), ylab="Term Occurrence")
-ad<-dev.off()
-barplot(100* rbind(f.term.sums.past/tsp.all,f.term.sums.recent/tsr.all),las=2, cex.names=0.7,
-        names.arg=falling.selected.words, main="Re-scaled Falling Terms",
-        legend.text=c("Previous","Target"), beside=TRUE, ylab="Term Frequency (%)")
-png("Images/FallingTerms_PastRecent_PC.png", width=1000, height=1000,pointsize=12, res=150)
-barplot(100* rbind(f.term.sums.past/tsp.all,f.term.sums.recent/tsr.all),las=2, cex.names=0.7,
-        names.arg=falling.selected.words, main="Re-scaled Falling Terms",
-        legend.text=c("Previous","Target"), beside=TRUE, ylab="Term Frequency (%)")
-ad<-dev.off()
 
 ## checkpoint (manual!) if the above-thrsh plots include common terms then maybe the threshold is too low
 # i.e. we are in "noise"
@@ -419,13 +345,17 @@ ad<-dev.off()
 ## Analyse the distribution of the rising terms between "recent" documents
 ##
 #plots of number of docs containing the above-threshold terms
+dtm.bin.rising<-weightBin(dtm.tf.rising)
 cnt.docs_with_rising<-col_sums(dtm.bin.rising)
 cnt.recent<-sum(!past.doc_ids.bool)
-par(mar=mar.bigmar)
-barplot(cnt.docs_with_rising, las=2, cex.names=0.7, col=cols[as.integer(rising.selected)-rf.ratio.int.min-1], main="Occurrence of Top Rising Terms", ylab="Number of Docs (Target)", names.arg=rising.selected.words)
-png("Images/RisingTerm_DocOcurrence_Bar.png", width=1000, height=1000,pointsize=12, res=150)
-barplot(cnt.docs_with_rising, las=2, cex.names=0.7, col=cols[as.integer(rising.selected)-rf.ratio.int.min-1], main="Occurrence of Top Rising Terms", ylab="Number of Docs (Target)", names.arg=rising.selected.words)
-ad<-dev.off() 
+colorized.barplot(cnt.docs_with_rising, Main="Documents with Rising Terms",
+                  Ylab="Number of Docs (Target)",
+                  Names=rising.selected.words, Colours=rising.cols,
+                  OutputFile="Images/RisingTerm_DocOcurrence_Bar.png")
+# try a heatmap to visualise term-document correlations
+basic.heatmap(as.matrix(dtm.tf.rising), Main="Rising Terms Among Documents",
+                        ColumnLabels=rising.selected.words,
+                        OutputFile="Images/RisingTerm_DocOcurrence_Heat.png")
 #Scatter plot of the % rise vs the number of documents containing
 # this isn't as good to look at as the previous colourised bar plot but is more quantitative
 # plot(x=rising.selected, y=cnt.docs_with_rising, main="% Rise vs Documents Containing",
@@ -442,28 +372,23 @@ ad<-dev.off()
 # text(x=rising.selected, y=cnt.docs_with_rising, rising.selected.words, adj=c(-0.2,0.8), offset=1, cex=0.6)
 # par(srt=0)
 # ad<-dev.off()
-# try a heatmap to visualise term-document correlations
-par(mar=mar.bigmar)
-heatmap(as.matrix(dtm.tf.rising), main="Rising Terms Among Documents", labCol=rising.selected.words, margins=c(10,5))
-png("Images/RisingTerm_DocOcurrence_Heat.png", width=1000, height=1000,pointsize=12, res=150)
-heatmap(as.matrix(dtm.tf.rising), main="Rising Terms Among Documents", labCol=rising.selected.words, margins=c(10,5))
-ad<-dev.off()
+
          
 ##
 ## gephi output of term associations for above-threshold rising terms
 ##
 #node=term, weighting=rising ratio
 #edge=co-occurrence in a documet, weighting = number of docs in which the terms co-occur (not weighted by freq!)
-nodes1.df<-data.frame(Id=names(rising.selected),Label=rising.selected.words,Weight=as.numeric(rising.selected))
+nodes1.df<-data.frame(Id=names(rise.ratio),Label=rising.selected.words,Weight=as.numeric(rise.ratio))
 edges1.df<-data.frame()
 #use the binary occurrence doc-term-matrix in plain matrix form for easy calcs
 mat.bin<-as.matrix(dtm.bin.rising)
 #loop over terms, this loop is one end of each edge
-for(t in 2:length(rising.selected)){
+for(t in 2:length(rise.ratio)){
    edge.weights<-colSums(mat.bin[,t]*mat.bin)
    edges1.df<-rbind(edges1.df,data.frame(
-              Source=names(rising.selected)[t],
-              Target=names(rising.selected)[1:(t-1)],#omits the self-referential edge and avoids double counting edges (A-B and B-A)
+              Source=names(rise.ratio)[t],
+              Target=names(rise.ratio)[1:(t-1)],#omits the self-referential edge and avoids double counting edges (A-B and B-A)
               Type="Undirected",Weight=edge.weights[1:(t-1)]))
 }
 #find the min/max co-occurrences for reporting
@@ -527,49 +452,13 @@ names(new.doclist)<-new.sel.words[new.selected.term.ids.asc]
 # re-jig back to showing on console and logging
 sink()
 sink(file="RF_Terms.log", append=TRUE, type="output", split=TRUE)
-
-##       
-## find docs containing the above-threshold nearly-new terms, sorted most-numerous first
-##
-# improve this - find URL for each 
-n_new.selected.term.ids.asc<-order(term.sums.n_new.sel, decreasing=TRUE)
-dtm.bin.n_new<-dtm.bin.n_new[,names(term.sums.n_new[term.sums.n_new>=(new.thresh+n_new.thresh)][n_new.selected.term.ids.asc])]
-print("Documents for Nearly New Terms (most numerous term first) - see RF_Terms.log")
-# re-jig the sink to only print this stuff to file
-sink()
-sink(file="RF_Terms.log", append=TRUE, type="output", split=FALSE)
-#data frames are used to store this stuff in new.doclist for simple use using Brew for report creation
-n_new.doclist<-NULL
-ii<-1
-for (i in Terms(dtm.bin.n_new)){
-   print(paste("Documents containing term:",i))
-   corp.for.term<-corp.n_new[Docs(dtm.bin.n_new[row_sums(dtm.bin.n_new[,i])>0,])]
-   empty.field.c<-rep(NA,length(corp.for.term))
-   df.for.term<-data.frame(origin=empty.field.c, date=empty.field.c, heading=empty.field.c,authors=empty.field.c,id=empty.field.c,abstract=empty.field.c, stringsAsFactors=FALSE)
-   jj<-1
-   for (j in corp.for.term){
-      df.for.term[jj,]<-c(conference.name[as.integer(meta(j, tag="Origin"))] , as.character(meta(j, tag="DateTimeStamp")), as.character(meta(j, tag="Heading")),  as.character(meta(j, tag="Author")), as.character(meta(j, tag="ID")), as.character(j))
-        print("")
-        print(df.for.term[jj,"heading"])
-        print(paste(df.for.term[jj,"origin"],df.for.term[jj,"date"],", ",df.for.term[jj,"authors"],", ", "ID=", df.for.term[jj,"id"], sep=""))
-        print(df.for.term[jj,"abstract"])
-      jj<-jj+1
-   }
-   n_new.doclist[[ii]]<-df.for.term
-   ii<-ii+1
-   print("============")
-}
-names(n_new.doclist)<-n_new.sel.words[n_new.selected.term.ids.asc]
-# re-jig back to showing on console and logging
-sink()
-sink(file="RF_Terms.log", append=TRUE, type="output", split=TRUE)
         
 ##       
 ## find docs containing the above-threshold rising terms, sorted most-rising first
 ##
 # improve this - find URL for each 
-rising.selected.term.ids.asc<-order(rise.ratio[rise.ratio>=rise.pc.thresh], decreasing=TRUE)
-dtm.bin.rising<-dtm.bin.rising[,names(rise.ratio[rise.ratio>=rise.pc.thresh][rising.selected.term.ids.asc])]
+rising.selected.term.ids.asc<-order(rise.ratio, decreasing=TRUE)
+dtm.bin.rising<-dtm.bin.rising[,rising.selected.term.ids.asc]
 print("Statistics for the number of different above-threshold rising terms in each Target doc with at least one such term")
 print(dtm.bin.rising)
 summary(cnt.docs_with_rising)
@@ -577,11 +466,11 @@ print("Documents for Rising Terms (most rising term first) - see RF_Terms.log")
 # re-jig the sink to only print this stuff to file
 sink()
 sink(file="RF_Terms.log", append=TRUE, type="output", split=FALSE)
-#data frames are used to store this stuff in new.doclist for simple use using Brew for report creation
+#data frames are used to store this stuff in rising.doclist for simple use using Brew for report creation
 rising.doclist<-NULL
 ii<-1
 for (i in Terms(dtm.bin.rising)){
-   print(paste("Documents containing term:",names(rise.ratio[rise.ratio>=rise.pc.thresh][i])))
+   print(paste("Documents containing term:",i))
    corp.for.term<-corp.rising[Docs(dtm.bin.rising[row_sums(dtm.bin.rising[,i])>0,])]
    empty.field.c<-rep(NA,length(corp.for.term))
    df.for.term<-data.frame(origin=empty.field.c, date=empty.field.c, heading=empty.field.c,authors=empty.field.c,id=empty.field.c,abstract=empty.field.c, stringsAsFactors=FALSE)
@@ -607,7 +496,7 @@ sink(file="RF_Terms.log", append=TRUE, type="output", split=TRUE)
 ##
 ## find docs containing several different above-threshold rising terms. 
 ##
-dtm.bin.key_docs<-dtm.bin.rising[row_sums(dtm.bin.rising)>quantile(cnt.docs_with_rising,probs=0.75),]
+dtm.bin.key_docs<-dtm.bin.rising[row_sums(dtm.bin.rising)>quantile(row_sums(dtm.bin.rising),probs=0.75),]
 print("How many documents are above the thrid quartile for (different) rising term count")
 print(dtm.bin.key_docs)
 #Inspect these "Key docs"

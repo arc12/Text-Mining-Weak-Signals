@@ -14,7 +14,9 @@
 
 ## Run Properties - dependent on the source
 #the output directory. NB convention to include the year
-setwd("/home/arc1/R Projects/Text Mining Weak Signals Output/Rising and Falling Terms/Union A/2010")
+output.dir<-"/home/arc1/R Projects/Text Mining Weak Signals Output/Rising and Falling Terms/Union A/testing"
+dir.create(output.dir, showWarnings=FALSE)
+setwd(output.dir)
 title<-"Rising and Falling Terms - Conference Proceedings from ICALT, ECTEL and ICWL"
 abstracts.csv <- c("/home/arc1/R Projects/Source Data/ICALT Abstracts 2005-2010.csv",
                    "/home/arc1/R Projects/Source Data/ECTEL Abstracts 2006-2010.csv",
@@ -55,18 +57,10 @@ start.date<-key.date; start.date$year<-start.date$year-conf.years.in_past
 last.date<-key.date;last.date$year<-last.date$year+1
 
 # thresholds
-# for rising or falling, a proportional change. This is a percentage (since % used for plot y axis)
-rise.pc.thresh<-180
-fall.pc.thresh<--80 #negative
-#must have this number of term occurrences in "past" set to consider in rising investigation
-enough.thresh.rise<- 8 
-#the falling investigation will set the enough.thresh.fall threshold at the 9th decile term frequency
-# for new terms in recent, an absolute count, show cases >= this.
-new.thresh <- 4 
-# max past occurrence to qualify as "nearly-new" this is also added to new.thresh to determine which to show
-n_new.thresh <- 2
 # how many documents must the term appear in to be listed. This is in addition to the frequency thresholds. A value of 2 is expected, i.e. ignore terms that appear in only one doc
 doc_count.thresh <- 2
+# p-value to accept the "alternative hypothesis" that there is something interesting
+thresh.pval<-0.01 #i.e. accept a 1% chance that null hypothesis falsely rejected
 ##
 ## End setup
 ##
