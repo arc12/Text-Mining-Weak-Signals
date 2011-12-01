@@ -22,6 +22,7 @@ library("corpora")
 ##
 
 # various plot functions, for writing to file and the normal graphics device
+source("/home/arc1/R Projects/Text Mining Weak Signals/Rising and Falling Terms/commonFunctions.R")
 source("/home/arc1/R Projects/Text Mining Weak Signals/Rising and Falling Terms/plotFunctions.R")
 
 #var to use to make some more space at the bottom of plots for long label (use par(mar=mar.bigmar) )
@@ -38,6 +39,27 @@ cat(paste(title,"\n"))
 cat(paste(paste(rep("=",79),collapse="")),"\n\n")
 print(paste("From:",start.date," Split at:",key.date, sep=""))
 timestamp(stamp=date(), prefix="##TIMESTAMP: ")
+
+##
+## Prepare lexicon for sentiment analysis
+##
+##
+# Read in the sentiment word lists (cols extracted from the Harvard Inquirer spreadsheet http://www.wjh.harvard.edu/~inquirer/)
+# and process to obtain a list of dictionaries. 
+#The column headings MUST be "Entry,Positive,Negative"
+inquirer.table<-read.csv("/home/arc1/R Projects/Text Mining Weak Signals/InquirerPosNeg.csv",
+                         header=TRUE, sep=",", quote="\"", stringsAsFactors=FALSE)
+sentiment.dics<-list()
+# for each sentiment, find out which words are relevant and for cases where there is more
+# than one usage (denoted #1 in the word), select only the first one as this is the most frequent in general
+for(i in 2:length(inquirer.table[1,])){
+   dic<-inquirer.table[,"Entry"]
+   dic<-dic[inquirer.table[,i]!=""]#limit to words for sentiment
+   dic<-sub("#1","",dic)#remove '#1' from any words containing it
+   dic<-dic[-grep("#",dic)]#remove all words still containing #
+   sentiment.dics[[i-1]]<-dic
+   names(sentiment.dics)[[i-1]] <- colnames(inquirer.table)[i]
+}
 
 ##
 ## Read in the abstracts. NB this code allows for vectors of csv file names, titles etc in RF_Init.R
@@ -57,7 +79,7 @@ for (src in 1:length(abstracts.csv)){
 # now read in the possibly-cumulated table to a corpus, handling the metadata via mapping
 #create a mapping from datatable column names to PlainTextDocument attribute names
 #"Keywords" is a user-defined "localmetadata" property while the rest are standard tm package document metadata fields
-map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords")
+map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url")
 #use the mapping while reading the dataframe source to create a coprus with metadata
 corp<-Corpus(DataframeSource(table), readerControl=list(reader= readTabular(mapping=map)))
 
@@ -83,8 +105,8 @@ cat(paste(paste(rep("-",79),collapse="")),"\n\n")
 #Here we go////
 dtm.tf<-DocumentTermMatrix(corp,
   control=list(stemming=TRUE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=TRUE))
-dtm.bin<-weightBin(dtm.tf)
-terms.doc.cnt<-col_sums(dtm.bin) #the number of docs containing >=1 occurrence of the term
+#dtm.bin<-weightBin(dtm.tf)
+#terms.doc.cnt<-col_sums(dtm.bin) #the number of docs containing >=1 occurrence of the term
 #compute some corpus and term statistics FOR INFORMATION
 print("Computed Document Term Matrix, Term-Frequency")
 print(dtm.tf)
@@ -122,15 +144,114 @@ term.sums.past<-col_sums(dtm.tf[past.doc_ids.bool,])
 tsp.all<-sum(term.sums.past)
 term.sums.recent<-col_sums(dtm.tf[!past.doc_ids.bool,])
 tsr.all<-sum(term.sums.recent)
+#the number of docs in the new setcontaining >=1 occurrence of the term
+dtm.bin<-weightBin(dtm.tf)
+dtm.bin.recent<-dtm.bin[!past.doc_ids.bool,]
+terms.doc.cnt.recent<-col_sums(dtm.bin.recent)
+
+##
+## Compute document distances based on binary term occurrence (all terms, not just WS terms)
+## to look for "novel" abstracts. Consider documents in the recent set in relation to ALL docs
+##
+# remove common terms so that the selectivity is enhanced
+common.terms<-col_sums(dtm.bin)/length(Docs(dtm.bin))>term.doc_occurrence.max
+dtm.bin.trimmed<-dtm.bin[,!common.terms]
+dtm.bin.recent.trimmed<-dtm.bin.recent[,!common.terms]
+doc.norm.mat<-sqrt(tcrossprod(row_sums(dtm.bin.recent.trimmed),row_sums(dtm.bin.trimmed)))
+difference.mat<-1.0-tcrossprod(as.matrix(dtm.bin.recent.trimmed),
+                               as.matrix(dtm.bin.trimmed)) / doc.norm.mat
+#self referential terms need "removing" (since the mat is not square, cant use "diag")
+difference.mat[difference.mat[,]==0]<-1.0
+#novelty means there is no other close doc so find the smallest difference
+novelty<-apply(difference.mat,1,min)
+#the summary stats
+novelty.summary<-summary(novelty)
+print("Summary Stats for Novelty")
+print(novelty.summary)
+#if the histogram is very skew to high values (e.g. 0.8) then it isn't possible to ident novel
+basic.hist(novelty,"Absolute Novelty Values","minimum(1 - similarty)","Images/AbsoluteNovelty.png", Breaks=20)
+standardised.novelty<-(novelty-median(novelty))/(1-median(novelty))
+std.novelty.summary<-summary(standardised.novelty)
+print("Summary of Standardised Novelty")
+print(std.novelty.summary)
+
+std.nov.extreme <-standardised.novelty[standardised.novelty>=std.novelty.min]
+print(paste("Docs above standard novelty threshold",std.novelty.min))
+print(std.nov.extreme)
+basic.hist(standardised.novelty,"Standardised Novelty","","Images/StandardisedNovelty.png", Breaks=30)
+# add "standardised novelty" as corpus metadata
+# this is very slow so I should attempt to improve it
+for(i in 1:length(standardised.novelty)){
+   meta(corp[[names(standardised.novelty)[i]]],tag="StdNovelty")<-
+      round(standardised.novelty[[i]],digits=2)
+}
+
+##
+## Sentiment Analysis, specifically "subjectivity"
+##
+# Use the Harvard Inquirer word lists to score sets of responses against several sentiments.
+# Do this for the recent set of abstracts only and NB this is an UNSTEMMED treatment
+# Count each occurrence of each word as a score of 1 for every word in the sentiment list.
+# "subjectivity" is the sum of positive and negative scores divided by the number of terms in the doc
+# work on the recent corpus only. keep this separate since no stemming etc
+corp.recent<-tm_filter(corp,FUN=sFilter, doclevel = TRUE, useMeta = FALSE, paste("datetimestamp>='",key.date,"'",sep=""))
+# -- positive scores
+dtm.tf.unstemmed.p<-DocumentTermMatrix(corp.recent,
+  control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics[["Positive"]])))
+pos.score<-row_sums(dtm.tf.unstemmed.p)/row_sums(dtm.bin.recent)[Docs(dtm.tf.unstemmed.p)]
+pos.terms.sums<-col_sums(dtm.tf.unstemmed.p[,col_sums(dtm.tf.unstemmed.p)>0])
+print("Summary of Positive Sentiment Scores")
+summary(pos.score)
+basic.hist(pos.score,Main="Positive Sentiment", Xlab="Score",
+           OutputFile="Images/PosSentiment.png", Breaks=20)
+# -- negative scores
+dtm.tf.unstemmed.n<-DocumentTermMatrix(corp.recent,
+  control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics[["Negative"]])))
+neg.score<-row_sums(dtm.tf.unstemmed.n)/row_sums(dtm.bin.recent)[Docs(dtm.tf.unstemmed.n)]
+neg.terms.sums<-col_sums(dtm.tf.unstemmed.n[,col_sums(dtm.tf.unstemmed.n)>0])
+print("Summary of Negative Sentiment Scores")
+summary(neg.score)
+basic.hist(neg.score,Main="Negative Sentiment", Xlab="Score",
+           OutputFile="Images/NegSentiment.png", Breaks=20)
+# -- subjectivity
+subjectivity<-pos.score + neg.score
+subj.summary<-summary(subjectivity)
+print("Summary of Subjectivity Scores (positive+negative)")
+print(subj.summary)
+#upper outliers as plotted on the boxplot (plotted further on)
+subj.thresh<-(5*subj.summary[["3rd Qu."]]-3*subj.summary[["1st Qu."]])/2
+subj.outliers<-subjectivity[subjectivity>subj.thresh]
+# plot sentiment balance for most "sentinental" docs
+subj.9th.dec<-quantile(subjectivity,0.9)
+sentiment.barplot(neg.score[subjectivity>=subj.9th.dec],
+                  pos.score[subjectivity>=subj.9th.dec], Main="9th Decile Subjectivity",
+                  Ylab="Subjectivity", OutputFile="Images/TopSubjectivity.png")
+# add sentiment (pos,neg,subj) to corpus metadata
+for(i in 1:length(subjectivity)){
+   meta(corp[[names(subjectivity)[i]]],tag="Positive")<- as.numeric(round(pos.score[i], digits=2))
+   meta(corp[[names(subjectivity)[i]]],tag="Negative")<- as.numeric(round(neg.score[i], digits=2))
+   meta(corp[[names(subjectivity)[i]]],tag="Subjectivity")<- as.numeric(round(subjectivity[i], digits=2))
+}  
+print("********* Occurrence of Positive Terms in the Recent Document Set *********")
+print(pos.terms.sums)
+print("********* Occurrence of Negative Terms in the Recent Document Set *********")
+print(neg.terms.sums)
+
+# quick view of sentiment and subjectivity distributions and outliers
+# upper outliers are above a limit = 3rd quartile + 1.5*inter_quartile_range
+#  (inter quartile range = difference between 1st and 3rd quartiles)
+# lower outliers are not expected but have an analogously-defined limit relative to the 1stQ
+# the plot "whiskers" default to the outlier limits described above or to the most extreme data-point if less than these limits.
+basic.boxplot(list(Positive=pos.score,Negative=neg.score,Subjectivity=subjectivity), Ylab="Sentment Score", OutputFile="Images/SentimentComparison.png")
 
 #GET some boolean filters for three groups, Rising, Falling and New. No decision on significance yet!
 #term sums of 0 in the past must be new terms, since we know the corpus sum>0
 #ONLY select those with a mininum number of document occurrences
-new.term_ids.bool <- (term.sums.past==0) & (terms.doc.cnt>=doc_count.thresh)
+new.term_ids.bool <- (term.sums.past==0) & (terms.doc.cnt.recent>=doc_count.thresh)
 #which terms should be considered in rising/falling?
 #for rising terms (which includes the old "nearl-new" concept, again require a minimum number of documents)
 rise.term_ids.bool <- (term.sums.recent/tsr.all>term.sums.past/tsp.all) &
-                       (term.sums.past>0) & (terms.doc.cnt>=doc_count.thresh)
+                       (term.sums.past>0) & (terms.doc.cnt.recent>=doc_count.thresh)
 fall.term_ids.bool <- (term.sums.recent/tsr.all<term.sums.past/tsp.all)
 
 ##
@@ -156,19 +277,39 @@ fall.ratio<-(tsr.fall*tsp.all/(tsr.all*tsp.fall) -1)* 100
 # Some basic stats and plots of the distributions before applying significance testing
 ##
 # Inspect the distribution of new terms.
-print("Summary of New Terms (only those contained in >= min number of documents)")
-print(summary(term.sums.new))
+print("Summary of New Terms (before significance test)")
+raw.summary.new<-summary(term.sums.new)
+print(raw.summary.new)
 print("Deciles")
 print(quantile(term.sums.new, probs=seq(0.1,0.9,0.1)))
+# Rising Terms
+print("Summary of Rising Terms: Distribution of % Rise (before significance test)")
+raw.summary.rise<-summary(rise.ratio)
+print(raw.summary.rise)
+print("Deciles:")
+print(quantile(rise.ratio, probs=seq(0.1,0.9,0.1)))
+#Falling Terms
+print("Summary of Falling Terms: Distribution of % Fall (before significance test)")
+raw.summary.fall<-summary(fall.ratio)
+print(raw.summary.fall)
+print("Deciles:")
+print(quantile(fall.ratio, probs=seq(0.1,0.9,0.1)))
+
 #plot the distribution of new terms that appear in at least 2 docs (whether "significant" or not)
 term.sums.new.t<-tabulate(term.sums.new)
 basic.barplot(term.sums.new.t, "New Term Occurrence", "Term Frequency (count)",
               "Number of Terms", seq(1:max(term.sums.new)), 
               "Images/NewTermFrequencies.png")
+#plot a histogram of the % rises
+basic.hist(rise.ratio, Main="Histogram of Rising Terms (before significance test)",
+           Xlab="Rise Ratio (%)", OutputFile="Images/RisingTerm_Distribution.png")
+#plot a histogram of the % falls
+basic.hist(fall.ratio, Main="Histogram of Falling Terms (before significance test)",
+           Xlab="Fall Ratio (%)", OutputFile="Images/FallingTerm_Distribution.png")
 
 
 ##
-## Apply Pearson's Chi^2 Test to each group
+## Apply Pearson's Chi^2 Test to each group, then filter down as appropriate
 ##
 p.rising<-chisq.pval(term.sums.past.rising,tsp.all ,term.sums.recent.rising, tsr.all)
 p.falling<-chisq.pval(term.sums.past.falling,tsp.all ,term.sums.recent.falling, tsr.all)
@@ -180,9 +321,9 @@ names(p.new)<-names(term.sums.new)
 dtm.tf.new<-dtm.tf.new[,p.new<=thresh.pval]
 dtm.tf.new<-dtm.tf.new[row_sums(dtm.tf.new)>0]
 dtm.tf.rising<-dtm.tf.rising[,p.rising<=thresh.pval]
-dtm.tf.rising<-dtm.tf.rising[row_sums(dtm.tf.rising)>0]
+dtm.tf.rising<-dtm.tf.rising[row_sums(dtm.tf.rising)>0,]
 #these are used later to output the relevant docs/metadata
-corp.rising<-corp[Docs(dtm.tf.rising)]
+#corp.rising<-corp[Docs(dtm.tf.rising)] moved to later
 corp.new<-corp[Docs(dtm.tf.new)]
 #filter down the vectors of the important measures
 #fall.term_ids.bool<- fall.term_ids.bool & (p.falling<=thresh.pval)
@@ -192,6 +333,54 @@ fall.ratio<-fall.ratio[p.falling<=thresh.pval]
 p.rising<-p.rising[p.rising<=thresh.pval]
 p.falling<-p.falling[p.falling<=thresh.pval]
 p.new<-p.new[p.new<=thresh.pval]
+#prep palette for rising/falling %s
+rf.ratio.int.min<-min(as.integer(fall.ratio))
+rf.ratio.int.max<-max(as.integer(rise.ratio))
+rf.palette<-diverge_hcl(rf.ratio.int.max-rf.ratio.int.min, c = 200, l = c(40, 120), power = 1)
+
+##
+## remove "established terms" from the rising set and hive them off to a separate list
+##
+past.freq.rising <- col_sums(dtm.tf[past.doc_ids.bool,Terms(dtm.tf.rising)])/tsp.all
+p.established.rising <- p.rising[past.freq.rising>max.past.freq]
+p.rising <- p.rising[past.freq.rising<=max.past.freq]
+dtm.tf.rising<-dtm.tf.rising[,past.freq.rising<=max.past.freq]
+dtm.tf.rising<-dtm.tf.rising[row_sums(dtm.tf.rising)>0]
+corp.rising<-corp[Docs(dtm.tf.rising)]
+established.rise.ratio<-rise.ratio[past.freq.rising>max.past.freq]
+rise.ratio<-rise.ratio[past.freq.rising<=max.past.freq]
+
+##
+## find documents containing A LOT of rising/new terms of any kind
+##
+dtm.bin.recent.any<-dtm.bin.recent[,c(names(established.rise.ratio), names(rise.ratio),  names(p.new))]
+rs<-row_sums(dtm.bin.recent.any)
+top10<-rs[order(rs,decreasing=TRUE)][1:10]
+print("Top 10 documents containing the most distinct rising, established or new terms:")
+print(top10)
+
+##
+## Compute mean novelty and subjectivity of documents containing the significant new/rising terms
+##
+# new
+std.nov.terms.new<-NULL
+for (nt in Terms(dtm.tf.new)){
+   std.nov.terms.new[[nt]]<-standardised.novelty[Docs(dtm.tf.new[as.matrix(dtm.tf.new[,nt])>0,nt])]
+}
+subj.terms.new<-NULL
+for (nt in Terms(dtm.tf.new)){
+   subj.terms.new[[nt]]<-subjectivity[Docs(dtm.tf.new[as.matrix(dtm.tf.new[,nt])>0,nt])]
+}
+#rising
+std.nov.terms.rising<-NULL
+for (nt in Terms(dtm.tf.rising)){
+   std.nov.terms.rising[[nt]]<-standardised.novelty[Docs(dtm.tf.rising[as.matrix(dtm.tf.rising[,nt])>0,nt])]
+}
+subj.terms.rising<-NULL
+for (nt in Terms(dtm.tf.rising)){
+   subj.terms.rising[[nt]]<-subjectivity[Docs(dtm.tf.rising[as.matrix(dtm.tf.rising[,nt])>0,nt])]
+}
+
 
 ##
 ## Output of New Terms Results
@@ -220,29 +409,25 @@ insideLabel.barplot(cnt.docs_with_new, Main="Occurrence of New Terms",
 basic.heatmap(as.matrix(dtm.tf.new), Main="New Term Occurrence",
               ColumnLabels=new.sel.words,
               OutputFile="Images/NewTerm_DocOccurrence_Heat.png")
+#Plots for novelty and subjectivity
+basic.boxplot(std.nov.terms.new,Ylab="Standardised Novelty",Main="Novelty of Documents Containing New Terms",Names=new.sel.words, OutputFile="Images/NewTermNovelty.png")
+basic.boxplot(subj.terms.new,Ylab="Subjectivity Score",Main="Subjectivity of Documents Containing New Terms",Names=new.sel.words, OutputFile="Images/NewTermSubjectivity.png")
+# write out input text for Wordle
+write.table(-log10(p.new), "Wordle/NewTermsSignificance.txt", quote=FALSE, sep=":", col.names=FALSE)
 
 ##
 ## Output of Rising Term Results 
 ##
-print("Summary of Rising Terms: Distribution of % Rise")
-print(summary(rise.ratio))
-print("Deciles:")
-print(quantile(rise.ratio, probs=seq(0.1,0.9,0.1)))
-#plot a histogram of the % rises
-basic.hist(rise.ratio, Main="Histogram of Rising Terms (before significance test)",
-           Xlab="Rise Ratio (%)", OutputFile="Images/RisingTerm_Distribution.png")
 # Get full-words in place of stemmed terms to make for prettier presentation
 # replace NAs by the stemmed term (which is often the answer, dunno why stemCompletion doesn't do this)
 rising.selected.words<-stemCompletion(names(rise.ratio),corp.rising,type="shortest")
 rising.selected.words[is.na(rising.selected.words)]<-names(rise.ratio[is.na(rising.selected.words)])
-#prep palette for rising/falling %s
-rf.ratio.int.min<-min(as.integer(fall.ratio))
-rf.ratio.int.max<-max(as.integer(rise.ratio))
-rf.palette<-diverge_hcl(rf.ratio.int.max-rf.ratio.int.min, c = 200, l = c(40, 120), power = 1)
-rising.cols<-rf.palette[as.integer(rise.ratio)-rf.ratio.int.min-1]
-falling.cols<-rf.palette[as.integer(fall.ratio)-rf.ratio.int.min+1]
 #plot the rises as a bar chart with the most-rising coloured red/pink
-colorized.barplot(rise.ratio, Main="Rising Terms", Ylab="% Rise in Target Set",
+rising.cols<-rf.palette[as.integer(rise.ratio)-rf.ratio.int.min-1]
+# truncate very large bars for display
+rise.ratio.trunc<-rise.ratio
+rise.ratio.trunc[rise.ratio>rising.plot.max]<-rising.plot.max
+colorized.barplot(rise.ratio.trunc, Main="Rising Terms", Ylab="% Rise in Target Set",
                   Names=rising.selected.words, Colours=rising.cols,
                   OutputFile="Images/RisingTerms_PC.png")
 # Plot the frequency of occurrence of the rising terms in the past and recent sets as a stacked bar chart
@@ -269,24 +454,45 @@ colorized.barplot(logp.rising, Main="Rising Terms", Ylab="Significance (-log10(p
 #scatter plot significance vs %rise
 log.scatter(rise.ratio, logp.rising, Main="Rising Terms", Xlab="% Rise",
      Ylab="Significance (-log10(p))", OutputFile="Images/RisingSigPC_Scatter.png")
+#wordle weighting data
+write.table(logp.rising, "Wordle/RIsingTermSignificance.txt", quote=FALSE, sep=":", col.names=FALSE)
+write.table(rise.ratio, "Wordle/RIsingTermPC.txt", quote=FALSE, sep=":", col.names=FALSE)
+#Plots for novelty and subjectivity
+basic.boxplot(std.nov.terms.rising,Ylab="Standardised Novelty",Main="Novelty of Documents Containing Rising Terms",Names=rising.selected.words, OutputFile="Images/RisingTermNovelty.png")
+basic.boxplot(subj.terms.rising,Ylab="Subjectivity Score",Main="Subjectivity of Documents Containing Rising Terms",Names=rising.selected.words, OutputFile="Images/RisingTermSubjectivity.png")
+
+##
+## Output of **ESTABLISHED* but still sigificantly Rising Term Results 
+##
+est.rising.selected.words<-stemCompletion(names(established.rise.ratio),corp.rising,type="shortest")
+est.rising.selected.words[is.na(est.rising.selected.words)]<-names(established.rise.ratio[is.na(est.rising.selected.words)])
+#use same palette as before
+est.rising.cols<-rf.palette[as.integer(established.rise.ratio)-rf.ratio.int.min-1]
+#plot the rises as a bar chart with the most-rising coloured red/pink
+colorized.barplot(established.rise.ratio, Main="Established Rising Terms", Ylab="% Rise in Target Set",
+                  Names=est.rising.selected.words, Colours=est.rising.cols,
+                  OutputFile="Images/EstablishedRisingTerms_PC.png")
+#prep palette for "unlikelihood power"
+up.palette<-diverge_hcl(20, c = 200, l = c(40, 120), power = 1)
+logp.established.rising <- -log10(p.established.rising)
+palette.index.est.rising <- (as.integer(logp.established.rising) + log10(thresh.pval))*4 +1
+palette.index.est.rising[palette.index.est.rising>20]<-20 #flatten off extreme peaks
+up.est.rising.cols <- up.palette[palette.index.est.rising]
+#plot the colorised significace for all rising terms
+colorized.barplot(logp.established.rising, Main="Established Rising Terms", Ylab="Significance (-log10(p))",
+                  Names=est.rising.selected.words, Colours=up.est.rising.cols,
+                  OutputFile="Images/EstablishedRisingSignificance.png")
 
 ##
 ## Output of Falling Term Results
 ##
-print("Summary of Falling Terms")
-print(summary(fall.ratio))
-print("Deciles:")
-print(quantile(fall.ratio, probs=seq(0.1,0.9,0.1)))
-#plot a histogram of the % falls
-basic.hist(fall.ratio, Main="Histogram of Falling Terms",
-           Xlab="Fall Ratio (%)", OutputFile="Images/FallingTerm_Distribution.png")
 # Get full-words in place of stemmed terms to make for prettier presentation
 # replace NAs by the stemmed term (which is often the answer, dunno why stemCompletion doesn't do this)
 #NB falling use different copus argument
 falling.selected.words<-stemCompletion(names(fall.ratio),corp,type="shortest")#NB the default type is "prevalent"
 falling.selected.words[is.na(falling.selected.words)]<-names(fall.ratio[is.na(falling.selected.words)])
-
 #plot the rises as a bar chart with the most-rising coloured red/pink
+falling.cols<-rf.palette[as.integer(fall.ratio)-rf.ratio.int.min+1]
 colorized.barplot(fall.ratio, Main="Falling Terms", Ylab="% Fall in Target Set",
                   Names=falling.selected.words, Colours=falling.cols,
                   OutputFile="Images/FallingTerms_PC.png")
@@ -337,10 +543,6 @@ if(!is.na(recent.themes.txt)){
    print(in_themes.msg.rising)     
 }
 
-
-## checkpoint (manual!) if the above-thrsh plots include common terms then maybe the threshold is too low
-# i.e. we are in "noise"
-
 ##
 ## Analyse the distribution of the rising terms between "recent" documents
 ##
@@ -373,57 +575,149 @@ basic.heatmap(as.matrix(dtm.tf.rising), Main="Rising Terms Among Documents",
 # par(srt=0)
 # ad<-dev.off()
 
-         
 ##
-## gephi output of term associations for above-threshold rising terms
+## Create separate small log files containing the sets of stemmed terms. (designed for use in HistoryVis)
 ##
-#node=term, weighting=rising ratio
-#edge=co-occurrence in a documet, weighting = number of docs in which the terms co-occur (not weighted by freq!)
-nodes1.df<-data.frame(Id=names(rise.ratio),Label=rising.selected.words,Weight=as.numeric(rise.ratio))
+#start logging all std output to a file in addition to "printing" to console
+#first clean up old sinks
+while(sink.number()>0)
+  {sink()}
+#log to separate files
+LogTerms("NewTerms.log",names(p.new), new.sel.words)
+LogTerms("RisingTerms.log",names(p.rising),rising.selected.words)
+LogTerms("EstablishedTerms.log",names(p.established.rising), est.rising.selected.words)
+LogTerms("FallingTerms.log",names(p.falling),falling.selected.words)
+#re-instate the general logging
+sink(file="RF_Terms.log", append=TRUE, type="output", split=TRUE)
+
+
+##
+## Gephi co-occurrence between a set of New and Rising Terms
+##
+terms.both<-c(names(term.sums.new.sel),names(rise.ratio))
+labels.both<-c(new.sel.words,rising.selected.words)
+weight.both<-c(-log10(p.new),as.numeric(-log10(p.rising)))
+nodes1.df<-data.frame(Id=terms.both,Label=labels.both,Weight=weight.both)
 edges1.df<-data.frame()
+#start again from the full dtm otherwise we will not get cross-set co-occurrence showing (if used new and recent dtms)
+dtm.bin.both<-dtm.bin.recent[,terms.both]
+dtm.bin.both<-dtm.bin.both[row_sums(dtm.bin.both)>0]
 #use the binary occurrence doc-term-matrix in plain matrix form for easy calcs
-mat.bin<-as.matrix(dtm.bin.rising)
+mat.bin<-as.matrix(dtm.bin.both)
 #loop over terms, this loop is one end of each edge
-for(t in 2:length(rise.ratio)){
+for(t in 2:length(terms.both)){
    edge.weights<-colSums(mat.bin[,t]*mat.bin)
    edges1.df<-rbind(edges1.df,data.frame(
-              Source=names(rise.ratio)[t],
-              Target=names(rise.ratio)[1:(t-1)],#omits the self-referential edge and avoids double counting edges (A-B and B-A)
+              Source=terms.both[t],
+              Target=terms.both[1:(t-1)],#omits the self-referential edge and avoids double counting edges (A-B and B-A)
               Type="Undirected",Weight=edge.weights[1:(t-1)]))
 }
 #find the min/max co-occurrences for reporting
-min.cooccurrence<-min(edges1.df["Weight"])
-max.cooccurrence<-max(edges1.df["Weight"])
-mean.cooccurrence<-mean(edges1.df["Weight"])
-max.edges.df<-edges1.df[which(edges1.df["Weight"] == max(edges1.df["Weight"])),]
-print("Rising Term Co-occurrence Stats")
+max.cooccurrence<-max(as.matrix(edges1.df["Weight"]))
+#max.edges.df<-edges1.df[which(edges1.df["Weight"] == max(edges1.df["Weight"])),]
+print("Significant (New and Rising) Term Co-occurrence Stats")
 print(summary(edges1.df["Weight"]))
-#remove cases where there is no co-occurrence (oddly this seems quite rare)
+#remove cases where there is no co-occurrence
 edges1.df<-subset(edges1.df,Weight>0)
-#save to disk
-write.csv(nodes1.df, file="Gephi/RisingTerm-Co-occurence Nodes.csv")
-write.csv(edges1.df, file="Gephi/RisingTerm-Co-occurence Edges.csv")
+#save to disk. we do not want row names since these end up being scrubbed on import to gephi
+write.csv(nodes1.df, file="Gephi/SignificantTerm-Co-occurence Nodes.csv", row.names=FALSE)
+write.csv(edges1.df, file="Gephi/SignificantTerm-Co-occurence Edges.csv", row.names=FALSE)
 ## **** notes on importing into Gephi (v0.8 alpha used)
-# import nodes then edges from CSV files. Make Node Weight be a float and de-select the "*" columns
-# show node labels, use "statistics" to calculate an unweighted degree
-# Use "ranking" to set node and edge size/colour
-# - node size = imported weight (=%rise). Scale the size proportional to the sqrt(% rise)
-# - node label size = same treatment as node size
-# - node colour = degree. Set the colour range from #FF5000 to #00D620
-# - edge size = imported weight (=number of co-occurrences). Scale proportional to the weight
+# import nodes then edges from CSV files. Make Node Weight be a float [it is ESSENTIAL not to leave it as a String]
+# show node labels, use "statistics" to calculate modularity
+# Use "ranking" to set node size = imported weight 
+# edge size = imported weight (=number of co-occurrences). by default
+# Use "partition" to set node colour = modularity class
 # NB the actual scale may need a multiplier/factor to be applied.
-# Use a circular auto-layout, with "no overlap" and with nodes ordered by degree
+# Use a circular auto-layout with nodes ordered by modularity class then use Frucherman Reingold
 # - may need to do a label adjust too.
-# - generally apply one step of expansion x1.2
-     
-     
+# ** for the "preview"
+# - set edge thickness to 5 and label font to 36pt. curved edges work OK
+# - uncheck "proportional size" on node and edge
+# - when exporting to PNG, set a 25% margin otherwise it gets cropped!
+
+
+# ##
+# ## gephi output of term associations for NEW terms
+# ##
+# #node=term, weighting=freq in new set
+# #edge=co-occurrence in a documet, weighting = number of docs in which the terms co-occur (not weighted by freq!)
+# nodes1.df<-data.frame(Id=names(term.sums.new.sel),Label=new.sel.words,Weight=as.numeric(term.sums.new.sel))
+# edges1.df<-data.frame()
+# #use the binary occurrence doc-term-matrix in plain matrix form for easy calcs
+# mat.bin<-as.matrix(dtm.bin.new)
+# #loop over terms, this loop is one end of each edge
+# for(t in 2:length(term.sums.new.sel)){
+#    edge.weights<-colSums(mat.bin[,t]*mat.bin)
+#    edges1.df<-rbind(edges1.df,data.frame(
+#               Source=names(term.sums.new.sel)[t],
+#               Target=names(term.sums.new.sel)[1:(t-1)],#omits the self-referential edge and avoids double counting edges (A-B and B-A)
+#               Type="Undirected",Weight=edge.weights[1:(t-1)]))
+# }
+# #find the min/max co-occurrences for reporting
+# min.cooccurrence<-min(edges1.df["Weight"])
+# max.cooccurrence<-max(edges1.df["Weight"])
+# mean.cooccurrence<-mean(edges1.df["Weight"])
+# max.edges.df<-edges1.df[which(edges1.df["Weight"] == max(edges1.df["Weight"])),]
+# print("New Term Co-occurrence Stats")
+# print(summary(edges1.df["Weight"]))
+# #remove cases where there is no co-occurrence
+# edges1.df<-subset(edges1.df,Weight>0)
+# #save to disk
+# write.csv(nodes1.df, file="Gephi/NewTerm-Co-occurence Nodes.csv")
+# write.csv(edges1.df, file="Gephi/NewTerm-Co-occurence Edges.csv")
+#          
+# 
+# 
+# ##
+# ## gephi output of term associations for above-threshold rising terms
+# ##
+# #node=term, weighting=rising ratio
+# #edge=co-occurrence in a documet, weighting = number of docs in which the terms co-occur (not weighted by freq!)
+# nodes1.df<-data.frame(Id=names(rise.ratio),Label=rising.selected.words,Weight=as.numeric(rise.ratio))
+# edges1.df<-data.frame()
+# #use the binary occurrence doc-term-matrix in plain matrix form for easy calcs
+# mat.bin<-as.matrix(dtm.bin.rising)
+# #loop over terms, this loop is one end of each edge
+# for(t in 2:length(rise.ratio)){
+#    edge.weights<-colSums(mat.bin[,t]*mat.bin)
+#    edges1.df<-rbind(edges1.df,data.frame(
+#               Source=names(rise.ratio)[t],
+#               Target=names(rise.ratio)[1:(t-1)],#omits the self-referential edge and avoids double counting edges (A-B and B-A)
+#               Type="Undirected",Weight=edge.weights[1:(t-1)]))
+# }
+# #find the min/max co-occurrences for reporting
+# min.cooccurrence<-min(edges1.df["Weight"])
+# max.cooccurrence<-max(edges1.df["Weight"])
+# mean.cooccurrence<-mean(edges1.df["Weight"])
+# max.edges.df<-edges1.df[which(edges1.df["Weight"] == max(edges1.df["Weight"])),]
+# print("Rising Term Co-occurrence Stats")
+# print(summary(edges1.df["Weight"]))
+# #remove cases where there is no co-occurrence (oddly this seems quite rare)
+# edges1.df<-subset(edges1.df,Weight>0)
+# #save to disk
+# write.csv(nodes1.df, file="Gephi/RisingTerm-Co-occurence Nodes.csv")
+# write.csv(edges1.df, file="Gephi/RisingTerm-Co-occurence Edges.csv")
+# ## **** notes on importing into Gephi (v0.8 alpha used)
+# # import nodes then edges from CSV files. Make Node Weight be a float and de-select the "*" columns
+# # show node labels, use "statistics" to calculate an unweighted degree
+# # Use "ranking" to set node and edge size/colour
+# # - node size = imported weight (=%rise). Scale the size proportional to the sqrt(% rise)
+# # - node label size = same treatment as node size
+# # - node colour = degree. Set the colour range from #FF5000 to #00D620
+# # - edge size = imported weight (=number of co-occurrences). Scale proportional to the weight
+# # NB the actual scale may need a multiplier/factor to be applied.
+# # Use a circular auto-layout, with "no overlap" and with nodes ordered by degree
+# # - may need to do a label adjust too.
+# # - generally apply one step of expansion x1.2
+
 ##       
 ## find docs containing the above-threshold new terms, sorted most-numerous first
 ##
 # improve this - find URL for each 
-new.selected.term.ids.asc<-order(term.sums.new.sel, decreasing=TRUE) ###################
-dtm.bin.new<-dtm.bin.new[,names(term.sums.new.sel[new.selected.term.ids.asc])]
-print("Documents for New Terms (most numerous term first) - see RF_Terms.log")
+#new.selected.term.ids.asc<-order(term.sums.new.sel, decreasing=TRUE)
+#dtm.bin.new<-dtm.bin.new[,names(term.sums.new.sel[new.selected.term.ids.asc])]
+print("Documents for New Terms (alphabetical) - see RF_Terms.log")
 # re-jig the sink to only print this stuff to file
 sink()
 sink(file="RF_Terms.log", append=TRUE, type="output", split=FALSE)
@@ -432,23 +726,13 @@ new.doclist<-NULL
 ii<-1
 for (i in Terms(dtm.bin.new)){
    print(paste("Documents containing term:",i)) #########################
-   corp.for.term<-corp.new[Docs(dtm.bin.new[row_sums(dtm.bin.new[,i])>0,])]
-   empty.field.c<-rep(NA,length(corp.for.term))
-   df.for.term<-data.frame(origin=empty.field.c, date=empty.field.c, heading=empty.field.c,authors=empty.field.c,id=empty.field.c,abstract=empty.field.c, stringsAsFactors=FALSE)
-   jj<-1
-   for (j in corp.for.term){
-      df.for.term[jj,]<-c(conference.name[as.integer(meta(j, tag="Origin"))], as.character(meta(j, tag="DateTimeStamp")), as.character(meta(j, tag="Heading")),  as.character(meta(j, tag="Author")), as.character(meta(j, tag="ID")), as.character(j))
-        print("")
-        print(df.for.term[jj,"heading"])
-        print(paste(df.for.term[jj,"origin"],df.for.term[jj,"date"],", ",df.for.term[jj,"authors"],", ", "ID=", df.for.term[jj,"id"], sep=""))
-        print(df.for.term[jj,"abstract"])
-      jj<-jj+1
-   }
-   new.doclist[[ii]]<-df.for.term
+   doc_ids.for.term<-Docs(dtm.bin.new[row_sums(dtm.bin.new[,i])>0,])
+   corp.for.term<-corp.new[doc_ids.for.term]
+   new.doclist[[ii]]<-ExtractDocs(corp.for.term, doc_ids.for.term)
    ii<-ii+1
    print("============")
 }
-names(new.doclist)<-new.sel.words[new.selected.term.ids.asc]
+names(new.doclist)<-new.sel.words
 # re-jig back to showing on console and logging
 sink()
 sink(file="RF_Terms.log", append=TRUE, type="output", split=TRUE)
@@ -457,12 +741,12 @@ sink(file="RF_Terms.log", append=TRUE, type="output", split=TRUE)
 ## find docs containing the above-threshold rising terms, sorted most-rising first
 ##
 # improve this - find URL for each 
-rising.selected.term.ids.asc<-order(rise.ratio, decreasing=TRUE)
-dtm.bin.rising<-dtm.bin.rising[,rising.selected.term.ids.asc]
+#rising.selected.term.ids.asc<-order(rise.ratio, decreasing=TRUE)
+#dtm.bin.rising<-dtm.bin.rising[,rising.selected.term.ids.asc]
 print("Statistics for the number of different above-threshold rising terms in each Target doc with at least one such term")
 print(dtm.bin.rising)
 summary(cnt.docs_with_rising)
-print("Documents for Rising Terms (most rising term first) - see RF_Terms.log")
+print("Documents for Rising Terms (alphabetical) - see RF_Terms.log")
 # re-jig the sink to only print this stuff to file
 sink()
 sink(file="RF_Terms.log", append=TRUE, type="output", split=FALSE)
@@ -471,28 +755,26 @@ rising.doclist<-NULL
 ii<-1
 for (i in Terms(dtm.bin.rising)){
    print(paste("Documents containing term:",i))
-   corp.for.term<-corp.rising[Docs(dtm.bin.rising[row_sums(dtm.bin.rising[,i])>0,])]
-   empty.field.c<-rep(NA,length(corp.for.term))
-   df.for.term<-data.frame(origin=empty.field.c, date=empty.field.c, heading=empty.field.c,authors=empty.field.c,id=empty.field.c,abstract=empty.field.c, stringsAsFactors=FALSE)
-   jj<-1
-   for (j in corp.for.term){
-      df.for.term[jj,]<-c(conference.name[as.integer(meta(j, tag="Origin"))] , as.character(meta(j, tag="DateTimeStamp")), as.character(meta(j, tag="Heading")),  as.character(meta(j, tag="Author")), as.character(meta(j, tag="ID")), as.character(j))
-        print("")
-        print(df.for.term[jj,"heading"])
-        print(paste(df.for.term[jj,"origin"],df.for.term[jj,"date"],", ",df.for.term[jj,"authors"],", ", "ID=", df.for.term[jj,"id"], sep=""))
-        print(df.for.term[jj,"abstract"])
-      jj<-jj+1
-   }
-   rising.doclist[[ii]]<-df.for.term
+   doc_ids.for.term<-Docs(dtm.bin.rising[row_sums(dtm.bin.rising[,i])>0,])
+   corp.for.term<-corp.rising[doc_ids.for.term]
+   rising.doclist[[ii]]<-ExtractDocs(corp.for.term, doc_ids.for.term)
    ii<-ii+1
    print("============")
 }
-names(rising.doclist)<-rising.selected.words[rising.selected.term.ids.asc]
+names(rising.doclist)<-rising.selected.words
   
 # re-jig back to showing on console and logging
 sink()
 sink(file="RF_Terms.log", append=TRUE, type="output", split=TRUE)
-        
+     
+##
+## Documents containing extreme or outlier "auxillary metrics" - novelty or subjectivity
+##
+#novelty
+df.std.nov.extreme<-ExtractDocs(corp, std.nov.extreme)
+#Subjectivity
+df.subj.outliers<-ExtractDocs(corp,subj.outliers)
+
 ##
 ## find docs containing several different above-threshold rising terms. 
 ##

@@ -41,6 +41,7 @@ publisher.url <- c("http://ieeexplore.ieee.org/xpl/mostRecentIssue.jsp?punumber=
 ## ensure subdirectories exist
 dir.create("Gephi", showWarnings=FALSE)
 dir.create("Images", showWarnings=FALSE)
+dir.create("Wordle", showWarnings=FALSE)
 
 ##
 ## Run properties - normally the same between different sources of the same kind for comparability
@@ -61,6 +62,16 @@ last.date<-key.date;last.date$year<-last.date$year+1
 doc_count.thresh <- 2
 # p-value to accept the "alternative hypothesis" that there is something interesting
 thresh.pval<-0.01 #i.e. accept a 1% chance that null hypothesis falsely rejected
+#max frequency of term in the past set for eligibility as a weak signal.
+#Above this, sigifnicant risers are "established terms"
+max.past.freq<-0.0002 #i.e. 0.02%
+# *for plotting* cap rising % at this level. If value greater then plot is effectively cut off
+rising.plot.max<-800
+
+#novelty calc
+term.doc_occurrence.max<-0.1#remove terms appearing in more than 10% of documents
+std.novelty.min<-0.33 #a min value of the "standard novelty"
+
 ##
 ## End setup
 ##
