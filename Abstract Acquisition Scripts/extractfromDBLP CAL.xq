@@ -1,0 +1,2 @@
+ root()/*:dblp/*:article[journal[text() = "Computers &amp; Education"]][volume[text()="54"]][number[text()="3"]]|
+ root()/*:dblp/*:article[journal[text() = "Computers &amp; Education"]][volume[text()="50"]][number[text()="2"]]
