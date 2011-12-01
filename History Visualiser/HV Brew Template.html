@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<%if(isGadget){-%>
+<Module>
+  <ModulePrefs title="History Visualiser: <%=title.common%> - <%=run.title%>" height="400">
+ <Require feature="dynamic-height"/>
+ </ModulePrefs>
+  <Content type="html">
+    <![CDATA[
+<%}else{-%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<%}-%>
+<head>
+  <title>History Visualiser: <%=title.common%> - <%=run.title%></title>
+  <meta name="AUTHOR" content="Adam Cooper" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+  <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    
+  <style type="text/css">
+	body { background-color: #efefef; padding: 10px;}
+	div.nice { width: 270px; float: left; padding: 10px;}
+	div.clear { clear: both;} 
+	div.reduced {font-size: 12px; font-family: arial; color: black; clear: both;}
+  </style>
+
+  
+  <script language="javascript" type="text/javascript">
+	var gadgets;
+      
+      	google.load('visualization', '1', {'packages':['motionchart']});
+      	google.setOnLoadCallback(drawChart);
+      	function drawChart() {
+      		var options = {};
+      		options['width']=800;
+      		options['height']=600;
+      		//options['showSidePanel']=false;
+      		options['state']='{"orderedByY":false,"nonSelectedAlpha":0.4,"yLambda":1,"orderedByX":false,"uniColorForNonSelected":false,"colorOption":"_UNIQUE_COLOR","duration":{"multiplier":1,"timeUnit":"D"},"dimensions":{"iconDimensions":["dim0"]},"time":"<%=start.year-%>","sizeOption":"3","xLambda":1,"yAxisOption":"2","yZoomedDataMax":0.482607903842652,"showTrails":false,"iconKeySettings":[],"xAxisOption":"4","xZoomedDataMin":0.0986460348162476,"yZoomedDataMin":0.00411793773678142,"playDuration":15000,"xZoomedDataMax":0.19340061126913,"xZoomedIn":false,"iconType":"BUBBLE","yZoomedIn":false}';
+        	var data = new google.visualization.DataTable();
+        	data.addColumn('string', 'Term');
+        	data.addColumn('date', 'Date');
+        	data.addColumn('number', 'Frequency (%)');
+        	data.addColumn('number', 'Documents (%)');
+        	data.addColumn('number', 'Subjectivity');
+        	data.addColumn('number', 'Positive Sentiment');
+        	data.addColumn('number', 'Negative Sentiment');
+        	data.addRows([
+        	//injected data from R. cannot use rjson because types vary
+        		<%for(i in 1:row.count){%>
+        		['<%=as.character(data.rows[i,1])%>',new Date('<%=as.character(data.rows[i,2])%>'),<%=data.rows[i,3]%>,<%=data.rows[i,4]%>,<%=data.rows[i,5]%>,<%=data.rows[i,6]%>,<%=data.rows[i,7]%>]
+			<%if(i<row.count){%>,<%}%>
+			<%}%>
+          	]);
+        	var chart = new google.visualization.MotionChart(document.getElementById('chart_div'));
+        	chart.draw(data, options);
+      	}
+  </script>
+
+</head>
+
+<body>
+<%if(!isGadget){-%>
+<h1><%=title.common%> - <%=run.title%></h1>
+<%}-%>
+<div id="chart_div"></div>
+
+<p>
+This shows the history of the way certain terms have been used (related words are counted also, e.g. &quot;gaming&quot; would be counted as &quot;game&quot;). The chart loads up showing each term as a different coloured blob with a size determined by the percentage of abstracts that contain it and a location on the graph to show the term frequency and the average &quot;subjectivity&quot; of abstracts containing the term. &quot;Subjectivity&quot; is calculated as the fraction of words that generally have either a positive or negative sentiment connotation. Calculations were conducted for all abstracts for all conferences in <%=slice.size-%> month slices and spline interpolation used to give the impression of a smooth change. In total, <%=docs.used-%> abstracts were used.
+</p>
+
+<p><em>NB: observe the scales and be aware that insignificant fluctuations in the data may be magnified (especially true for &quot;subjectivity&quot; and sentiment scores.</em></p>
+</body>
+<%if(isGadget){-%>
+    ]]>
+  </Content>
+</Module>
+<%}else{-%>
+</html>
+<%}%>

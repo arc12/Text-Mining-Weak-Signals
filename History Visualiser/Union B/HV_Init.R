@@ -1,0 +1,75 @@
+## ***Made available using the The MIT License (MIT)***
+# Copyright (c) 2011, Adam Cooper
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+## ************ end licence ***************
+##
+## This contains the parameters for running a specific dataset against the HistoryVis.R Method
+## It should be executed first
+##
+
+## Run Properties - dependent on the source
+#the output directory. NB convention to include the year
+output.dir<-"/home/arc1/R Projects/Text Mining Weak Signals Output/History Visualiser/Union B"
+brew.dir<-"/home/arc1/R Projects/Text Mining Weak Signals/History Visualiser"
+dir.create(output.dir, showWarnings=TRUE)
+setwd(output.dir)
+abstracts.csv <- c("/home/arc1/R Projects/Source Data/ICALT Abstracts 2004-2011.csv",
+                   "/home/arc1/R Projects/Source Data/CAL Abstracts 2007-2009.csv",
+                   "/home/arc1/R Projects/Source Data/ECTEL Abstracts 2006-2011.csv",
+                   "/home/arc1/R Projects/Source Data/ICWL Abstracts 2004-2011.csv")
+conference.name <- c("ICALT",
+                     "CAL",
+                     "ECTEL",
+                     "ICWL")
+conference.title <- c("IEEE International Conference on Advanced Learning Technologies",
+                      "Computer Assisted Learning Conference",
+                      "European Conference on Technology Enhanced Learning",
+                      "International Conference on Web-based Learning")
+                  
+##
+## Run properties - normally the same between different sources of the same kind for comparability
+##
+today<-as.POSIXlt(Sys.Date(), tz = "GMT")
+start.year<-2005
+end.year<-2010
+# data interval control.
+slice.size<-12 #how many months in a time slice used in the analysis. the last slice is is from start month 1 in the end.year to the end of month "slice.size" in end.year
+interpolate.size<-3 #number of months between interpolated points in the output; 1 "row" is created for each interval. No interpolation if slice.size = interpolate.size
+num.slices<-12*(end.year-start.year)/slice.size+1
+if(slice.size==interpolate.size){
+   num.interpolate <- num.slices
+}else{
+   num.interpolate<-slice.size*num.slices/interpolate.size+1
+}
+init.date<-as.POSIXlt(paste(start.year,"1","1",sep="-"), tz = "GMT")
+slice.start.dates<-as.POSIXlt(seq.POSIXt(init.date, by=paste(slice.size,"months"), length.out=num.slices))
+interpolate.start.dates<-as.POSIXlt(seq.POSIXt(init.date, by=paste(interpolate.size,"months"), length.out=num.interpolate))
+
+##
+## Which Terms to run for
+##
+title.common<-"Conference Proceedings from ICALT, CAL ECTEL and ICWL"
+titles<-c("terms that dipped in 2010 compared to the previous 4 years",
+          "terms that rose in 2010 and where established in the previous 4 years",
+          "terms that rose in 2010 from a low level in the previous 4 years")
+          #"Run the Second")#should match each of the entries in the following list
+# NB!!!!!!!!! these are the STEMMED terms
+term.lists<-list(Falling=c("blog","content","databas","ontolog","project"),             Established=c("activ","condit","conduct","differ","emot","game","gamebas","motiv","path","profil","strategi","tutor","video"),
+Rising=c("besid","competit","eassess","figur","gameplay","gender","hybrid","negat","oral","ples","probabilist","public","qti","risk","selfreflect","serious","statement","tablet","tangibl","uptak","wil"))
+# .... and these are the pretty versions for display
+word.lists<-list(Falling=c("blog","content","database","ontology","project"),          Established=c("active","condition","conduct","different","emotion","game","gamebas","motivator","path","profile","strategies","tutor","video"),
+Rising=c("besides","competitive","eassess","figure","gameplay","gender","hybrid","negative","oral","ples","probabilistic","public","qti","risk","selfreflect","serious","statements","tablet","tangible","uptake","will"))
+
+##
+## End setup
+##
+
+
+
+# in interactive execution it may be best to skip this command and to manually switch to it
+#source("../RF_Terms.R")
