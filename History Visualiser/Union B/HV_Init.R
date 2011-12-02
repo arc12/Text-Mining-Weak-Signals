@@ -13,23 +13,27 @@
 ##
 
 ## Run Properties - dependent on the source
-#the output directory. NB convention to include the year
-output.dir<-"/home/arc1/R Projects/Text Mining Weak Signals Output/History Visualiser/Union B"
-brew.dir<-"/home/arc1/R Projects/Text Mining Weak Signals/History Visualiser"
+base.dir<-"/home/arc1/R Projects/Text Mining Weak Signals"
+source.dir<-paste(base.dir,"Source Data",sep="/")
+set.name<-"Union B 2005 to 2010"
+output.dir<-paste("/home/arc1/R Projects/Text Mining Weak Signals Output/History Visualiser",set.name,sep="/")
+brew.dir<-paste(base.dir,"History Visualiser",sep="/")
+web.page.base<-paste("http://arc12.github.com/Text-Mining-Weak-Signals-Output/History%20Visualiser",set.name, sep="/")
+
 dir.create(output.dir, showWarnings=TRUE)
 setwd(output.dir)
-abstracts.csv <- c("/home/arc1/R Projects/Source Data/ICALT Abstracts 2004-2011.csv",
-                   "/home/arc1/R Projects/Source Data/CAL Abstracts 2007-2009.csv",
-                   "/home/arc1/R Projects/Source Data/ECTEL Abstracts 2006-2011.csv",
-                   "/home/arc1/R Projects/Source Data/ICWL Abstracts 2004-2011.csv")
+abstracts.csv <- c("ICALT Abstracts 2005-2011 with metrics.csv",
+                   "ECTEL Abstracts 2006-2011 with metrics.csv",
+                   "ICWL Abstracts 2005-2011 with metrics.csv",
+                   "CAL Abstracts 2007-2009 with metrics.csv")
 conference.name <- c("ICALT",
-                     "CAL",
                      "ECTEL",
-                     "ICWL")
+                     "ICWL",
+                     "CAL")
 conference.title <- c("IEEE International Conference on Advanced Learning Technologies",
-                      "Computer Assisted Learning Conference",
                       "European Conference on Technology Enhanced Learning",
-                      "International Conference on Web-based Learning")
+                      "International Conference on Web-based Learning",
+                      "Computer Assisted Learning Conference")
                   
 ##
 ## Run properties - normally the same between different sources of the same kind for comparability
@@ -53,7 +57,7 @@ interpolate.start.dates<-as.POSIXlt(seq.POSIXt(init.date, by=paste(interpolate.s
 ##
 ## Which Terms to run for
 ##
-title.common<-"Conference Proceedings from ICALT, CAL ECTEL and ICWL"
+title.common<-"Conference Proceedings from ICALT, ECTEL and ICWL" #CAL
 titles<-c("terms that dipped in 2010 compared to the previous 4 years",
           "terms that rose in 2010 and where established in the previous 4 years",
           "terms that rose in 2010 from a low level in the previous 4 years")

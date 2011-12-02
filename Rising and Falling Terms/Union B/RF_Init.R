@@ -13,37 +13,39 @@
 ##
 
 ## Run Properties - dependent on the source
+base.dir<-"/home/arc1/R Projects/Text Mining Weak Signals"
+source.dir<-paste(base.dir,"Source Data",sep="/")
 #the output directory. NB convention to include the year
-output.dir<-"/home/arc1/R Projects/Text Mining Weak Signals Output/Rising and Falling Terms/Union B/testing"
+output.dir<-"/home/arc1/R Projects/Text Mining Weak Signals Output/Rising and Falling Terms/Union B/2010"
 dir.create(output.dir, showWarnings=FALSE)
 setwd(output.dir)
 title<-"Rising and Falling Terms - Conference Proceedings from ICALT, CAL, ECTEL and ICWL"
-abstracts.csv <- c("/home/arc1/R Projects/Source Data/ICALT Abstracts 2004-2011.csv",
-                   "/home/arc1/R Projects/Source Data/CAL Abstracts 2007-2009.csv",
-                   "/home/arc1/R Projects/Source Data/ECTEL Abstracts 2006-2011.csv",
-                   "/home/arc1/R Projects/Source Data/ICWL Abstracts 2004-2011.csv")
-recent.themes.txt <- NA # file containing invited conference themes. Use NA if analysing blogs.
+abstracts.csv <- c("ICALT Abstracts 2005-2011 with metrics.csv",
+                   "ECTEL Abstracts 2006-2011 with metrics.csv",
+                   "ICWL Abstracts 2005-2011 with metrics.csv",
+                   "CAL Abstracts 2007-2009 with metrics.csv")
 conference.name <- c("ICALT",
-                     "CAL",
                      "ECTEL",
-                     "ICWL")
-last.conference.url <- c("http://www.ask4research.info/icalt/2010/",
-                         "",
-                         "http://www.ectel2010.org/",
-                         "http://www.hkws.org/conference/icwl2010/")
+                     "ICWL",
+                     "CAL")
 conference.title <- c("IEEE International Conference on Advanced Learning Technologies",
-                      "Computer Assisted Learning Conference",
                       "European Conference on Technology Enhanced Learning",
-                      "International Conference on Web-based Learning")
+                      "International Conference on Web-based Learning",
+                      "Computer Assisted Learning Conference")
+recent.themes.txt <- NA # file containing invited conference themes. Use NA if analysing blogs.
+last.conference.url <- c("http://www.ask4research.info/icalt/2010/",
+                         "http://www.ectel2010.org/",
+                         "http://www.hkws.org/conference/icwl2010/",
+                         "")
 publisher.series <- c("IEEE",
-                      "Elsevier Computers and Education Journal",
                       "Springer Lecture Notes in Computer Science (LNCS)",
                       "Springer Lecture Notes in Computer Science (LNCS)",
-                      "Springer Lecture Notes in Computer Science (LNCS)")
+                      "Springer Lecture Notes in Computer Science (LNCS)",
+                      "Elsevier Computers and Education Journal")
 publisher.url <- c("http://ieeexplore.ieee.org/xpl/mostRecentIssue.jsp?punumber=5570018",
-                   "http://www.journals.elsevier.com/computers-and-education/",
                    "http://www.springerlink.com/content/978-3-642-16019-6/contents/",
-                   "http://www.springer.com/computer/general+issues/book/978-3-642-17406-3")
+                   "http://www.springer.com/computer/general+issues/book/978-3-642-17406-3",
+                   "http://www.journals.elsevier.com/computers-and-education/")
                    
 ## ensure subdirectories exist
 dir.create("Gephi", showWarnings=FALSE)

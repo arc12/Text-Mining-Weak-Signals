@@ -23,7 +23,7 @@ my $booktitle="";
 my $publisher="";
 my $min_year = 2005;
 my $max_year = 2011;
-my $conf = "ICALT";
+my $conf = "ICWL";
 my $infile = "../Source Data/Raw and Part-Processed/".$conf."/".$conf." inproceedings.xml";
 my $outfile = "../Source Data/".$conf." Abstracts ".$min_year."-".$max_year.".csv";
 print "Starting - acquire abstracts $min_year -> $max_year \n";

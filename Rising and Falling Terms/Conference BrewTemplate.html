@@ -385,7 +385,7 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <em><%=df[j,"authors"]%>, <%=paste(df[j,"origin"],df[j,"date"])%> (id=<%=df[j,"id"]%>
 <%if(!is.na(top10[df[j,"id"]])){%>
 *Top 10 Abstract*<%}-%>)<br/>
-<%=paste("Ancillary Measures: Novelty=",df[j,"std.novelty"],", Subjectivity=",df[j,"subjectivity"])%></em><br/>
+<%=paste("Ancillary Measures: Novelty=",df[j,"std.novelty"],", Subjectivity=",df[j,"subjectivity"], "Max Author Betweenness=",df[j,"max.betweenness"])-%></em><br/>
 <%if(show.abstracts){%>
 <%=df[j,"abstract"]%>
 <%}#endif%>
@@ -407,7 +407,7 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <em><%=df[j,"authors"]%>, <%=paste(df[j,"origin"],df[j,"date"])%> (id=<%=df[j,"id"]%>
 <%if(!is.na(top10[df[j,"id"]])){%>
 *Top 10 Abstract*<%}-%>)<br/>
-<%=paste("Ancillary Measures: Novelty=",df[j,"std.novelty"],", Subjectivity=",df[j,"subjectivity"])%></em><br/>
+<%=paste("Ancillary Measures: Novelty=",df[j,"std.novelty"],", Subjectivity=",df[j,"subjectivity"], "Max Author Betweenness=",df[j,"max.betweenness"])-%></em><br/>
 <%if(show.abstracts){%>
 <%=df[j,"abstract"]%>
 <%}#endif%>
@@ -426,7 +426,7 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <em><%=df.std.nov.extreme[j,"authors"]%>, <%=paste(df.std.nov.extreme[j,"origin"],df.std.nov.extreme[j,"date"])%> (id=<%=df.std.nov.extreme[j,"id"]%>
 <%if(!is.na(top10[df[j,"id"]])){%>
 *Top 10 Abstract*<%}-%>)<br/>
-<%=paste("Ancillary Measures: Novelty=",df.std.nov.extreme[j,"std.novelty"],", Subjectivity=",df.std.nov.extreme[j,"subjectivity"])%></em><br/>
+<%=paste("Ancillary Measures: Novelty=",df.std.nov.extreme[j,"std.novelty"],", Subjectivity=",df.std.nov.extreme[j,"subjectivity"], "Max Author Betweenness=",df.std.nov.extreme[j,"max.betweenness"])-%></em><br/>
 <%if(show.abstracts){%>
 <%=df.std.nov.extreme[j,"abstract"]%>
 <%}%>
@@ -445,7 +445,7 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <dd>
 <em><%=df.subj.outliers[j,"authors"]%>, <%=paste(df.subj.outliers[j,"origin"],df.subj.outliers[j,"date"])%> (id=<%=df.subj.outliers[j,"id"]%><%if(!is.na(top10[df[j,"id"]])){%>
 *Top 10 Abstract*<%}-%>)<br/>
-<%=paste("Ancillary Measures: Novelty=",df.subj.outliers[j,"std.novelty"],", Subjectivity=",df.subj.outliers[j,"subjectivity"])%></em><br/>
+<%=paste("Ancillary Measures: Novelty=",df.subj.outliers[j,"std.novelty"],", Subjectivity=",df.subj.outliers[j,"subjectivity"], "Max Author Betweenness=",df.subj.outliers[j,"max.betweenness"])-%></em><br/>
 <%if(show.abstracts){%>
 <%=df.subj.outliers[j,"abstract"]%>
 <%}%>

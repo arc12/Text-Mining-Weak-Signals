@@ -12,32 +12,38 @@
 ## common functions for RF_Terms. No attempt is made to make these generic utility functions (a job for a rainy day or another life)
 ##
 
-# Given a corpus and a list of document IDs, extract document metadata and content into a dataframe
+# Given a corpus, extra metadata and a list of document IDs, extract document metadata and content into a dataframe
 # and optionally print out the extracted info
-ExtractDocs<-function(Corpus, DocIds, Print=TRUE){
+#ExtraMeta is a data frame with Doc IDs as row names, columns for max betweenness and Std Novelty
+ExtractDocs<-function(Corp, ExtraMeta, DocIds, Print=TRUE){
    empty.field.c<-rep(NA,length(DocIds))
    df<-data.frame(origin=empty.field.c, date=empty.field.c,
-         heading=empty.field.c, authors=empty.field.c, id=empty.field.c, url=empty.field.c,
+         heading=empty.field.c, authors=empty.field.c, id=empty.field.c,
+         url=empty.field.c, dblp_url=empty.field.c,
          abstract=empty.field.c, std.novelty=empty.field.c, positive=empty.field.c,
-         negative=empty.field.c, subjectivity=empty.field.c, stringsAsFactors=FALSE)
+         negative=empty.field.c, subjectivity=empty.field.c, max.betweenness=empty.field.c,
+         stringsAsFactors=FALSE)
    jj<-1
-   for (j in names(DocIds)){
+   for (j in DocIds){
       #BEWARE order is critical!
-      df[jj,]<-c(conference.name[as.integer(meta(corp[[j]], tag="Origin"))],
-         as.character(meta(corp[[j]], tag="DateTimeStamp")), as.character(meta(corp[[j]], tag="Heading")),
-         as.character(meta(corp[[j]], tag="Author")), as.character(meta(corp[[j]], tag="ID")),
-         as.character(corp[[j]], tag="URL"), as.character(corp[[j]]),
-         as.numeric(meta(corp[[j]], tag="StdNovelty")),
-         as.numeric(meta(corp[[j]], tag="Positive")),
-         as.numeric(meta(corp[[j]], tag="Negative")),
-         as.numeric(meta(corp[[j]], tag="Subjectivity")))
+      df[jj,]<-c(as.character(meta(Corp[[j]], tag="Origin")),
+         as.character(meta(Corp[[j]], tag="DateTimeStamp")), as.character(meta(Corp[[j]], tag="Heading")),
+         as.character(meta(Corp[[j]], tag="Author")), as.character(meta(Corp[[j]], tag="ID")),
+         as.character(meta(Corp[[j]], tag="URL")), as.character(meta(Corp[[j]], tag="DBLP_URL")),
+         as.character(Corp[[j]]),
+         as.numeric(ExtraMeta[j,"StdNovelty"]),
+         as.numeric(meta(Corp[[j]], tag="Positive")),
+         as.numeric(meta(Corp[[j]], tag="Negative")),
+         as.numeric(meta(Corp[[j]], tag="Subjectivity")),
+         as.numeric(ExtraMeta[j,"MaxBetweenness"]))
       if(Print){
          print("")
          print(df[jj,"heading"])
          print(paste("Metrics: std. novelty=", df[jj,"std.novelty"],
               "  + sentiment=", df[jj,"positive"],
               "  - sentiment=", df[jj,"negative"],
-              "  subjectivity=", df[jj,"subjectivity"],sep=""))
+              "  subjectivity=", df[jj,"subjectivity"],
+              "  max betweenness=",df[jj,"max.betweenness"],sep=""))
          print(paste(df[jj,"origin"],df[jj,"date"],", ",df[jj,"authors"],", ", "ID=", df[jj,"id"], sep=""))
          print(df[jj,"abstract"])
       }
@@ -55,4 +61,15 @@ LogTerms<-function(fileName, terms, words=NULL){
       cat(paste("c(\"",paste(words,collapse="\",\""),"\")",sep=""))
    }
    sink()
+}
+
+CustomStopwords<-function(){
+   #+  "paper" (which is common in journal/proceedings abstracts!)
+   SW<-c(stopwords(language = "en"),"paper","studentspsila")
+   #- some terms (and various expansions) that are relevant to the education domain
+   SW<-SW[-grep("group", SW)]
+   SW<-SW[-grep("problem", SW)]
+   SW<-SW[-grep("present", SW)]
+   SW<-SW[-grep("work", SW)]
+   return(SW)
 }

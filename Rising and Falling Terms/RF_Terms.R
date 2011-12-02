@@ -22,7 +22,7 @@ library("corpora")
 ##
 
 # various plot functions, for writing to file and the normal graphics device
-source("/home/arc1/R Projects/Text Mining Weak Signals/Rising and Falling Terms/commonFunctions.R")
+source("/home/arc1/R Projects/Text Mining Weak Signals/commonFunctions.R")
 source("/home/arc1/R Projects/Text Mining Weak Signals/Rising and Falling Terms/plotFunctions.R")
 
 #var to use to make some more space at the bottom of plots for long label (use par(mar=mar.bigmar) )
@@ -40,38 +40,25 @@ cat(paste(paste(rep("=",79),collapse="")),"\n\n")
 print(paste("From:",start.date," Split at:",key.date, sep=""))
 timestamp(stamp=date(), prefix="##TIMESTAMP: ")
 
-##
-## Prepare lexicon for sentiment analysis
-##
-##
-# Read in the sentiment word lists (cols extracted from the Harvard Inquirer spreadsheet http://www.wjh.harvard.edu/~inquirer/)
-# and process to obtain a list of dictionaries. 
-#The column headings MUST be "Entry,Positive,Negative"
-inquirer.table<-read.csv("/home/arc1/R Projects/Text Mining Weak Signals/InquirerPosNeg.csv",
-                         header=TRUE, sep=",", quote="\"", stringsAsFactors=FALSE)
-sentiment.dics<-list()
-# for each sentiment, find out which words are relevant and for cases where there is more
-# than one usage (denoted #1 in the word), select only the first one as this is the most frequent in general
-for(i in 2:length(inquirer.table[1,])){
-   dic<-inquirer.table[,"Entry"]
-   dic<-dic[inquirer.table[,i]!=""]#limit to words for sentiment
-   dic<-sub("#1","",dic)#remove '#1' from any words containing it
-   dic<-dic[-grep("#",dic)]#remove all words still containing #
-   sentiment.dics[[i-1]]<-dic
-   names(sentiment.dics)[[i-1]] <- colnames(inquirer.table)[i]
-}
+
+# This is a list of papers (id, dblp url, author-id-list)
+# the row names are made to be the DBLP URLs
+papers.table<-read.csv(paste(source.dir,"Union B Author Ids 2010.csv",sep="/"),
+                         header=TRUE, sep=",", quote="\"", row.names=2, 
+                           stringsAsFactors=FALSE) 
+# this is a list of author centrality measures (id, centrality) NB author IDs must match previous list of papers
+authors.table<-read.csv(paste(source.dir,"Author Betweenness D4_3.csv",sep="/"),
+                         header=TRUE, sep=",", quote="\"", row.names=1, 
+                           stringsAsFactors=FALSE)
 
 ##
 ## Read in the abstracts. NB this code allows for vectors of csv file names, titles etc in RF_Init.R
 ##
-#(aside) rbinding tables is faster and better than merging corpora using tm_combine, which leads to problematical duplicate document ids. handling Origin as below rather than meta(.. tag="Origin")<-value is also MUCH FASTER
+#(aside) rbinding tables is faster and better than merging corpora using tm_combine, which leads to problematical duplicate document ids.
 table<-NULL
 for (src in 1:length(abstracts.csv)){
-   # read in CSV with format year,pages,title,authors,abstract,keywords. There is a header row. title/authors/keywords are delimited by "
-   tmp_table<-read.csv(abstracts.csv[[src]],header=TRUE,sep=",",quote="\"")
-   #insert the "origin" as a new column
-   origin<-rep(src, length(tmp_table[,1]))
-   tmp_table<-cbind(origin,tmp_table)
+   # read in CSV with format year,pages,title,authors,abstract,keywords. There is a header row. 
+   tmp_table<-read.csv(paste(source.dir,abstracts.csv[[src]],sep="/"),header=TRUE,sep=",",quote="\"")
    #accumulate the table            
    table<-rbind(table,tmp_table)
    tmp_table<-NULL
@@ -79,7 +66,7 @@ for (src in 1:length(abstracts.csv)){
 # now read in the possibly-cumulated table to a corpus, handling the metadata via mapping
 #create a mapping from datatable column names to PlainTextDocument attribute names
 #"Keywords" is a user-defined "localmetadata" property while the rest are standard tm package document metadata fields
-map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url")
+map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url", Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")
 #use the mapping while reading the dataframe source to create a coprus with metadata
 corp<-Corpus(DataframeSource(table), readerControl=list(reader= readTabular(mapping=map)))
 
@@ -87,18 +74,23 @@ corp<-Corpus(DataframeSource(table), readerControl=list(reader= readTabular(mapp
 # and also not later than the target year
 #corp<-tm_filter(corp,FUN=sFilter, doclevel = TRUE, useMeta = FALSE, paste("datetimestamp>'",start.date,"'",sep=""))
 corp<-tm_filter(corp,FUN=sFilter, doclevel = TRUE, useMeta = FALSE, paste("datetimestamp<='",last.date,"' & datetimestamp>'",start.date,"'",sep=""))
+#this for additional "metadata" calculated below. This is more efficient than storing inside the corpus
+extra.meta<-data.frame(row.names="DocId", DocId=unlist(meta(corp,tag="ID",type="local")))
+
+# pull out the sentiment data
+pos.score<-unlist(meta(corp,tag="Positive", type="local"))
+if(is.null(pos.score)){
+   stop("Source data should be pre-processed to add sentiment/subjectivity - usee Pre-process.R")
+}
+neg.score<-unlist(meta(corp,tag="Negative", type="local"))
+subj.score<-unlist(meta(corp,tag="Subjectivity", type="local"))
 
 ## -----
 ## Standard pre-processing to get a document-term matrix of the entire corpus.
 ## -----
 #use the standard stopword set with a few modifications!
 #+  "paper" (which is common in journal/proceedings abstracts!)
-stop.words<-c(stopwords(language = "en"),"paper")
-#- some terms (and various expansions) that are relevant to the education domain
-stop.words<-stop.words[-grep("group", stop.words)]
-stop.words<-stop.words[-grep("problem", stop.words)]
-stop.words<-stop.words[-grep("present", stop.words)]
-stop.words<-stop.words[-grep("work", stop.words)]
+stop.words<-stop.words<-CustomStopwords()
 print("Stopwords being used")
 print(stop.words)
 cat(paste(paste(rep("-",79),collapse="")),"\n\n")
@@ -131,9 +123,7 @@ if(!is.na(recent.themes.txt)){
       barplot(themes.tw, las=2, cex.names=0.7, main="Words In the Conference Themes Description",
               ylab="Frequency")
       ad<-dev.off()
-      # TO DO? - gephi output to create a tag cloud to match
 }
-
 
 ##
 ## APply a filter using key.date to get two lists of document ids, one for past and one for recent
@@ -148,6 +138,37 @@ tsr.all<-sum(term.sums.recent)
 dtm.bin<-weightBin(dtm.tf)
 dtm.bin.recent<-dtm.bin[!past.doc_ids.bool,]
 terms.doc.cnt.recent<-col_sums(dtm.bin.recent)
+
+## ********************************
+## author centrality needs to be calculated for each paper in the recent set.
+##
+dblp_url<-unlist(meta(corp,tag="DBLP_URL", type="local"))
+dblp_url<-dblp_url[!past.doc_ids.bool]
+max.betweenness<-vector()
+for(i in 1:length(dblp_url)){
+   authors<-papers.table[as.character(dblp_url[[i]]),"AUTHOR_IDS"]
+   if(is.na(authors)){
+      print(paste("Paper in abstracts CSV was not found in authorship CSV: DBLP URL=",as.character(dblp_url[[i]])))
+   }else{
+      authors.sep<-unlist(strsplit(authors,","))
+      betweenness<-authors.table[authors.sep,]
+      max.betweenness[i]<-max(betweenness, na.rm=TRUE)
+      if(max.betweenness[i]==-Inf){
+         print(paste("Cannot find centrality measure for any of authors:",authors,"defaulting to 0.0"))
+         max.betweenness[i]<-0.0            
+      }
+   }
+}
+#use corpus doc ids as names
+names(max.betweenness)<-names(dblp_url)
+print("Summary of per-paper max author betweenness:")
+print(summary(max.betweenness))
+# add as corpus metadata - this is very slow so I should attempt to improve it
+# for(i in 1:length(max.betweenness)){
+#    meta(corp[[names(max.betweenness)[i]]],tag="MaxBetweenness")<-
+#       round(max.betweenness[[i]],digits=5)
+# }
+extra.meta[names(max.betweenness),"MaxBetweenness"]<-max.betweenness
 
 ##
 ## Compute document distances based on binary term occurrence (all terms, not just WS terms)
@@ -181,68 +202,46 @@ print(std.nov.extreme)
 basic.hist(standardised.novelty,"Standardised Novelty","","Images/StandardisedNovelty.png", Breaks=30)
 # add "standardised novelty" as corpus metadata
 # this is very slow so I should attempt to improve it
-for(i in 1:length(standardised.novelty)){
-   meta(corp[[names(standardised.novelty)[i]]],tag="StdNovelty")<-
-      round(standardised.novelty[[i]],digits=2)
-}
+# for(i in 1:length(standardised.novelty)){
+#    meta(corp[[names(standardised.novelty)[i]]],tag="StdNovelty")<-
+#       round(standardised.novelty[[i]],digits=2)
+# }
+extra.meta[names(standardised.novelty),"StdNovelty"]<-standardised.novelty
 
 ##
-## Sentiment Analysis, specifically "subjectivity"
-##
-# Use the Harvard Inquirer word lists to score sets of responses against several sentiments.
-# Do this for the recent set of abstracts only and NB this is an UNSTEMMED treatment
-# Count each occurrence of each word as a score of 1 for every word in the sentiment list.
-# "subjectivity" is the sum of positive and negative scores divided by the number of terms in the doc
-# work on the recent corpus only. keep this separate since no stemming etc
-corp.recent<-tm_filter(corp,FUN=sFilter, doclevel = TRUE, useMeta = FALSE, paste("datetimestamp>='",key.date,"'",sep=""))
-# -- positive scores
-dtm.tf.unstemmed.p<-DocumentTermMatrix(corp.recent,
-  control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics[["Positive"]])))
-pos.score<-row_sums(dtm.tf.unstemmed.p)/row_sums(dtm.bin.recent)[Docs(dtm.tf.unstemmed.p)]
-pos.terms.sums<-col_sums(dtm.tf.unstemmed.p[,col_sums(dtm.tf.unstemmed.p)>0])
-print("Summary of Positive Sentiment Scores")
-summary(pos.score)
-basic.hist(pos.score,Main="Positive Sentiment", Xlab="Score",
+## Sentiment Analysis, specifically "subjectivity" was calculated in pre-processing
+pos.score.recent<-pos.score[!past.doc_ids.bool]
+neg.score.recent<-neg.score[!past.doc_ids.bool]
+subj.score.recent<-subj.score[!past.doc_ids.bool]
+#pos.terms.sums<-col_sums(dtm.tf.unstemmed.p[,col_sums(dtm.tf.unstemmed.p)>0])
+print("Summary of Positive Sentiment Scores in Recent Set")
+summary(pos.score.recent)
+basic.hist(pos.score.recent,Main="Positive Sentiment (Recent Documents)", Xlab="Score",
            OutputFile="Images/PosSentiment.png", Breaks=20)
 # -- negative scores
-dtm.tf.unstemmed.n<-DocumentTermMatrix(corp.recent,
-  control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics[["Negative"]])))
-neg.score<-row_sums(dtm.tf.unstemmed.n)/row_sums(dtm.bin.recent)[Docs(dtm.tf.unstemmed.n)]
-neg.terms.sums<-col_sums(dtm.tf.unstemmed.n[,col_sums(dtm.tf.unstemmed.n)>0])
 print("Summary of Negative Sentiment Scores")
-summary(neg.score)
-basic.hist(neg.score,Main="Negative Sentiment", Xlab="Score",
+summary(neg.score.recent)
+basic.hist(neg.score.recent,Main="Negative Sentiment", Xlab="Score",
            OutputFile="Images/NegSentiment.png", Breaks=20)
 # -- subjectivity
-subjectivity<-pos.score + neg.score
-subj.summary<-summary(subjectivity)
+subj.summary<-summary(subj.score.recent)
 print("Summary of Subjectivity Scores (positive+negative)")
 print(subj.summary)
 #upper outliers as plotted on the boxplot (plotted further on)
 subj.thresh<-(5*subj.summary[["3rd Qu."]]-3*subj.summary[["1st Qu."]])/2
-subj.outliers<-subjectivity[subjectivity>subj.thresh]
+subj.outliers<-subj.score.recent[subj.score.recent>subj.thresh]
 # plot sentiment balance for most "sentinental" docs
-subj.9th.dec<-quantile(subjectivity,0.9)
-sentiment.barplot(neg.score[subjectivity>=subj.9th.dec],
-                  pos.score[subjectivity>=subj.9th.dec], Main="9th Decile Subjectivity",
+subj.9th.dec<-quantile(subj.score.recent,0.9)
+sentiment.barplot(neg.score.recent[subj.score.recent>=subj.9th.dec],
+                  pos.score.recent[subj.score.recent>=subj.9th.dec], Main="9th Decile Subjectivity",
                   Ylab="Subjectivity", OutputFile="Images/TopSubjectivity.png")
-# add sentiment (pos,neg,subj) to corpus metadata
-for(i in 1:length(subjectivity)){
-   meta(corp[[names(subjectivity)[i]]],tag="Positive")<- as.numeric(round(pos.score[i], digits=2))
-   meta(corp[[names(subjectivity)[i]]],tag="Negative")<- as.numeric(round(neg.score[i], digits=2))
-   meta(corp[[names(subjectivity)[i]]],tag="Subjectivity")<- as.numeric(round(subjectivity[i], digits=2))
-}  
-print("********* Occurrence of Positive Terms in the Recent Document Set *********")
-print(pos.terms.sums)
-print("********* Occurrence of Negative Terms in the Recent Document Set *********")
-print(neg.terms.sums)
 
 # quick view of sentiment and subjectivity distributions and outliers
 # upper outliers are above a limit = 3rd quartile + 1.5*inter_quartile_range
 #  (inter quartile range = difference between 1st and 3rd quartiles)
 # lower outliers are not expected but have an analogously-defined limit relative to the 1stQ
 # the plot "whiskers" default to the outlier limits described above or to the most extreme data-point if less than these limits.
-basic.boxplot(list(Positive=pos.score,Negative=neg.score,Subjectivity=subjectivity), Ylab="Sentment Score", OutputFile="Images/SentimentComparison.png")
+basic.boxplot(list(Positive=pos.score.recent,Negative=neg.score.recent,Subjectivity=subj.score.recent), Ylab="Sentiment Score", OutputFile="Images/SentimentComparison.png")
 
 #GET some boolean filters for three groups, Rising, Falling and New. No decision on significance yet!
 #term sums of 0 in the past must be new terms, since we know the corpus sum>0
@@ -360,7 +359,7 @@ print("Top 10 documents containing the most distinct rising, established or new 
 print(top10)
 
 ##
-## Compute mean novelty and subjectivity of documents containing the significant new/rising terms
+## Find novelty, max author centrality and subjectivity of documents containing the significant new/rising terms
 ##
 # new
 std.nov.terms.new<-NULL
@@ -369,7 +368,11 @@ for (nt in Terms(dtm.tf.new)){
 }
 subj.terms.new<-NULL
 for (nt in Terms(dtm.tf.new)){
-   subj.terms.new[[nt]]<-subjectivity[Docs(dtm.tf.new[as.matrix(dtm.tf.new[,nt])>0,nt])]
+   subj.terms.new[[nt]]<-subj.score.recent[Docs(dtm.tf.new[as.matrix(dtm.tf.new[,nt])>0,nt])]
+}
+betweenness.terms.new<-NULL
+for (nt in Terms(dtm.tf.new)){
+   betweenness.terms.new[[nt]]<-max.betweenness[Docs(dtm.tf.new[as.matrix(dtm.tf.new[,nt])>0,nt])]
 }
 #rising
 std.nov.terms.rising<-NULL
@@ -378,9 +381,12 @@ for (nt in Terms(dtm.tf.rising)){
 }
 subj.terms.rising<-NULL
 for (nt in Terms(dtm.tf.rising)){
-   subj.terms.rising[[nt]]<-subjectivity[Docs(dtm.tf.rising[as.matrix(dtm.tf.rising[,nt])>0,nt])]
+   subj.terms.rising[[nt]]<-subj.score.recent[Docs(dtm.tf.rising[as.matrix(dtm.tf.rising[,nt])>0,nt])]
 }
-
+betweenness.terms.rising<-NULL
+for (nt in Terms(dtm.tf.rising)){
+   betweenness.terms.rising[[nt]]<-max.betweenness[Docs(dtm.tf.rising[as.matrix(dtm.tf.rising[,nt])>0,nt])]
+}
 
 ##
 ## Output of New Terms Results
@@ -728,7 +734,7 @@ for (i in Terms(dtm.bin.new)){
    print(paste("Documents containing term:",i)) #########################
    doc_ids.for.term<-Docs(dtm.bin.new[row_sums(dtm.bin.new[,i])>0,])
    corp.for.term<-corp.new[doc_ids.for.term]
-   new.doclist[[ii]]<-ExtractDocs(corp.for.term, doc_ids.for.term)
+   new.doclist[[ii]]<-ExtractDocs(corp.for.term, ExtraMeta=extra.meta, DocIds=doc_ids.for.term)
    ii<-ii+1
    print("============")
 }
@@ -757,7 +763,7 @@ for (i in Terms(dtm.bin.rising)){
    print(paste("Documents containing term:",i))
    doc_ids.for.term<-Docs(dtm.bin.rising[row_sums(dtm.bin.rising[,i])>0,])
    corp.for.term<-corp.rising[doc_ids.for.term]
-   rising.doclist[[ii]]<-ExtractDocs(corp.for.term, doc_ids.for.term)
+   rising.doclist[[ii]]<-ExtractDocs(corp.for.term, ExtraMeta=extra.meta, DocIds=doc_ids.for.term)
    ii<-ii+1
    print("============")
 }
@@ -771,9 +777,9 @@ sink(file="RF_Terms.log", append=TRUE, type="output", split=TRUE)
 ## Documents containing extreme or outlier "auxillary metrics" - novelty or subjectivity
 ##
 #novelty
-df.std.nov.extreme<-ExtractDocs(corp, std.nov.extreme)
+df.std.nov.extreme<-ExtractDocs(corp,  ExtraMeta=extra.meta, DocIds=names(std.nov.extreme))
 #Subjectivity
-df.subj.outliers<-ExtractDocs(corp,subj.outliers)
+df.subj.outliers<-ExtractDocs(corp, ExtraMeta=extra.meta, DocIds=names(subj.outliers))
 
 ##
 ## find docs containing several different above-threshold rising terms. 

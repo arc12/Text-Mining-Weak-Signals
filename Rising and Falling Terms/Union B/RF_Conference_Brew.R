@@ -7,7 +7,7 @@ library("tm")
 library("brew")
 
 # Load the RF_Terms workspace
-setwd("/home/arc1/R Projects/Text Mining Weak Signals Output/Rising and Falling Terms/Union B/testing")
+setwd("/home/arc1/R Projects/Text Mining Weak Signals Output/Rising and Falling Terms/Union B/2010")
 load("RF_Terms.RData")
 
 # the template is assumed to be in the parent directory since this script is assumed to be in a conference-specific directory

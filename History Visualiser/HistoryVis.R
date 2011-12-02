@@ -21,71 +21,41 @@ library("brew")
 ##
 ## NB {data_set_name}/HV_Init.R should be run first to establish the run parameters
 ##
-
+source(paste(base.dir,"commonFunctions.R",sep="/"))
 while(sink.number()>0)
   {sink()}
 sink(file="HistoryVis.log", append=FALSE, type="output", split=TRUE)
 
 ##
-## Prepare lexicon for sentiment analysis
-##
-##
-# Read in the sentiment word lists (cols extracted from the Harvard Inquirer spreadsheet http://www.wjh.harvard.edu/~inquirer/)
-# and process to obtain a list of dictionaries. 
-#The column headings MUST be "Entry,Positive,Negative"
-inquirer.table<-read.csv("/home/arc1/R Projects/Text Mining Weak Signals/InquirerPosNeg.csv",
-                         header=TRUE, sep=",", quote="\"", stringsAsFactors=FALSE)
-sentiment.dics<-list()
-# for each sentiment, find out which words are relevant and for cases where there is more
-# than one usage (denoted #1 in the word), select only the first one as this is the most frequent in general
-for(i in 2:length(inquirer.table[1,])){
-   dic<-inquirer.table[,"Entry"]
-   dic<-dic[inquirer.table[,i]!=""]#limit to words for sentiment
-   dic<-sub("#1","",dic)#remove '#1' from any words containing it
-   dic<-dic[-grep("#",dic)]#remove all words still containing #
-   sentiment.dics[[i-1]]<-dic
-   names(sentiment.dics)[[i-1]] <- colnames(inquirer.table)[i]
-}
-
-
-##
 ## Read in the abstracts. NB this code allows for vectors of csv file names
 ##
-#(aside) rbinding tables is faster and better than merging corpora using tm_combine, which leads to problematical duplicate document ids. handling Origin as below rather than meta(.. tag="Origin")<-value is also MUCH FASTER
+#(aside) rbinding tables is faster and better than merging corpora using tm_combine, which leads to problematical duplicate document ids.
 table<-NULL
 for (src in 1:length(abstracts.csv)){
    # read in CSV with format year,pages,title,authors,abstract,keywords. There is a header row. title/authors/keywords are delimited by "
-   tmp_table<-read.csv(abstracts.csv[[src]],header=TRUE,sep=",",quote="\"")
-   #insert the "origin" as a new column
-   origin<-rep(src, length(tmp_table[,1]))
-   tmp_table<-cbind(origin,tmp_table)
+   tmp_table<-read.csv(paste(source.dir,abstracts.csv[[src]],sep="/"),header=TRUE,sep=",",quote="\"")
    #accumulate the table            
    table<-rbind(table,tmp_table)
    tmp_table<-NULL
 }
 # now read in the possibly-cumulated table to a corpus, handling the metadata via mapping
 #create a mapping from datatable column names to PlainTextDocument attribute names
-#"Keywords" is a user-defined "localmetadata" property while the rest are standard tm package document metadata fields
-map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url")
+#"Keywords" and after are user-defined "localmetadata" properties while the rest are standard tm package document metadata fields
+map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url", Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")
 #use the mapping while reading the dataframe source to create a coprus with metadata
 corp<-Corpus(DataframeSource(table), readerControl=list(reader= readTabular(mapping=map)))
-
-## -----
-## Standard pre-processing to get a document-term matrix of the entire corpus.
-## -----
-#use the standard stopword set with a few modifications!
-#+  "paper" (which is common in journal/proceedings abstracts!)
-stop.words<-c(stopwords(language = "en"),"paper")
-#- some terms (and various expansions) that are relevant to the education domain
-stop.words<-stop.words[-grep("group", stop.words)]
-stop.words<-stop.words[-grep("problem", stop.words)]
-stop.words<-stop.words[-grep("present", stop.words)]
-stop.words<-stop.words[-grep("work", stop.words)]
-
-#Here we go////
+# Standard document-term matrix of the entire corpus, use the standard stopword set with a few modifications!
+stop.words<-CustomStopwords()
 dtm.tf<-DocumentTermMatrix(corp,
   control=list(stemming=TRUE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=TRUE))
 dtm.bin<-weightBin(dtm.tf)
+# pull out the sentiment data
+pos.score<-unlist(meta(corp,tag="Positive", type="local"))
+if(is.null(pos.score)){
+   stop("Source data should be pre-processed to add sentiment/subjectivity - usee Pre-process.R")
+}
+neg.score<-unlist(meta(corp,tag="Negative", type="local"))
+subj.score<-unlist(meta(corp,tag="Subjectivity", type="local"))
 
 #compute some corpus and term statistics FOR INFORMATION
 print("Computed Document Term Matrix, Term-Frequency")
@@ -94,29 +64,6 @@ dtm.tf.sums<-col_sums(dtm.tf)
 cat("\n")
 print("Summary Stats of (Total) Term Occurrences in the Corpus")
 print(summary(dtm.tf.sums))
-
-##
-## Sentiment Analysis, specifically "subjectivity" at a document level. Used later to calc sentiment of docs containing term 
-##
-# Use the Harvard Inquirer word lists to score sets of responses against several sentiments.
-# Do this for the recent set of abstracts only and NB this is an UNSTEMMED treatment
-# Count each occurrence of each word as a score of 1 for every word in the sentiment list.
-# "subjectivity" is the sum of positive and negative scores divided by the number of terms in the doc
-# -- positive scores
-dtm.tf.unstemmed.p<-DocumentTermMatrix(corp,
-  control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics[["Positive"]])))
-pos.score<-row_sums(dtm.tf.unstemmed.p)/row_sums(dtm.bin)[Docs(dtm.tf.unstemmed.p)]
-pos.terms.sums<-col_sums(dtm.tf.unstemmed.p[,col_sums(dtm.tf.unstemmed.p)>0])
-# -- negative scores
-dtm.tf.unstemmed.n<-DocumentTermMatrix(corp,
-  control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics[["Negative"]])))
-neg.score<-row_sums(dtm.tf.unstemmed.n)/row_sums(dtm.bin)[Docs(dtm.tf.unstemmed.n)]
-neg.terms.sums<-col_sums(dtm.tf.unstemmed.n[,col_sums(dtm.tf.unstemmed.n)>0])
-# -- subjectivity
-subj.score<-pos.score + neg.score
-# tidy up
-rm(dtm.tf.unstemmed.p)
-rm(dtm.tf.unstemmed.n)
 
 ##
 ## Start to get results.
@@ -221,11 +168,13 @@ for (i.run in 1:length(term.lists)){
    
    #Create the HTML/JS for the Google Chart using a Brew Template
    isGadget=FALSE
+   html.page<-paste(run.name,".html",sep="")
    brew(file=paste(brew.dir,"HV Brew Template.html",sep="/"),
-     output=paste(run.name,".html",sep=""),run=TRUE)
-# isGadget=TRUE
-# brew(file=paste(brew.dir,"Brew Template - visapi.html",sep="/"),
-#      output="gadget.xml",run=TRUE)
+     output=html.page,run=TRUE)
+   isGadget=TRUE
+   web.page.url<-paste(web.page.base,html.page,sep="/")
+   brew(file=paste(brew.dir,"HV Brew Template.html",sep="/"),
+     output=paste(run.name,"gadget.xml",sep=" "),run=TRUE)
 }
 
 #stop logging
