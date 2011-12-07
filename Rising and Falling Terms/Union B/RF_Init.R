@@ -71,6 +71,7 @@ last.date<-key.date;last.date$year<-last.date$year+1
 doc_count.thresh <- 2
 # p-value to accept the "alternative hypothesis" that there is something interesting
 thresh.pval<-0.005 #i.e. accept a .5% chance that null hypothesis falsely rejected
+thresh.pval.falling<-0.01 #use a more lenient threshold for falling terms
 #max frequency of term in the past set for eligibility as a weak signal.
 #Above this, sigifnicant risers are "established terms"
 max.past.freq<-0.0002 #i.e. 0.02%

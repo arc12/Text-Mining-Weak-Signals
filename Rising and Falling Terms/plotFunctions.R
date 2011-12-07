@@ -20,6 +20,10 @@ mar.bigmar<-c(6,4,4,2)
 #boxplot with added mean values as circules
 # X is a list of lists
 basic.boxplot<-function(X, Main="", Ylab="", Names=names(X), OutputFile=NA, AddMean=TRUE){
+   if(length(X)==0){
+      empty.plot(Main,OutputFile)
+      return()
+   }
    par(mar=mar.bigmar)
    boxplot(X, main=Main, ylab=Ylab, names=Names, las=2, cex.axis=0.7) 
    if(AddMean){
@@ -38,6 +42,10 @@ basic.boxplot<-function(X, Main="", Ylab="", Names=names(X), OutputFile=NA, AddM
 
 # basic barplot with labels horizontal and under x axis
 basic.barplot<-function(X,Main,Xlab,Ylab,Names,OutputFile=NA, ForceIntYAxis=FALSE){
+   if(length(X)==0){
+      empty.plot(Main,OutputFile)
+      return()
+   }
    par(mar=mar.bigmar)
    barplot(X,main=Main, xlab=Xlab, ylab=Ylab, names.arg=Names, axes=!ForceIntYAxis)
    if(ForceIntYAxis){
@@ -56,6 +64,10 @@ basic.barplot<-function(X,Main,Xlab,Ylab,Names,OutputFile=NA, ForceIntYAxis=FALS
 
 # no x axis title or labels; labels appear inside bars
 insideLabel.barplot<-function(X,Main,Ylab,Names,OutputFile=NA, ForceIntYAxis=FALSE){
+   if(length(X)==0){
+      empty.plot(Main,OutputFile)
+      return()
+   }
    par(mar=mar.default)
    x.pos<-barplot(X,main=Main, ylab=Ylab, names.arg="", axes=!ForceIntYAxis)
    if(ForceIntYAxis){
@@ -80,6 +92,10 @@ insideLabel.barplot<-function(X,Main,Ylab,Names,OutputFile=NA, ForceIntYAxis=FAL
 }
 
 basic.hist<-function(X,Main,Xlab,OutputFile=NA, Breaks=10){
+   if(length(X)==0){
+      empty.plot(Main,OutputFile)
+      return()
+   }
    par(mar=mar.bigmar)
    #if(min(X)>=0){
    #   Xlim<-c(0, ceiling(10*max(X))/10)
@@ -99,6 +115,10 @@ basic.hist<-function(X,Main,Xlab,OutputFile=NA, Breaks=10){
 
 
 colorized.barplot<-function(X, Main, Ylab, Names, Colours, OutputFile=NA){
+   if(length(X)==0){
+      empty.plot(Main,OutputFile)
+      return()
+   }
    par(mar=mar.bigmar)
    barplot(X, las=2, cex.names=0.7, col=Colours, main=Main, ylab=Ylab, names.arg=Names)
    
@@ -111,6 +131,10 @@ colorized.barplot<-function(X, Main, Ylab, Names, Colours, OutputFile=NA){
 
 #for showing comparison between previous and current sets as stack or side-by-side
 pair.barplot<-function(X.past, X.target, Main, Ylab, Names, OutputFile=NA, Beside=FALSE){
+   if(length(X.past)==0 || length(X.target)==0){
+      empty.plot(Main,OutputFile)
+      return()
+   }
    barplot(rbind(X.past, X.target),las=2, cex.names=0.7, names.arg=Names, main=Main, legend.text=c("Previous","Target"), ylab=Ylab, beside=Beside)
    
    if(!is.na(OutputFile)){
@@ -138,6 +162,10 @@ sentiment.barplot<-function(Neg, Pos, Main, Ylab, OutputFile=NA, Beside=FALSE){
 
 #simplest heat map
 basic.heatmap<-function(M, Main, ColumnLabels, OutputFile=NA){
+   if(length(M[1,])<2 || length(M[,1])<2){
+      empty.plot(Main,OutputFile)
+      return()
+   }
    par(mar=mar.bigmar)        
    heatmap(M, main=Main, labCol=ColumnLabels, margins=c(10,5))
    
@@ -150,6 +178,10 @@ basic.heatmap<-function(M, Main, ColumnLabels, OutputFile=NA){
 
 #basic scatter plot with log y exis
 log.scatter<-function(X, Y,  Main, Xlab, Ylab, OutputFile=NA){
+   if(length(X)==0){
+      empty.plot(Main,OutputFile)
+      return()
+   }
    plot(X, Y ,main=Main, xlab=Xlab, ylab=Ylab, log="y")
    
    if(!is.na(OutputFile)){
@@ -159,3 +191,18 @@ log.scatter<-function(X, Y,  Main, Xlab, Ylab, OutputFile=NA){
    }
 }
 
+#to be used when there is no data. Useful for Brew/HTML output
+empty.plot<-function(Main, OutputFile=NA){
+   plot.new()
+   box()
+   title(Main)
+   text(x=0.5, y=0.5, "No Terms Found", pos=1)
+   if(!is.na(OutputFile)){
+   png(OutputFile, width=1000, height=1000,pointsize=12, res=150)
+   plot.new()
+   box()
+   title(Main)
+   text(x=0.5, y=0.5, "No Terms Found", pos=1)
+   ad<-dev.off()
+   }
+}

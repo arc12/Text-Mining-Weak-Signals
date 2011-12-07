@@ -159,10 +159,10 @@ It is one part of the <a href="http://blogs.cetis.ac.uk/adam/2011/05/12/weak-sig
 
 <p>Four views on the differences between the target and previous years' abstracts are presented:
 <ul>
-   <li><strong>New Terms</strong>, where this report highlights terms that meet the significance threshold and appear in at least <%=doc_count.thresh%> different recent abstracts but not at all in the previous years.</li>
-   <li><strong>Rising Terms</strong>, where term frequency rises to a statistically-significant level. A term must appear in at least <%=doc_count.thresh%> different recent abstracts but must not have an average frequency of more than <%=100*max.past.freq%>% in the previous years set. i.e. the Rising Terms view focusses on possible weak signals, possible <em>new</em> trends.</li>
+   <li><strong>New Terms</strong>, where this report highlights terms that meet the significance threshold and appear in at least <%=doc_count.thresh%> different target-year abstracts but not at all in the previous years.</li>
+   <li><strong>Rising Terms</strong>, where term frequency rises to a statistically-significant level. A term must appear in at least <%=doc_count.thresh%> different target-year abstracts but must not have an average frequency of more than <%=100*max.past.freq%>% in the previous years set. i.e. the Rising Terms view focusses on possible weak signals, possible <em>new</em> trends.</li>
    <li><strong>Established Terms</strong> are similar to "Rising Terms" but appear with a frequency of <%=100*max.past.freq%>% or more on average in the previous years and hence are considered to be established upwards trends rather than indicators of a possible weak signal. Since this report is primarily concerned with Weak Signal detection, relatively little emphasis is given to Established Terms.</li>
-   <li><strong>Falling Terms</strong>, are those terms showing a decrease between the previous years set and the recent abstracts that exceeds the significance threshold.</li>
+   <li><strong>Falling Terms</strong>, are those terms showing a decrease between the previous years set and the target-year abstracts that exceeds a significance threshold of <%=100*thresh.pval.falling%>% (more lenient for falling terms).</li>
 </ul>
 <em>For Rising, Established Falling Terms, the % change is calculated on the proportion of all stemmed words that are the term in question. For example if 2.00% of stemmed words in the previous years set was &quot;learn&quot; and 2.12% pertains to the current set, then the rise is 6%.</em>
 </p>
@@ -203,7 +203,7 @@ Figure <%=figure%><%figure<-figure+1%>: Number of terms with a given % fall befo
 <div class="clear"/>
 
 <h2>Auxillary Measures of Interest</h2>
-<p>In addition to the primary measures of interest - statistical significance and the percentage change - two more are calculated as an aid to judging the actual, as opposed to statistical, significance of differences between the previous years abstracts and the recent set. The auxillary measures apply to the abstracts and are:</p>
+<p>In addition to the primary measures of interest - statistical significance and the percentage change - two more are calculated as an aid to judging the actual, as opposed to statistical, significance of differences between the previous years abstracts and the target-year set. The auxillary measures apply to the abstracts and are:</p>
 <ul>
 <li><strong>Novelty</strong>, which is a measure of how unusual the abstract is, based on the terms appearing in it, compared to all other abstracts in the corpus.</li>
 <li><strong>Subjectivity</strong>, which is a measure of the fraction of the words used that are listed as generally having either positive or negative sentiment associated with their occurrence (the <a href="http://www.wjh.harvard.edu/~inquirer/homecat.htm">Harvard General Inquirer</a> lexicon is used). A high Subjectivity is assumed to indicate the author's active interest rather than passive observation; active interest may correlate with weak signals. A subjectivity of 0.1 indicates 10% of the words (after removel of stopwords) have connotations of positive or negative sentiment.</li>
@@ -385,7 +385,7 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <em><%=df[j,"authors"]%>, <%=paste(df[j,"origin"],df[j,"date"])%> (id=<%=df[j,"id"]%>
 <%if(!is.na(top10[df[j,"id"]])){%>
 *Top 10 Abstract*<%}-%>)<br/>
-<%=paste("Ancillary Measures: Novelty=",df[j,"std.novelty"],", Subjectivity=",df[j,"subjectivity"], "Max Author Betweenness=",df[j,"max.betweenness"])-%></em><br/>
+<%=paste("Ancillary Measures: Novelty=",round(as.numeric(df[j,"std.novelty"]),digits=3),", Subjectivity=",round(as.numeric(df[j,"subjectivity"]),digits=3), "Max Author Betweenness=",signif(as.numeric(df[j,"max.betweenness"]),digits=3))-%></em><br/>
 <%if(show.abstracts){%>
 <%=df[j,"abstract"]%>
 <%}#endif%>
@@ -407,7 +407,7 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <em><%=df[j,"authors"]%>, <%=paste(df[j,"origin"],df[j,"date"])%> (id=<%=df[j,"id"]%>
 <%if(!is.na(top10[df[j,"id"]])){%>
 *Top 10 Abstract*<%}-%>)<br/>
-<%=paste("Ancillary Measures: Novelty=",df[j,"std.novelty"],", Subjectivity=",df[j,"subjectivity"], "Max Author Betweenness=",df[j,"max.betweenness"])-%></em><br/>
+<%=paste("Ancillary Measures: Novelty=",round(as.numeric(df[j,"std.novelty"]),digits=3),", Subjectivity=",round(as.numeric(df[j,"subjectivity"]),digits=3), "Max Author Betweenness=",signif(as.numeric(df[j,"max.betweenness"]),digits=3))-%></em><br/>
 <%if(show.abstracts){%>
 <%=df[j,"abstract"]%>
 <%}#endif%>
@@ -424,9 +424,9 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <dt><a href="<%=df.std.nov.extreme[j,"url"]%>"><%=df.std.nov.extreme[j,"heading"]%></a></dt>
 <dd>
 <em><%=df.std.nov.extreme[j,"authors"]%>, <%=paste(df.std.nov.extreme[j,"origin"],df.std.nov.extreme[j,"date"])%> (id=<%=df.std.nov.extreme[j,"id"]%>
-<%if(!is.na(top10[df[j,"id"]])){%>
+<%if(!is.na(top10[df.std.nov.extreme[j,"id"]])){%>
 *Top 10 Abstract*<%}-%>)<br/>
-<%=paste("Ancillary Measures: Novelty=",df.std.nov.extreme[j,"std.novelty"],", Subjectivity=",df.std.nov.extreme[j,"subjectivity"], "Max Author Betweenness=",df.std.nov.extreme[j,"max.betweenness"])-%></em><br/>
+<%=paste("Ancillary Measures: Novelty=",round(as.numeric(df.std.nov.extreme[j,"std.novelty"]),digits=3),", Subjectivity=",round(as.numeric(df.std.nov.extreme[j,"subjectivity"]),digits=3), "Max Author Betweenness=",signif(as.numeric(df.std.nov.extreme[j,"max.betweenness"]),digits=3))-%></em><br/>
 <%if(show.abstracts){%>
 <%=df.std.nov.extreme[j,"abstract"]%>
 <%}%>
@@ -443,9 +443,9 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <%for (j in 1:length(df.subj.outliers[,1])){%>
 <dt><a href="<%=df.subj.outliers[j,"url"]%>"><%=df.subj.outliers[j,"heading"]%></a></dt>
 <dd>
-<em><%=df.subj.outliers[j,"authors"]%>, <%=paste(df.subj.outliers[j,"origin"],df.subj.outliers[j,"date"])%> (id=<%=df.subj.outliers[j,"id"]%><%if(!is.na(top10[df[j,"id"]])){%>
+<em><%=df.subj.outliers[j,"authors"]%>, <%=paste(df.subj.outliers[j,"origin"],df.subj.outliers[j,"date"])%> (id=<%=df.subj.outliers[j,"id"]%><%if(!is.na(top10[df.subj.outliers[j,"id"]])){%>
 *Top 10 Abstract*<%}-%>)<br/>
-<%=paste("Ancillary Measures: Novelty=",df.subj.outliers[j,"std.novelty"],", Subjectivity=",df.subj.outliers[j,"subjectivity"], "Max Author Betweenness=",df.subj.outliers[j,"max.betweenness"])-%></em><br/>
+<%=paste("Ancillary Measures: Novelty=",round(as.numeric(df.subj.outliers[j,"std.novelty"]),digits=3),", Subjectivity=",round(as.numeric(df.subj.outliers[j,"subjectivity"]),digits=3), "Max Author Betweenness=",signif(as.numeric(df.subj.outliers[j,"max.betweenness"]),digits=3))-%></em><br/>
 <%if(show.abstracts){%>
 <%=df.subj.outliers[j,"abstract"]%>
 <%}%>
@@ -453,8 +453,8 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <%}#j-loop%>
 </dl>
 
-<a name="credits"/>
-<h2>Copyright, Licence and Credits</h2>
+<a name="credits">
+<h2>Copyright, Licence and Credits</h2></a>
 <table>
 <tr>
 	<td><a rel="license" href="http://creativecommons.org/licenses/by/3.0/"><img alt="Creative Commons Licence" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/88x31.png" /></a></td>
@@ -463,12 +463,12 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 </table>
 
 <%if(length(conference.name)==1){%>
-<p>Quoted abstracts are &copy; the publisher, <%=publisher.series%>. Papers and a full set of abstracts may be <a href="<%=publisher.url%>">found on the publisher's website</a> and other information may be found on the <a href="<%=last.conference.url%>">conference website</a>.</p>
+<p><%if(show.abstracts){-%>Quoted abstracts are &copy; the publisher, <%=publisher.series%>.<%}%> Papers and a full set of abstracts may be <a href="<%=publisher.url%>">found on the publisher's website</a> and other information may be found on the <a href="<%=last.conference.url%>">conference website</a>.</p>
 <%}else{%>
-<p>Quoted abstracts are &copy; the respective publisher, as follows:</p>
+<p><%if(show.abstracts){-%>Quoted abstracts are &copy; the respective publisher, as follows:<%}else{%>Conference proceedings and other information may be found at:<%}%></p>
 <ul>
 <%for(conf in 1:length(conference.name)){%>
-<li><%=conference.name[conf]%>, <a href="<%=publisher.url[conf]%>">papers and a full set of abstracts</a> (<%=publisher.series[conf]%>), <a href="<%=last.conference.url[conf]%>">conference website</a>.</li>
+<li><%=conference.name[conf]%> - <a href="<%=publisher.url[conf]%>">publisher website</a><%if(last.conference.url[conf]!=""){%>,  <%=conf.year.recent%> <a href="<%=last.conference.url[conf]%>">conference website</a><%}%>.</li>
 <%}#end loop%>
 </ul>
 <%}#end if%>
@@ -477,7 +477,8 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <HR/>
 <em>Generated using Brew with &quot;Conference BrewTemplate.html&quot; v0.3.<br/>
 Source code for processing and formatting is available <a href="https://github.com/arc12/Text-Mining-Weak-Signals">on GitHub</a>.<br/>
-Thanks to Michael Ley for maintaining <a href="http://www.informatik.uni-trier.de/~ley/db/">DBLP</a> which has greatly helped to stream-line the data collection.</em>
+Thanks to Michael Ley for maintaining <a href="http://www.informatik.uni-trier.de/~ley/db/">DBLP</a> which has greatly helped to stream-line the data collection and to Michael Derntl and colleagues at <a href="http://dbis.rwth-aachen.de/cms">RWTH Aachen DBIS</a> (and TELMap partners) for the author betweenness centrality data.</em>
+<p><em>Data: the raw results are available as a <a href="Raw Results.csv">CSV download</a> under the same licence terms as this report.</em></p>
 
 </body>
 </html>

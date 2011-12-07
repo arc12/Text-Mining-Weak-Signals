@@ -327,10 +327,10 @@ corp.new<-corp[Docs(dtm.tf.new)]
 #filter down the vectors of the important measures
 #fall.term_ids.bool<- fall.term_ids.bool & (p.falling<=thresh.pval)
 rise.ratio<-rise.ratio[p.rising<=thresh.pval]
-fall.ratio<-fall.ratio[p.falling<=thresh.pval]
+fall.ratio<-fall.ratio[p.falling<=thresh.pval.falling]
 #similarly finally truncate the p-value vectors now we have finished using them as filters
 p.rising<-p.rising[p.rising<=thresh.pval]
-p.falling<-p.falling[p.falling<=thresh.pval]
+p.falling<-p.falling[p.falling<=thresh.pval.falling]# NB different threshold
 p.new<-p.new[p.new<=thresh.pval]
 #prep palette for rising/falling %s
 rf.ratio.int.min<-min(as.integer(fall.ratio))
@@ -343,6 +343,8 @@ rf.palette<-diverge_hcl(rf.ratio.int.max-rf.ratio.int.min, c = 200, l = c(40, 12
 past.freq.rising <- col_sums(dtm.tf[past.doc_ids.bool,Terms(dtm.tf.rising)])/tsp.all
 p.established.rising <- p.rising[past.freq.rising>max.past.freq]
 p.rising <- p.rising[past.freq.rising<=max.past.freq]
+dtm.tf.est<-dtm.tf.rising[,past.freq.rising>max.past.freq]
+dtm.tf.est<-dtm.tf.est[row_sums(dtm.tf.est)>0]
 dtm.tf.rising<-dtm.tf.rising[,past.freq.rising<=max.past.freq]
 dtm.tf.rising<-dtm.tf.rising[row_sums(dtm.tf.rising)>0]
 corp.rising<-corp[Docs(dtm.tf.rising)]
@@ -515,7 +517,7 @@ pair.barplot(X.past=100*f.term.sums.past/tsp.all, X.target=100*f.term.sums.recen
              OutputFile="Images/FallingTerms_PastRecent_PC.png")
 #prep palette for "unlikelihood power"
 logp.falling <- -log10(p.falling)
-palette.index.falling <- (as.integer(logp.falling) + log10(thresh.pval))*4 +1
+palette.index.falling <- (as.integer(logp.falling) + log10(thresh.pval.falling))*4 +1
 palette.index.falling[palette.index.falling>20]<-20 #flatten off extreme peaks
 up.falling.cols <- up.palette[palette.index.falling]
 colorized.barplot(logp.falling, Main="Falling Terms", Ylab="Significance (-log10(p))",
@@ -585,9 +587,7 @@ basic.heatmap(as.matrix(dtm.tf.rising), Main="Rising Terms Among Documents",
 ## Create separate small log files containing the sets of stemmed terms. (designed for use in HistoryVis)
 ##
 #start logging all std output to a file in addition to "printing" to console
-#first clean up old sinks
-while(sink.number()>0)
-  {sink()}
+
 #log to separate files
 LogTerms("NewTerms.log",names(p.new), new.sel.words)
 LogTerms("RisingTerms.log",names(p.rising),rising.selected.words)
@@ -638,7 +638,8 @@ write.csv(edges1.df, file="Gephi/SignificantTerm-Co-occurence Edges.csv", row.na
 # Use a circular auto-layout with nodes ordered by modularity class then use Frucherman Reingold
 # - may need to do a label adjust too.
 # ** for the "preview"
-# - set edge thickness to 5 and label font to 36pt. curved edges work OK
+# - set edge thickness to 5 and label font to 36pt. curved edges sometimes work OK
+# - set the opacity to somewhere between 60 and 80% so that labels show up better
 # - uncheck "proportional size" on node and edge
 # - when exporting to PNG, set a 25% margin otherwise it gets cropped!
 
@@ -810,6 +811,27 @@ for (j in corp.key_docs){
    i<-i+1
    print(paste("Contains Terms:", paste( Terms(dtm.bin.rising[key_doc.ids[i],col_sums(dtm.bin.rising[key_doc.ids[i],])>0]),collapse=", ") ,sep=" "))
 }   
+        
+#dump a CSV of the recent docs, with lists of terms and ancillary measures
+#DO not include the abstracts so that it may be published with less risk of IPR issues
+df.dump<-ExtractDocs(corp, ExtraMeta=extra.meta, DocIds=Docs(dtm.tf)[!past.doc_ids.bool], Print=FALSE)
+df.dump["abstract"]<-NULL
+rownames(df.dump)<-df.dump[["id"]]#make rownames be the doc ids
+#this cannot be done with sapply() since col_sums cannot currently cope with repeated indeces
+Doc_ids<-Docs(dtm.tf.new)
+for(i in Doc_ids){
+   df.dump[i,"new.terms"]<- paste(Terms(dtm.tf.new[i,col_sums(dtm.tf.new[i,])>0]),collapse=",")
+}
+Doc_ids<-Docs(dtm.tf.rising)
+for(i in Doc_ids){
+   df.dump[i,"rising.terms"]<- paste(Terms(dtm.tf.rising[i,col_sums(dtm.tf.rising[i,])>0]),collapse=",")
+}
+Doc_ids<-Docs(dtm.tf.est)
+for(i in Doc_ids){
+   df.dump[i,"established.terms"]<- paste(Terms(dtm.tf.est[i,col_sums(dtm.tf.est[i,])>0]),collapse=",")
+}
+write.csv(df.dump, "Raw Results.csv", quote=TRUE, row.names=FALSE)
+rm(df.dump)
         
 #stop logging
 timestamp(stamp=date(),prefix="##TIMESTAMP: ")

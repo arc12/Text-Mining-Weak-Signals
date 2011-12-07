@@ -54,13 +54,18 @@ ExtractDocs<-function(Corp, ExtraMeta, DocIds, Print=TRUE){
 }
 
 LogTerms<-function(fileName, terms, words=NULL){
+   #first clean up old sinks
+   while(sink.number()>0)
+      {sink()}
    sink(file=fileName, append=FALSE, type="output", split=TRUE)
    cat(paste("c(\"",paste(terms,collapse="\",\""),"\")",sep=""))
    cat("\n")
    if(!is.null(words)){
       cat(paste("c(\"",paste(words,collapse="\",\""),"\")",sep=""))
    }
-   sink()
+   
+   while(sink.number()>0)
+      {sink()}
 }
 
 CustomStopwords<-function(){

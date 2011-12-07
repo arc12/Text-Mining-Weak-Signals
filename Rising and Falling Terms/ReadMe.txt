@@ -10,3 +10,19 @@ The initialisers are:
 * RF_Conference_Brew.R - takes the .RData and uses Brew with the template file "Conference BrewTemplate.html" to create an HTML report.
 
 "Conference BrewTemplate ODT content.xml" is a rather poor experimental attempt at using Brew to generate an ODT report. It relies on files in "Conference BrewTemplate ODT files" and a small script "Prepare ODT Report.sh" in the conference/union subdirectory.
+
+----------
+## **** notes on importing co-occurrence graph into Gephi (v0.8 alpha used)
+# import nodes then edges from CSV files. Make Node Weight be a float [it is ESSENTIAL not to leave it as a String]
+# show node labels, use "statistics" to calculate modularity
+# Use "ranking" to set node size = imported weight 
+# edge size = imported weight (=number of co-occurrences). by default
+# Use "partition" to set node colour = modularity class
+# NB the actual scale may need a multiplier/factor to be applied.
+# Use a circular auto-layout with nodes ordered by modularity class then use Frucherman Reingold
+# - may need to do a label adjust too.
+# ** for the "preview"
+# - set edge thickness to 5 and label font to 36pt. curved edges work OK
+# - uncheck "proportional size" on node and edge
+# - set the opacity to somewhere between 60 and 80% so that labels show up better
+# - when exporting to PNG, set a 25% margin otherwise it gets cropped!
