@@ -74,10 +74,10 @@
 <p><a href="<%web.page.url-%>">Larger version</a> and more info...</p>
 <%}else{-%>
 <p>
-This shows the history of the way certain terms have been used (related words are counted also, e.g. &quot;gaming&quot; would be counted as &quot;game&quot;). The chart loads up showing each term as a different coloured blob with a size determined by the percentage of abstracts that contain it and a location on the graph to show the term frequency and the average &quot;subjectivity&quot; of abstracts containing the term. &quot;Subjectivity&quot; is calculated as the fraction of words that generally have either a positive or negative sentiment connotation. Calculations were conducted for all abstracts for all conferences in <%=slice.size-%> month slices and spline interpolation used to give the impression of a smooth change. In total, <%=docs.used-%> abstracts were used.
+This shows the history of the way certain terms have been used (related words are counted also, e.g. &quot;gaming&quot; would be counted as &quot;game&quot;). The chart loads up showing each term as a different coloured blob with a size determined by the percentage of abstracts that contain it and a location on the graph to show the term frequency and the average &quot;subjectivity&quot; of abstracts containing the term. &quot;Subjectivity&quot; is calculated as the fraction of words that generally have either a positive or negative sentiment connotation. Calculations were conducted for all abstracts for all conferences in <%=slice.size-%> month slices. True calculated values are plotted for the mid-point of each time slice and spline interpolation is used to give the impression of a smooth change between these points. In total, <%=docs.used-%> abstracts were used.
 </p>
 
-<p><em>NB: observe the scales and be aware that insignificant fluctuations in the data may be magnified (especially true for &quot;subjectivity&quot; and sentiment scores.</em></p>
+<p><em>NB: observe the scales and be aware that insignificant fluctuations in the data may be magnified (especially true for &quot;subjectivity&quot; and sentiment scores. Also note that sentiment values are essentially meaningless when the frequency is close to the baseline.</em></p>
 <%}-%>
 </div>
 </body>

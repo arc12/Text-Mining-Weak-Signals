@@ -48,11 +48,15 @@ num.slices<-12*(end.year-start.year)/slice.size+1
 if(slice.size==interpolate.size){
    num.interpolate <- num.slices
 }else{
-   num.interpolate<-slice.size*num.slices/interpolate.size+1
+   num.interpolate<-slice.size*(num.slices-1)/interpolate.size+1
 }
 init.date<-as.POSIXlt(paste(start.year,"1","1",sep="-"), tz = "GMT")
+#slice dates define the filtering of documents.
 slice.start.dates<-as.POSIXlt(seq.POSIXt(init.date, by=paste(slice.size,"months"), length.out=num.slices))
+#interpolate dates define the plotting, whether or not an interpolation has actually occurred
+# hence they are offset to the centre of slices as well as (usually) interspersing the slice periods
 interpolate.start.dates<-as.POSIXlt(seq.POSIXt(init.date, by=paste(interpolate.size,"months"), length.out=num.interpolate))
+interpolate.start.dates$mon<-interpolate.start.dates$mon+(slice.size/2)
 
 ##
 ## Which Terms to run for
@@ -63,11 +67,11 @@ titles<-c("terms that dipped in 2010 compared to the previous 4 years",
           "terms that rose in 2010 from a low level in the previous 4 years")
           #"Run the Second")#should match each of the entries in the following list
 # NB!!!!!!!!! these are the STEMMED terms
-term.lists<-list(Falling=c("blog","content","databas","ontolog","project"),             Established=c("activ","condit","conduct","differ","emot","game","gamebas","motiv","path","profil","strategi","tutor","video"),
+term.lists<-list(Falling=c("blog","content","databas","ontolog","project","technolog"),             Established=c("activ","condit","conduct","differ","emot","game","gamebas","motiv","path","profil","strategi","tutor","video"),
 Rising=c("besid","competit","eassess","figur","gameplay","gender","hybrid","negat","oral","ples","probabilist","public","qti","risk","selfreflect","serious","statement","tablet","tangibl","uptak","wil"))
 # .... and these are the pretty versions for display
-word.lists<-list(Falling=c("blog","content","database","ontology","project"),          Established=c("active","condition","conduct","different","emotion","game","gamebas","motivator","path","profile","strategies","tutor","video"),
-Rising=c("besides","competitive","eassess","figure","gameplay","gender","hybrid","negative","oral","ples","probabilistic","public","qti","risk","selfreflect","serious","statements","tablet","tangible","uptake","will"))
+word.lists<-list(Falling=c("blog","content","database","ontology","project","technology"),          Established=c("active","condition","conduct","different","emotion","game","game-based","motivator","path","profile","strategies","tutor","video"),
+Rising=c("besides","competitive","e-assessment","figure","game-play","gender","hybrid","negative","oral","PLEs","probabilistic","public","qti","risk","self-reflect","serious","statements","tablet","tangible","uptake","will"))
 
 ##
 ## End setup

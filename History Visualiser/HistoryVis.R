@@ -132,6 +132,9 @@ for (i.run in 1:length(term.lists)){
          sent.negative[nt]<-mean(neg.score[Docs(dtm.tf.slice[as.matrix(dtm.tf.slice[,nt])>0,nt])])
          subjectivity[nt]<-mean(subj.score[Docs(dtm.tf.slice[as.matrix(dtm.tf.slice[,nt])>0,nt])])
       }
+      sent.positive[is.nan(subjectivity)]<-0.0
+      sent.negative[is.nan(subjectivity)]<-0.0
+      subjectivity[is.nan(subjectivity)]<-0.0
       data.slices.positive<-rbind(data.slices.positive,sent.positive)
       data.slices.negative<-rbind(data.slices.negative,sent.negative)
       data.slices.subjectivity<-rbind(data.slices.subjectivity,subjectivity)
