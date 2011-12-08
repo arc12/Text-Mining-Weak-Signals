@@ -151,7 +151,7 @@ dt{text-decoration:underline;}
 
 It is one part of the <a href="http://blogs.cetis.ac.uk/adam/2011/05/12/weak-signals-and-text-mining-i-an-introduction-to-weak-signals/">&quot;Weak Signals Analysis&quot; work of the TEL-Map Project</a>. The same analytical method is also applied to blogs, hence the term "document" is used in plots; this may be equated to an abstract in this report.</p>
 
-<p><em>All plots will open in a new window/tab as 1000x1000 pixed images if clicked on.</em></p>
+<p><em>All plots will open in a new window/tab as 1000x1000 pixel images if clicked on.</em></p>
 <h2>The Method</h2>
 <p>The analysis involves the application of text mining to the abstracts of the conference proceedings. The set of abstracts from the target year (<%=conf.year.recent%>) is contrasted against a set from the previous <%=conf.years.in_past%> years. Pearson's "Chi Squared" test is applied to determine the probability that the frequency of terms in both of these two samples could be from the same hypothetical distribution. The probability that the difference in term frequency could be ascribed to chance - assuming this hypothesis is true - must be less than <%=100*thresh.pval%>% for a term to be presented in this report. This is referred to as the "significance threshold" below.</p>
 
@@ -160,14 +160,14 @@ It is one part of the <a href="http://blogs.cetis.ac.uk/adam/2011/05/12/weak-sig
 <p>Four views on the differences between the target and previous years' abstracts are presented:
 <ul>
    <li><strong>New Terms</strong>, where this report highlights terms that meet the significance threshold and appear in at least <%=doc_count.thresh%> different target-year abstracts but not at all in the previous years.</li>
-   <li><strong>Rising Terms</strong>, where term frequency rises to a statistically-significant level. A term must appear in at least <%=doc_count.thresh%> different target-year abstracts but must not have an average frequency of more than <%=100*max.past.freq%>% in the previous years set. i.e. the Rising Terms view focusses on possible weak signals, possible <em>new</em> trends.</li>
+   <li><strong>Rising Terms</strong>, where term frequency rises by a statistically-significant amount and has an average frequency of less than <%=100*max.past.freq%>% in the previous years set. A term must also appear in at least <%=doc_count.thresh%> different target-year abstracts. The Rising Terms view focusses on possible weak signals, possible <em>new</em> trends.</li>
    <li><strong>Established Terms</strong> are similar to "Rising Terms" but appear with a frequency of <%=100*max.past.freq%>% or more on average in the previous years and hence are considered to be established upwards trends rather than indicators of a possible weak signal. Since this report is primarily concerned with Weak Signal detection, relatively little emphasis is given to Established Terms.</li>
-   <li><strong>Falling Terms</strong>, are those terms showing a decrease between the previous years set and the target-year abstracts that exceeds a significance threshold of <%=100*thresh.pval.falling%>% (more lenient for falling terms).</li>
+   <li><strong>Falling Terms</strong>, are those terms showing a decrease between the previous years set and the target-year abstracts that exceeds a significance threshold of <%=100*thresh.pval.falling%>% (a more lenient condition is used for falling terms).</li>
 </ul>
-<em>For Rising, Established Falling Terms, the % change is calculated on the proportion of all stemmed words that are the term in question. For example if 2.00% of stemmed words in the previous years set was &quot;learn&quot; and 2.12% pertains to the current set, then the rise is 6%.</em>
+<em>For Rising, Established and Falling Terms, the % change is calculated on the proportion of all stemmed words that are the term in question. For example if 2.00% of stemmed words in the previous years set was &quot;learn&quot; and 2.12% pertains to the current set, then the rise is 6%.</em>
 </p>
 
-<h2>Statistics and Overall Pattern</h2>
+<h2>Summary Statistics and Overall Pattern</h2>
 <h3>Corpus Statistics</h3>
 <p>There are <%=sum(!past.doc_ids.bool)%> abstracts in <%=conf.year.recent%> and <%=sum(past.doc_ids.bool)%> in the <%=conf.years.in_past%> previous years. Within these abstracts, which define the corpus, there are <%=length(Terms(dtm.tf))%> distinct terms after removing stop words and applying stemming. The summary statistics for the number of times each term appears in the corpus are: mean=<%=summary(dtm.tf.sums)[["Mean"]]%>, median=<%=summary(dtm.tf.sums)[["Median"]]%>, maximum=<%=summary(dtm.tf.sums)[["Max."]]%>.</p>
 
@@ -191,7 +191,7 @@ The set of Falling Terms (the % fall from the previous years to the target year)
 Figure <%=figure%><%figure<-figure+1%>: The number of terms that appear 1,2,3... times in the target year set not at all in the previous years. In this case there are <%=term.sums.new.t[doc_count.thresh+2]%> new terms that appear <%=doc_count.thresh+2%> times. NB: the low end is suppressed due to the requirement that terms appear in at lest <%=doc_count.thresh%> documents.</div>
 
 <!--reset layout-->
-<div class="clear"/>
+<div class="clear"/><p></p>
 
 <h3>Rising and Falling Terms</h3>
 <div class="cap-img"><a href="Images/RisingTerm_Distribution.png" target="image_win"><img src="Images/RisingTerm_Distribution.png" alt="Rising Term Distribution" width="500" height="500" /></a><BR/>
@@ -200,7 +200,7 @@ Figure <%=figure%><%figure<-figure+1%>: Number of terms with a given % rise befo
 Figure <%=figure%><%figure<-figure+1%>: Number of terms with a given % fall before filtering out those terms that do not meet the criterion of the significance test. A 100% fall indicates that the term does not appear in the target year's abstracts.</div>
 
 <!--reset layout-->
-<div class="clear"/>
+<div class="clear"/><p></p>
 
 <h2>Auxillary Measures of Interest</h2>
 <p>In addition to the primary measures of interest - statistical significance and the percentage change - two more are calculated as an aid to judging the actual, as opposed to statistical, significance of differences between the previous years abstracts and the target-year set. The auxillary measures apply to the abstracts and are:</p>
@@ -210,14 +210,14 @@ Figure <%=figure%><%figure<-figure+1%>: Number of terms with a given % fall befo
 </ul>
 
 <div class="cap-img"><a href="Images/AbsoluteNovelty.png" target="image_win"><img src="Images/AbsoluteNovelty.png" alt="Absolute Novelty" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Distribution of novelty measure among abstracts.<br/>Novelty= 1 - the minimum distance (specifically the cosine distance) between the abstract and any other abstract in <%=conf.year.recent%> and <%=sum(past.doc_ids.bool)%> in the <%=conf.years.in_past%> previous years.</div>
+Figure <%=figure%><%figure<-figure+1%>: Distribution of novelty measure among abstracts.<br/>Novelty= 1 - the maximum similarity (specifically the <a href="http://en.wikipedia.org/wiki/Cosine_similarity">cosine similarity</a>) between the abstract and any other abstract in the corpus.</div>
 <div class="cap-img"><a href="Images/StandardisedNovelty.png" target="image_win"><img src="Images/StandardisedNovelty.png" alt="Standardised Novelty" width="500" height="500" /></a><BR/>
 Figure <%=figure%><%figure<-figure+1%>: Distribution of standardised novelty measure among abstracts.<br/>An abstract with median novelty will have a standardised novelty of 0 and a unique abstract a value of 1. Negative values indicate an abstract that has a closer &quot;neighbour&quot; than the median.</div>
 
 <!--reset layout-->
 <div class="clear"/>
 
-<p>Since conference abstracts are quite short, hence contain few terms stopword removal, and the corpus size is modest, the Novelty Measure is typically skewed towards a high value. In this case it is not realistic to select out novel abstracts, whereas a high negative value for the Standardised Novely is a reasonalble indicator of similarity.</p>
+<p>Since conference abstracts are quite short, hence contain few terms after stopword removal, and the corpus size is modest, the Novelty Measure is typically skewed towards a high value. In this case it is not realistic to identity truely novel abstracts, whereas a high negative value for the Standardised Novely is a reasonalble indicator of similarity.</p>
 <p>The papers containing the highest novelty scores are <a href="#novelty_abs">listed below</a>.</p>
 
 <div class="cap-img"><a href="Images/SentimentComparison.png" target="image_win"><img src="Images/SentimentComparison.png" alt="Positive and Negative Sentiment and Subjectivity Score" width="500" height="500" /></a><BR/>
@@ -276,7 +276,7 @@ Figure <%=figure%><%figure<-figure+1%>: Spread of subjectivity score among abstr
 
 
 <div class="cap-img"><a href="Images/RisingSignificance.png" target="image_win"><img src="Images/RisingSignificance.png" alt="Rising Terms - Statistical Significance" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Significant rising terms and their level of significance (-log<sub>10</sub>(probability that the rise is due to chance only)). Colour coding matches the significance value.</div>
+Figure <%=figure%><%figure<-figure+1%>: Significant rising terms and their level of significance (-log<sub>10</sub>(p), where p is the probability that the rise is due to chance only). Colour coding matches the significance value.</div>
 
 <div class="cap-img">
 	<div id="risingTermCanvasContainer">
@@ -288,7 +288,7 @@ Figure <%=figure%><%figure<-figure+1%>: Significant rising terms and their level
  </canvas>
  </div>
  <BR/>
-Figure <%=figure%><%figure<-figure+1%>: Wordcloud of significance level of the Rising Terms in the target year, coloured and sized according to term frequency.<br/>Uses <a href="http://www.goat1000.com/tagcanvas.php">TagCanvas</a> by &quot;goat 1000&quot;.</div>
+Figure <%=figure%><%figure<-figure+1%>: Wordcloud coloured and sized according to significance level of the Rising Terms in the target year.<br/>Uses <a href="http://www.goat1000.com/tagcanvas.php">TagCanvas</a> by &quot;goat 1000&quot;.</div>
 
 <!--reset layout-->
 <div class="clear"/>
@@ -296,7 +296,7 @@ Figure <%=figure%><%figure<-figure+1%>: Wordcloud of significance level of the R
 <p>The papers containing the significant rising terms are <a href="#rising_abs">listed below</a>.</p>
 
 <div class="cap-img"><a href="Images/RisingTerms_PC.png" target="image_win"><img src="Images/RisingTerms_PC.png" alt="Rising Terms - Percentage Rises" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Significant rising terms and their percentage of rise. Colour coding matches the % rise. The plot is cut off at a ceiling of <%=rising.plot.max%>%.</div>
+Figure <%=figure%><%figure<-figure+1%>: Significant rising terms and their percentage of rise. Colour coding matches the % rise. <%if(max(rise.ratio)>800){%>The plot is cut off at a ceiling of <%=rising.plot.max%>%.<%}%></div>
 
 <!--reset layout-->
 <div class="clear"/>
@@ -345,12 +345,12 @@ Figure <%=figure%><%figure<-figure+1%>: Rising Term Co-occurrence Map. The node 
 These are terms with a statistically-significant increase but with a freqency of <%=100*max.past.freq%>% or more on average in the years prior to <%=conf.year.recent%> and hence are considered to be established upwards trends rather than indicators of a possible weak signal. Since this report is primarily concerned with Weak Signal detection, relatively little emphasis is given to Established Terms.
 
 <div class="cap-img"><a href="Images/EstablishedRisingTerms_PC.png" target="image_win"><img src="Images/EstablishedRisingTerms_PC.png" alt="Established Terms - Percentage Rises" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Significant rising terms and their percentage of rise. Colour coding is identical to the Rising Term plot. The plot is cut off at a ceiling of <%=rising.plot.max%>%.</div>
+Figure <%=figure%><%figure<-figure+1%>: Significant rising terms and their percentage of rise. Colour coding is identical to the Rising Term plot. <%if(max(established.rise.ratio)>800){%>The plot is cut off at a ceiling of <%=rising.plot.max%>%.<%}%></div>
 <div class="cap-img"><a href="Images/EstablishedRisingSignificance.png" target="image_win"><img src="Images/EstablishedRisingSignificance.png" alt="Established Terms - Statistical Significance" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Significant rising terms and their level of significance (-log<sub>10</sub>(probability that the rise is due to chance only)). Colour coding matches the significance value as in the Rising Term plot.</div>
+Figure <%=figure%><%figure<-figure+1%>: Significant rising terms and their level of significance. Colour coding matches the significance value as in the Rising Term plot.</div>
 
 <!--reset layout-->
-<div class="clear"/>
+<div class="clear"/><p></p>
 
 <h2>Significant Falling Terms</h2>
 <div class="cap-img"><a href="Images/FallingTerms_PC.png" target="image_win"><img src="Images/FallingTerms_PC.png" alt="Falling Terms - Percentage Falls" width="500" height="500" /></a><BR/>
@@ -368,7 +368,7 @@ Figure <%=figure%><%figure<-figure+1%>: The number of occurrences of the Falling
 Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stemmed words that are the term in question in both the previous and target year.</div>
 
 <!--reset layout-->
-<div class="clear"/>
+<div class="clear"/><p></p>
 
 <h2>Papers Highlighted by the Analysis</h2>
 <p>Papers marked &quot;Top 10 Abstract&quot; are those where the abstract contains the greatest number of distinct terms that are either Rising, Established or New.</p>

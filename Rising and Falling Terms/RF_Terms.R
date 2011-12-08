@@ -190,7 +190,7 @@ novelty.summary<-summary(novelty)
 print("Summary Stats for Novelty")
 print(novelty.summary)
 #if the histogram is very skew to high values (e.g. 0.8) then it isn't possible to ident novel
-basic.hist(novelty,"Absolute Novelty Values","minimum(1 - similarty)","Images/AbsoluteNovelty.png", Breaks=20)
+basic.hist(novelty,"Absolute Novelty Values","minimum(1 - similarity)","Images/AbsoluteNovelty.png", Breaks=20)
 standardised.novelty<-(novelty-median(novelty))/(1-median(novelty))
 std.novelty.summary<-summary(standardised.novelty)
 print("Summary of Standardised Novelty")
@@ -296,7 +296,7 @@ print(quantile(fall.ratio, probs=seq(0.1,0.9,0.1)))
 
 #plot the distribution of new terms that appear in at least 2 docs (whether "significant" or not)
 term.sums.new.t<-tabulate(term.sums.new)
-basic.barplot(term.sums.new.t, "New Term Occurrence", "Term Frequency (count)",
+basic.barplot(term.sums.new.t, "Histogram of New Term Occurrence (before significance test)", "Term Occurrence",
               "Number of Terms", seq(1:max(term.sums.new)), 
               "Images/NewTermFrequencies.png")
 #plot a histogram of the % rises
@@ -452,8 +452,9 @@ pair.barplot(X.past=100*r.term.sums.past/tsp.all, X.target=100*r.term.sums.recen
 #prep palette for "unlikelihood power"
 up.palette<-diverge_hcl(20, c = 200, l = c(40, 120), power = 1)
 logp.rising <- -log10(p.rising)
-palette.index.rising <- (as.integer(logp.rising) + log10(thresh.pval))*4 +1
+palette.index.rising <- as.integer(logp.rising + log10(thresh.pval))*4 +1
 palette.index.rising[palette.index.rising>20]<-20 #flatten off extreme peaks
+palette.index.rising[palette.index.rising<0]<-0
 up.rising.cols <- up.palette[palette.index.rising]
 #plot the colorised significace for all rising terms
 colorized.barplot(logp.rising, Main="Rising Terms", Ylab="Significance (-log10(p))",
@@ -483,8 +484,9 @@ colorized.barplot(established.rise.ratio, Main="Established Rising Terms", Ylab=
 #prep palette for "unlikelihood power"
 up.palette<-diverge_hcl(20, c = 200, l = c(40, 120), power = 1)
 logp.established.rising <- -log10(p.established.rising)
-palette.index.est.rising <- (as.integer(logp.established.rising) + log10(thresh.pval))*4 +1
+palette.index.est.rising <- as.integer(logp.established.rising + log10(thresh.pval))*4 +1
 palette.index.est.rising[palette.index.est.rising>20]<-20 #flatten off extreme peaks
+palette.index.est.rising[palette.index.est.rising<0]<-0
 up.est.rising.cols <- up.palette[palette.index.est.rising]
 #plot the colorised significace for all rising terms
 colorized.barplot(logp.established.rising, Main="Established Rising Terms", Ylab="Significance (-log10(p))",
@@ -517,7 +519,7 @@ pair.barplot(X.past=100*f.term.sums.past/tsp.all, X.target=100*f.term.sums.recen
              OutputFile="Images/FallingTerms_PastRecent_PC.png")
 #prep palette for "unlikelihood power"
 logp.falling <- -log10(p.falling)
-palette.index.falling <- (as.integer(logp.falling) + log10(thresh.pval.falling))*4 +1
+palette.index.falling <- as.integer(logp.falling + log10(thresh.pval.falling))*4 +1
 palette.index.falling[palette.index.falling>20]<-20 #flatten off extreme peaks
 up.falling.cols <- up.palette[palette.index.falling]
 colorized.barplot(logp.falling, Main="Falling Terms", Ylab="Significance (-log10(p))",
