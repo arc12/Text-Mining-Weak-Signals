@@ -79,8 +79,8 @@ max.past.freq<-0.0002 #i.e. 0.02%
 rising.plot.max<-800
 
 #novelty calc
-term.doc_occurrence.max<-0.1#remove terms appearing in more than 10% of documents
-std.novelty.min<-0.33 #a min value of the "standard novelty"
+term.doc_occurrence.max<-0.5#remove terms appearing in more than 50% of documents
+std.novelty.min<-0.25 #a min value of the "standard novelty"
 
 ##
 ## End setup

@@ -191,7 +191,15 @@ print("Summary Stats for Novelty")
 print(novelty.summary)
 #if the histogram is very skew to high values (e.g. 0.8) then it isn't possible to ident novel
 basic.hist(novelty,"Absolute Novelty Values","minimum(1 - similarity)","Images/AbsoluteNovelty.png", Breaks=20)
-standardised.novelty<-(novelty-median(novelty))/(1-median(novelty))
+# calculate a standardised novelty to try to compensate for varying skewness
+#NB the median is calculated FOR ALL document novelty in the corpus, not just for the recent set, so repeat earlier calc but now for full cross product
+full.doc.norm.mat<-sqrt(tcrossprod(row_sums(dtm.bin.trimmed),row_sums(dtm.bin.trimmed)))
+full.difference.mat<-1.0-tcrossprod(as.matrix(dtm.bin.trimmed),
+                               as.matrix(dtm.bin.trimmed)) / full.doc.norm.mat
+diag(full.difference.mat)<-1.0
+full.novelty<-apply(full.difference.mat,1,min)
+#
+standardised.novelty<-(novelty-median(full.novelty))/(1-median(full.novelty))
 std.novelty.summary<-summary(standardised.novelty)
 print("Summary of Standardised Novelty")
 print(std.novelty.summary)

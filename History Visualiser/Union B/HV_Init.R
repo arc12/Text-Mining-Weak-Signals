@@ -18,7 +18,7 @@ source.dir<-paste(base.dir,"Source Data",sep="/")
 set.name<-"Union B 2005 to 2010"
 output.dir<-paste("/home/arc1/R Projects/Text Mining Weak Signals Output/History Visualiser",set.name,sep="/")
 brew.dir<-paste(base.dir,"History Visualiser",sep="/")
-web.page.base<-paste("http://arc12.github.com/Text-Mining-Weak-Signals-Output/History%20Visualiser",set.name, sep="/")
+web.page.base<-paste("http://arc12.github.com/Text-Mining-Weak-Signals-Output/History Visualiser",set.name, sep="/")
 
 dir.create(output.dir, showWarnings=TRUE)
 setwd(output.dir)

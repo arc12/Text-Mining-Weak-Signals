@@ -170,14 +170,17 @@ for (i.run in 1:length(term.lists)){
    }
    
    #Create the HTML/JS for the Google Chart using a Brew Template
-   isGadget=FALSE
-   html.page<-paste(run.name,".html",sep="")
+   html.filename<-paste(run.name,".html",sep="")   
+   web.page.url<-paste(web.page.base,html.filename,sep="/")
+   gadget.filename<-paste(run.name,"gadget.xml",sep=" ")
+   gadget.url.encoded<-URLencode(paste(web.page.base,gadget.filename,sep="/"), reserved=TRUE)
+   
+   isGadget=FALSE   
    brew(file=paste(brew.dir,"HV Brew Template.html",sep="/"),
-     output=html.page,run=TRUE)
+     output=html.filename,run=TRUE)
    isGadget=TRUE
-   web.page.url<-paste(web.page.base,html.page,sep="/")
    brew(file=paste(brew.dir,"HV Brew Template.html",sep="/"),
-     output=paste(run.name,"gadget.xml",sep=" "),run=TRUE)
+     output=gadget.filename,run=TRUE)
 }
 
 #stop logging
