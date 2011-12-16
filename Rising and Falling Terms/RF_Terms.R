@@ -731,7 +731,6 @@ write.csv(edges1.df, file="Gephi/SignificantTerm-Co-occurence Edges.csv", row.na
 ##       
 ## find docs containing the above-threshold new terms, sorted most-numerous first
 ##
-# improve this - find URL for each 
 #new.selected.term.ids.asc<-order(term.sums.new.sel, decreasing=TRUE)
 #dtm.bin.new<-dtm.bin.new[,names(term.sums.new.sel[new.selected.term.ids.asc])]
 print("Documents for New Terms (alphabetical) - see RF_Terms.log")
