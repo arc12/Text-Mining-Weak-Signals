@@ -1,5 +1,5 @@
 ## ***Made available using the The MIT License (MIT)***
-# Copyright (c) 2011, Adam Cooper
+# Copyright (c) 2012, Adam Cooper
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 # 
@@ -17,6 +17,15 @@
 ##
 ## (these are document-specific metrics, hence "novelty" is not included since it is defined relative to a corpus)
 ##
+## This handles conference abstracts and blog posts in slightly different ways
+##       abstracts: each CSV is assumed to be a set of abstracts from a 
+##                  single conference series (aka "origin"). The origin is
+##                  added as part of the pre=processing
+##      blogs: each CSV is assumed to contain posts from several blogs
+##             and the "origin" is in the CSV as the blog "home" URL
+##
+## (the column headings also differ, sometimes only for "historical reasons")
+##
 library("tm")
 library("slam")
 
@@ -25,15 +34,18 @@ home.dir<-"/home/arc1/R Projects/Text Mining Weak Signals"
 output.dir<-paste(home.dir,"Source Data",sep="/")
 setwd(output.dir)
 
-#each one of these will be looped over NB the origin.tag must match
-abstracts.csv <- c("ICALT Abstracts 2005-2011.csv",
-                   "CAL Abstracts 2007-2009.csv",
-                   "ECTEL Abstracts 2006-2011.csv",
-                   "ICWL Abstracts 2005-2011.csv")
-origin.tag <- c("ICALT",
-                   "CAL",
-                   "ECTEL",
-                   "ICWL")
+#each one of these will be looped over NB the origin.tag must be in the same order as set.csv
+# set.csv <- c("ICALT Abstracts 2005-2011.csv",
+#                    "CAL Abstracts 2007-2009.csv",
+#                    "ECTEL Abstracts 2006-2011.csv",
+#                    "ICWL Abstracts 2005-2011.csv")
+# origin.tag <- c("ICALT",
+#                    "CAL",
+#                    "ECTEL",
+#                    "ICWL")#only used for abstracts
+set.csv <- c("CETIS Blogs 20110101-20120301.csv","NonCETIS Blogs 20110101-20120301.csv")
+# this determines the source type: conference abstracts or blog content
+source.type="b"#a is for abstracts, b is for blogs
 
 ##
 ## Prepare lexicon for sentiment analysis
@@ -55,20 +67,27 @@ for(i in 2:length(inquirer.table[1,])){
 }
 
 ##
-## MAIN LOOP over the abstracts: Read-in, add columns of metrics and write-out
+## MAIN LOOP over the sets: Read-in, add columns of metrics and write-out
 ##
-for (src in 1:length(abstracts.csv)){
-   inFile<-abstracts.csv[src]
+for (src in 1:length(set.csv)){
+   inFile<-set.csv[src]
    outFile<-paste(strtrim(inFile,nchar(inFile)-4),"with metrics.csv")
    # read in CSV with format year,pages,title,authors,abstract,keywords,url,dblp_url.
    #There is a header row. DBLP_URL is the vital key into the author centrality data
    table<-read.csv(inFile,header=TRUE,sep=",",quote="\"",stringsAsFactors=FALSE)
-   #insert the "origin" as a new column
-   origin<-rep(origin.tag[src], length(table[,1]))
-   table<-cbind(origin,table)
-   # create a corpus, handling the metadata via mapping from datatable column names to PlainTextDocument attribute names
+   # choose an appropriate mapping and other source-specific preliminaries
    #"Keywords" and after are user-defined "localmetadata" properties while the rest are standard tm package document metadata fields
-   map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url")
+   if(source.type == "a"){
+      #insert the "origin" as a new column
+      origin<-rep(origin.tag[src], length(table[,1]))
+      table<-cbind(origin,table)
+      map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url")
+   }else if(source.type == "b"){
+      map<-list(Content="content", Heading="title", Author="authors", DateTimeStamp="datestamp", Origin="origin",URL="url")
+   }else{
+      stop("Unknown source type:",source.type)
+   }
+   # create a corpus, handling the metadata via mapping from datatable column names to PlainTextDocument attribute names
    corp<-Corpus(DataframeSource(table), readerControl=list(reader= readTabular(mapping=map)))
    ##
    ## Sentiment Analysis, specifically "subjectivity" at a document level.

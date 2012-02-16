@@ -1,5 +1,5 @@
 ## ***Made available using the The MIT License (MIT)***
-# Copyright (c) 2011, Adam Cooper
+# Copyright (c) 2012, Adam Cooper
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 # 
@@ -41,24 +41,15 @@ print(paste("From:",start.date," Split at:",key.date, sep=""))
 timestamp(stamp=date(), prefix="##TIMESTAMP: ")
 
 
-# This is a list of papers (id, dblp url, author-id-list)
-# the row names are made to be the DBLP URLs
-papers.table<-read.csv(paste(source.dir,"Union B Author Ids 2010.csv",sep="/"),
-                         header=TRUE, sep=",", quote="\"", row.names=2, 
-                           stringsAsFactors=FALSE) 
-# this is a list of author centrality measures (id, centrality) NB author IDs must match previous list of papers
-authors.table<-read.csv(paste(source.dir,"Author Betweenness D4_3.csv",sep="/"),
-                         header=TRUE, sep=",", quote="\"", row.names=1, 
-                           stringsAsFactors=FALSE)
 
 ##
 ## Read in the abstracts. NB this code allows for vectors of csv file names, titles etc in RF_Init.R
 ##
 #(aside) rbinding tables is faster and better than merging corpora using tm_combine, which leads to problematical duplicate document ids.
 table<-NULL
-for (src in 1:length(abstracts.csv)){
+for (src in 1:length(sets.csv)){
    # read in CSV with format year,pages,title,authors,abstract,keywords. There is a header row. 
-   tmp_table<-read.csv(paste(source.dir,abstracts.csv[[src]],sep="/"),header=TRUE,sep=",",quote="\"")
+   tmp_table<-read.csv(paste(source.dir,sets.csv[[src]],sep="/"),header=TRUE,sep=",",quote="\"")
    #accumulate the table            
    table<-rbind(table,tmp_table)
    tmp_table<-NULL
@@ -66,14 +57,26 @@ for (src in 1:length(abstracts.csv)){
 # now read in the possibly-cumulated table to a corpus, handling the metadata via mapping
 #create a mapping from datatable column names to PlainTextDocument attribute names
 #"Keywords" is a user-defined "localmetadata" property while the rest are standard tm package document metadata fields
-map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url", Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")
+if(source.type=="c"){
+   map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year",
+                  Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url",
+                  Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")
+}else{
+   #dblp_url is a dummy col in source data; put the field in corpus metadata for ease of handling later
+   table<-cbind(table,data.frame(dblp_url = rep(NA,length(table[,1]))))
+   map<-list(Content="content", Heading="title", Author="authors", DateTimeStamp="datestamp",
+                  Origin="origin",  URL="url",  DBLP_URL="dblp_url",
+                  Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")  
+}
 #use the mapping while reading the dataframe source to create a coprus with metadata
 corp<-Corpus(DataframeSource(table), readerControl=list(reader= readTabular(mapping=map)))
 
-# trim the corpus so that it begins at the specified date - "past" abstracts only go back so far -
-# and also not later than the target year
-#corp<-tm_filter(corp,FUN=sFilter, doclevel = TRUE, useMeta = FALSE, paste("datetimestamp>'",start.date,"'",sep=""))
-corp<-tm_filter(corp,FUN=sFilter, doclevel = TRUE, useMeta = FALSE, paste("datetimestamp<='",last.date,"' & datetimestamp>'",start.date,"'",sep=""))
+# trim the corpus so that documents come only from the used date range
+#changed from using tm_index because it seemed not to work with month-level periods
+dts<-as.POSIXlt(unlist(meta(corp,"DateTimeStamp",type="local")))
+filter.bool<- (dts>start.date) & (dts<=last.date)
+corp<-corp[filter.bool]
+
 #this for additional "metadata" calculated below. This is more efficient than storing inside the corpus
 extra.meta<-data.frame(row.names="DocId", DocId=unlist(meta(corp,tag="ID",type="local")))
 
@@ -128,7 +131,11 @@ if(!is.na(recent.themes.txt)){
 ##
 ## APply a filter using key.date to get two lists of document ids, one for past and one for recent
 ##
-past.doc_ids.bool<-tm_index(corp,FUN=sFilter, doclevel = TRUE, useMeta = FALSE, paste("datetimestamp<'",key.date,"'",sep=""))
+#past.doc_ids.bool<-tm_index(corp,FUN=sFilter, doclevel = TRUE, useMeta = FALSE,
+#paste("datetimestamp<'",key.date,"'",sep=""))
+#changed since tm_index seems broken
+dts<-as.POSIXlt(unlist(meta(corp,"DateTimeStamp",type="local")))
+past.doc_ids.bool<- (dts<key.date)
 print(paste(sum(past.doc_ids.bool),"documents in the reference set and",sum(!past.doc_ids.bool)," documents in the target set",sep=" "))
 term.sums.past<-col_sums(dtm.tf[past.doc_ids.bool,])
 tsp.all<-sum(term.sums.past)
@@ -142,33 +149,38 @@ terms.doc.cnt.recent<-col_sums(dtm.bin.recent)
 ## ********************************
 ## author centrality needs to be calculated for each paper in the recent set.
 ##
-dblp_url<-unlist(meta(corp,tag="DBLP_URL", type="local"))
-dblp_url<-dblp_url[!past.doc_ids.bool]
-max.betweenness<-vector()
-for(i in 1:length(dblp_url)){
-   authors<-papers.table[as.character(dblp_url[[i]]),"AUTHOR_IDS"]
-   if(is.na(authors)){
-      print(paste("Paper in abstracts CSV was not found in authorship CSV: DBLP URL=",as.character(dblp_url[[i]])))
-   }else{
-      authors.sep<-unlist(strsplit(authors,","))
-      betweenness<-authors.table[authors.sep,]
-      max.betweenness[i]<-max(betweenness, na.rm=TRUE)
-      if(max.betweenness[i]==-Inf){
-         print(paste("Cannot find centrality measure for any of authors:",authors,"defaulting to 0.0"))
-         max.betweenness[i]<-0.0            
+if(is.na(authors.table)){
+   max.betweenness<-NA
+   extra.meta[,"MaxBetweenness"]<-NA
+}else{
+   dblp_url<-unlist(meta(corp,tag="DBLP_URL", type="local"))
+   dblp_url<-dblp_url[!past.doc_ids.bool]
+   max.betweenness<-vector()
+   for(i in 1:length(dblp_url)){
+      authors<-papers.table[as.character(dblp_url[[i]]),"AUTHOR_IDS"]
+      if(is.na(authors)){
+         print(paste("Paper in abstracts CSV was not found in authorship CSV: DBLP URL=",as.character(dblp_url[[i]])))
+      }else{
+         authors.sep<-unlist(strsplit(authors,","))
+         betweenness<-authors.table[authors.sep,]
+         max.betweenness[i]<-max(betweenness, na.rm=TRUE)
+         if(max.betweenness[i]==-Inf){
+            print(paste("Cannot find centrality measure for any of authors:",authors,"defaulting to 0.0"))
+            max.betweenness[i]<-0.0            
+         }
       }
    }
+   #use corpus doc ids as names
+   names(max.betweenness)<-names(dblp_url)
+   print("Summary of per-paper max author betweenness:")
+   print(summary(max.betweenness))
+   # add as corpus metadata - this is very slow so I should attempt to improve it
+   # for(i in 1:length(max.betweenness)){
+   #    meta(corp[[names(max.betweenness)[i]]],tag="MaxBetweenness")<-
+   #       round(max.betweenness[[i]],digits=5)
+   # }
+   extra.meta[names(max.betweenness),"MaxBetweenness"]<-max.betweenness
 }
-#use corpus doc ids as names
-names(max.betweenness)<-names(dblp_url)
-print("Summary of per-paper max author betweenness:")
-print(summary(max.betweenness))
-# add as corpus metadata - this is very slow so I should attempt to improve it
-# for(i in 1:length(max.betweenness)){
-#    meta(corp[[names(max.betweenness)[i]]],tag="MaxBetweenness")<-
-#       round(max.betweenness[[i]],digits=5)
-# }
-extra.meta[names(max.betweenness),"MaxBetweenness"]<-max.betweenness
 
 ##
 ## Compute document distances based on binary term occurrence (all terms, not just WS terms)
@@ -449,7 +461,7 @@ colorized.barplot(rise.ratio.trunc, Main="Rising Terms", Ylab="% Rise in Target 
 # Plot the frequency of occurrence of the rising terms in the past and recent sets as a stacked bar chart
 r.term.sums.recent<-col_sums(dtm.tf.rising)
 r.term.sums.past<-col_sums(dtm.tf[past.doc_ids.bool,Terms(dtm.tf.rising)])
-pair.barplot(X.past=r.term.sums.past/conf.years.in_past, X.target=r.term.sums.recent,
+pair.barplot(X.past=r.term.sums.past/past.recent.ratio, X.target=r.term.sums.recent,
                 Main="Un-scaled Rising Terms", Ylab="Term Occurrence",
                 Names=rising.selected.words,
                 OutputFile="Images/RisingTerms_PastRecent_Counts.png")
@@ -517,7 +529,7 @@ colorized.barplot(fall.ratio, Main="Falling Terms", Ylab="% Fall in Target Set",
 #plots showing previous/target occurrences for falling terms, sim to rising
 f.term.sums.recent<-col_sums(dtm.tf[!past.doc_ids.bool,names(p.falling)])
 f.term.sums.past<-col_sums(dtm.tf[past.doc_ids.bool,names(p.falling)])
-pair.barplot(X.past=f.term.sums.past/conf.years.in_past, X.target=f.term.sums.recent,
+pair.barplot(X.past=f.term.sums.past/past.recent.ratio, X.target=f.term.sums.recent,
                 Main="Un-scaled Falling Terms", Ylab="Term Occurrence",
                 Names=falling.selected.words,
                 OutputFile="Images/FallingTerms_PastRecent_Counts.png")

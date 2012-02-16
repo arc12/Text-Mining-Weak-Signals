@@ -15,48 +15,31 @@
 ## Run Properties - dependent on the source
 base.dir<-"/home/arc1/R Projects/Text Mining Weak Signals"
 source.dir<-paste(base.dir,"Source Data",sep="/")
-set.name<-"Union B 2005 to 2010"
+set.name<-"Union B 2005 to 2010_"
 output.dir<-paste("/home/arc1/R Projects/Text Mining Weak Signals Output/History Visualiser",set.name,sep="/")
 brew.dir<-paste(base.dir,"History Visualiser",sep="/")
 web.page.base<-paste("http://arc12.github.com/Text-Mining-Weak-Signals-Output/History Visualiser",set.name, sep="/")
+brew.type<-"c"# c=conference abstracts, b=blog posts
 
 dir.create(output.dir, showWarnings=TRUE)
 setwd(output.dir)
-abstracts.csv <- c("ICALT Abstracts 2005-2011 with metrics.csv",
+#these are combined into one corpus
+sets.csv <- c("ICALT Abstracts 2005-2011 with metrics.csv",
                    "ECTEL Abstracts 2006-2011 with metrics.csv",
                    "ICWL Abstracts 2005-2011 with metrics.csv",
                    "CAL Abstracts 2007-2009 with metrics.csv")
-conference.name <- c("ICALT",
-                     "ECTEL",
-                     "ICWL",
-                     "CAL")
-conference.title <- c("IEEE International Conference on Advanced Learning Technologies",
-                      "European Conference on Technology Enhanced Learning",
-                      "International Conference on Web-based Learning",
-                      "Computer Assisted Learning Conference")
                   
 ##
 ## Run properties - normally the same between different sources of the same kind for comparability
 ##
 today<-as.POSIXlt(Sys.Date(), tz = "GMT")
 start.year<-2005
+start.month<-1 #default = 1
 end.year<-2010
+end.month<-1 #default = 1. NB this determines the start of the last slice
 # data interval control.
 slice.size<-12 #how many months in a time slice used in the analysis. the last slice is is from start month 1 in the end.year to the end of month "slice.size" in end.year
 interpolate.size<-3 #number of months between interpolated points in the output; 1 "row" is created for each interval. No interpolation if slice.size = interpolate.size
-num.slices<-12*(end.year-start.year)/slice.size+1
-if(slice.size==interpolate.size){
-   num.interpolate <- num.slices
-}else{
-   num.interpolate<-slice.size*(num.slices-1)/interpolate.size+1
-}
-init.date<-as.POSIXlt(paste(start.year,"1","1",sep="-"), tz = "GMT")
-#slice dates define the filtering of documents.
-slice.start.dates<-as.POSIXlt(seq.POSIXt(init.date, by=paste(slice.size,"months"), length.out=num.slices))
-#interpolate dates define the plotting, whether or not an interpolation has actually occurred
-# hence they are offset to the centre of slices as well as (usually) interspersing the slice periods
-interpolate.start.dates<-as.POSIXlt(seq.POSIXt(init.date, by=paste(interpolate.size,"months"), length.out=num.interpolate))
-interpolate.start.dates$mon<-interpolate.start.dates$mon+(slice.size/2)
 
 ##
 ## Which Terms to run for

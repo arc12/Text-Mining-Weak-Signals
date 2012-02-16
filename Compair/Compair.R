@@ -1,5 +1,5 @@
 ## ***Made available using the The MIT License (MIT)***
-# Copyright (c) 2011, Adam Cooper
+# Copyright (c) 2012, Adam Cooper
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 # 
@@ -19,41 +19,7 @@ library("corpora")
 library("shape")#used for colour legend
 library("brew")
 
-## Run Properties - dependent on the source
-base.dir<-"/home/arc1/R Projects/Text Mining Weak Signals"
-my.dir<-paste(base.dir,"Compair", sep="/")
-source.dir<-paste(base.dir,"Source Data",sep="/")
-#the output directory. NB convention to include the year
-output.dir<-"/home/arc1/R Projects/Text Mining Weak Signals Output/Compair/2011 ICALT and ICCE"
-dir.create(output.dir, showWarnings=FALSE)
-setwd(output.dir)
-
-title<-"Comparison: 2011 Conference Proceedings from ICALT and ICCE"
-dir.A <- "ICALT Full 2011"
-dir.B<-"ICCE Full 2011"
-name.A <- "ICALT"
-name.B<-  "ICCE"
-title.A <- "IEEE International Conference on Advanced Learning Technologies"
-title.B<-"ICCE"
-url.A <- "http://www.ask4research.info/icalt/2010/"
-url.B<-"http://www.nectec.or.th/icce2011/"
-# additional stopwords, e.g. to remove words appearing in boilerplate of one conf and not the other
-extra.stopwords<-c("IEEE","International","Conference","Advanced","Learning",
-                   "Technologies","Proceedings","Computers","Education","Asia-Pacific",
-                   "Society")
-
-##
-## Run properties
-##
-# minimum term frequency for inclusion (aggregate over both sets)
-# NB as a fraction of terms
-min.term.freq<-0.002 #0.2%
-#max term freq is meant to be used to eliminate terms that mess up the plots
-max.term.freq<-0.02
-#min number of docs term must appear in (agg over both sets)
-min.docs<-4
-# statistical significance threshold
-p.max<-0.001
+#NB: Run {subdir}/Init_Compair.R first
 
 #
 #start logging run info
@@ -65,30 +31,61 @@ cat(paste("Run Parameters: min term freq=",min.term.freq,"; min docs=", min.docs
 cat(paste(paste(rep("-",79),collapse="")),"\n\n")
 
 ##
+## Read in the source data according to the type
 ##
-##
-readCorp<-function(dir.name){
-   Corpus(DirSource(paste(source.dir,dir.name,sep="/"),pattern="*.pdf"), readerControl=list(reader=readPDF(pdfinfoOptions="", pdftotextOptions="-nopgbrk -q")))
-}
-corp.A<-readCorp(dir.A)
-corp.B<-readCorp(dir.B)
+if(source.type == "PDF"){
+   readCorp<-function(dir.name){
+      Corpus(DirSource(paste(source.dir,dir.name,sep="/"),pattern="*.pdf"), 
+             readerControl=list(reader=readPDF(pdfinfoOptions="",
+                                               pdftotextOptions="-nopgbrk -q")))
+   }
+   corp.A<-readCorp(dir.A)
+   corp.B<-readCorp(dir.B)
+}else if(source.type == "CSV"){
+   readCorp<-function(file.name){
+      tmp_table<-read.csv(paste(source.dir,file.name,sep="/"),header=TRUE,sep=",",quote="\"")
+      map<-list(Content="content", Heading="title")#title is not actually used
+      Corpus(DataframeSource(tmp_table), readerControl=list(reader= readTabular(mapping=map)))
+   }
+   corp.A<-readCorp(file.A)
+   corp.B<-readCorp(file.B)
+}else{
+   stop("Unrecognised source type: ",source.type)
+}   
 
 ##
 ## Compute 
 ##
 makeDTM<-function(corp){
-   DocumentTermMatrix(corp, control = list(stemming=TRUE, stopwords=c(stopwords(language = "en"),tolower(extra.stopwords)), minWordLength=3, removeNumbers=TRUE, removePunctuation=TRUE))
+   DocumentTermMatrix(corp, control = list(stemming=TRUE, stopwords=c(stopwords(kind = "en"),tolower(extra.stopwords)), minWordLength=3, removeNumbers=TRUE, removePunctuation=TRUE))
 }
 
 dtm.A <- makeDTM(corp.A)
-dtm.bin.A<- weightBin(dtm.A)
 dtm.B <- makeDTM(corp.B)
+dtm.bin.A<- weightBin(dtm.A)
 dtm.bin.B<- weightBin(dtm.B)
 cat(paste("Summary for",name.A,":", " Docs=",length(Docs(dtm.A)),
           " Terms=",length(Terms(dtm.A))), file = log.file, sep = "\n", append = TRUE)
 cat(paste("Summary for",name.B,":", " Docs=",length(Docs(dtm.B)),
           " Terms=",length(Terms(dtm.B))), file = log.file, sep = "\n", append = TRUE)
 
+#maybe do some pre-combination slimming-down
+if(min.docs.single>0){
+   filterA<-col_sums(dtm.bin.A)>=min.docs.single
+   filterB<-col_sums(dtm.bin.B)>=min.docs.single
+   dtm.A<-dtm.A[,filterA]
+   dtm.B<-dtm.B[,filterB]
+   dtm.bin.A<-dtm.bin.A[,filterA]
+   dtm.bin.B<-dtm.bin.B[,filterB]
+   cat(paste("Eliminating terms appearing in <",min.docs.single," documents"),
+                                           file = log.file, sep = "\n", append = TRUE)
+   cat(paste("Summary for",name.A,":", " Docs=",length(Docs(dtm.A)),
+          " Terms=",length(Terms(dtm.A))), file = log.file, sep = "\n", append = TRUE)
+   cat(paste("Summary for",name.B,":", " Docs=",length(Docs(dtm.B)),
+          " Terms=",length(Terms(dtm.B))), file = log.file, sep = "\n", append = TRUE)
+}
+
+#the main stats to be used. Further filtering will be on aggregate (setA+setB) stats, later
 freqs.A<-col_sums(dtm.A)
 freqs.B<-col_sums(dtm.B)
 sum.terms.A<-sum(freqs.A)
@@ -97,14 +94,14 @@ docs.A<-col_sums(dtm.bin.A)
 docs.B<-col_sums(dtm.bin.B)
 
 #combine the two named lists into a data frame - i.e. with columns as the union set of terms and zeros for missing values
-combine<-function(A,B){
+v_combine<-function(A,B){
    cc<-rbind.fill(as.data.frame(t(A)),as.data.frame(t(B)))
    cc[1,is.na(cc[1,])]<-0 #rbind.fill leaves NAs
    cc[2,is.na(cc[2,])]<-0
    return(cc)
 }
-df<-combine(freqs.A,freqs.B)
-df<-rbind(df,combine(docs.A,docs.B))
+df<-v_combine(freqs.A,freqs.B)
+df<-rbind(df,v_combine(docs.A,docs.B))
 rownames(df)<-c("freqA","freqB","docsA","docsB")
 cat(paste("Merging the terms lists ->",length(df[1,]),"terms"), file = log.file, sep = "\n", append = TRUE)
 
@@ -121,18 +118,44 @@ df<-df[,df["freqB",]<=max.term.freq*sum.terms.B]
 cat(paste("Now using",length(df[1,]),"terms"), file = log.file, sep = "\n", append = TRUE)
 cat(paste(paste(rep("-",79),collapse="")),"\n\n")
 
+##
+## A quick interlude to dump out for the union set of fairly-freqent terms
+##             BEFORE applying the statistical test
+##
+# word:freqency data for wordle or wordookie
+#find unstemmed words for the selected terms to make for prettier plots
+# there may be more time-efficient approaches here, better than creating and using the corpus union BUT at least this approach is clear!
+corp.AB<-c(corp.A,corp.B)
+words.AB<-stemCompletion(colnames(df),corp.AB,type="prevalent")
+words.AB[words.AB==""]<-names(words.AB[words.AB==""])
+freq.AB<-as.vector(df["freqA",]+df["freqB",])
+names(freq.AB)<-words.AB
+freq.AB<-t(sort(freq.AB, decreasing=TRUE))
+write.table(freq.AB,"AB Pre-sig Wordle.txt", quote=FALSE,sep=":", col.names=FALSE)
+cat(paste("Pre-sig test freqs",summary(freq.AB), sep=" "),
+                        file = log.file, sep = "\n", append = TRUE)
+#clean up space-hog
+rm(corp.AB)
+
+##
+## Now apply the CHI2 test and filter according to significance level
+##
 #find the statistically significant term freq differences
 pvals<-chisq.pval(df["freqA",],sum.terms.A, df["freqB",],sum.terms.B)
 df["p",]<-pvals
 
 #quick plot for diagnosis
 hist(pvals)
+hist(pvals[pvals<0.01], breaks=20)
 
 #select only those passing the threshold
 #and create two groups depending on whether set A or B is more frequent ** use fractional freqs
 df<-df[,df["p",]<=p.max]
 df.A<-df[,df["freqA",]/sum.terms.A>df["freqB",]/sum.terms.B]
 df.B<-df[,df["freqA",]/sum.terms.A<df["freqB",]/sum.terms.B]
+cat(paste(length(df[1,]),"terms meet the probability criterion"), file = log.file, sep = "\n", append = TRUE)
+cat(paste("Which split into two sets according to the dominant occurrence. A-terms:",length(df.A[1,]),"; B-terms",length(df.B[1,])), file = log.file, sep = "\n", append = TRUE)
+cat(paste(paste(rep("-",79),collapse="")),"\n\n")
 
 #find unstemmed words for the selected terms to make for prettier plots
 words.A<-stemCompletion(colnames(df.A),corp.A,type="prevalent")
@@ -142,8 +165,11 @@ words.B[words.B==""]<-names(words.B[words.B==""])
 
 # plot an all-together
 squares.plot<-function(X,Y,Z,Labels,Main,FileName){
+   X<-100.0*X
+   Z<-1000.0*Z/sum(Z)
    rt.Z<-sqrt(Z)
-   Z.pal<-as.integer(Z)-min(Z)+1
+   Z<-as.integer(Z)
+   Z.pal<-Z-min(Z)+1
    pal<-heat.colors(max(Z),alpha=0.7)
    type<-unlist(strsplit(FileName,"\\."))[[2]]#file type
    switch(type,
@@ -153,18 +179,18 @@ squares.plot<-function(X,Y,Z,Labels,Main,FileName){
         fg="black", bg=pal[Z.pal], inches=0.3, log="y", ylim=c(-log10(p.max),max(Y)),
         xlab="Term Frequency(%)", ylab="Significance (-log10(p))", main=Main, cex.main=1.0)
    text(X, Y, Labels, cex=1.0, pos=4, offset=0.8)
-   colorlegend(pal, zlim=c(min(Z.pal), max(Z.pal)),
-               main="Docs", cex=1.0, main.cex=1.5, posx=c(0.93,0.96), left=TRUE)
+   colorlegend(pal, zlim=c(0, max(Z)),
+               main="Docs/1000", cex=1.0, main.cex=1.5, posx=c(0.93,0.96), left=TRUE)
    dev.off()
 }
-squares.plot(100*df.A["freqA",]/sum.terms.A, -log10(df.A["p",]), df.A["docsA",],words.A,
+squares.plot(df.A["freqA",]/sum.terms.A, -log10(df.A["p",]), df.A["docsA",],words.A,
              paste("Terms more frequent at",name.A),FileName="A.png")
-squares.plot(100*df.B["freqB",]/sum.terms.B, -log10(df.B["p",]), df.B["docsB",],words.B,
+squares.plot(df.B["freqB",]/sum.terms.B, -log10(df.B["p",]), df.B["docsB",],words.B,
              paste("Terms more frequent at",name.B),FileName="B.png")
 
-squares.plot(100*df.A["freqA",]/sum.terms.A, -log10(df.A["p",]), df.A["docsA",],words.A,
+squares.plot(df.A["freqA",]/sum.terms.A, -log10(df.A["p",]), df.A["docsA",],words.A,
              paste("Terms more frequent at",name.A),FileName="A.pdf")
-squares.plot(100*df.B["freqB",]/sum.terms.B, -log10(df.B["p",]), df.B["docsB",],words.B,
+squares.plot(df.B["freqB",]/sum.terms.B, -log10(df.B["p",]), df.B["docsB",],words.B,
              paste("Terms more frequent at",name.B),FileName="B.pdf")
 
 ##
@@ -175,7 +201,7 @@ gephi.csv<-function(DF, Labels, DTM.bin, SetLetter){
    nodes1.df<-data.frame(Id=terms,Label=Labels,Weight=-log10(as.numeric(DF["p",])))
    edges1.df<-data.frame()
    #use the binary occurrence doc-term-matrix in plain matrix form for easy calcs
-   mat.bin<-as.matrix(DTM.bin)[,terms]#subset of columns
+   mat.bin<-as.matrix(DTM.bin[,terms])#subset of columns
    #loop over terms, this loop is one end of each edge
    for(t in 2:length(terms)){
       edge.weights<-colSums(mat.bin[,t]*mat.bin)
@@ -189,19 +215,21 @@ gephi.csv<-function(DF, Labels, DTM.bin, SetLetter){
    cat(paste("Significant Term Co-occurrence Stats for Set",SetLetter), file = log.file, sep = "\n", append = TRUE)
    ew.summary<-summary(unlist(edges1.df["Weight"]))
    cat(paste(names(ew.summary),ew.summary,sep="="), file = log.file, sep = "\n", append = TRUE)
-   #remove cases with less than median co-occurrence
-   cat("Only exporting co-occurrence edges >= the 3rd Quartile in weighting.", file = log.file, sep = "\n\n", append = TRUE)
-   edges1.df<-subset(edges1.df,Weight>=ew.summary["3rd Qu."])
+   #remove cases with less than given quantile co-occurrence
+   cut.weight<-quantile(unlist(edges1.df["Weight"]),edge.quantile)
+   cat(paste("Only exporting co-occurrence edges >= the",edge.quantile,"Quartile in weighting (wt>=",cut.weight,")"), file = log.file, sep = "\n\n", append = TRUE)
+   edges1.df<-subset(edges1.df,Weight>=cut.weight)
    #save to disk. we do not want row names since these end up being scrubbed on import to gephi
    write.csv(nodes1.df, file=paste(SetLetter, "Term-Co-occurrence Nodes.csv",sep=" "),
              row.names=FALSE)
    write.csv(edges1.df, file=paste(SetLetter, "Term-Co-occurrence Edges.csv",sep=" "),
              row.names=FALSE)
+   rm(mat.bin, nodes1.df, edges1.df)
 }
-
+#
 gephi.csv(df.A,words.A,dtm.bin.A,"A")
 gephi.csv(df.B,words.B,dtm.bin.B,"B")
-## **** notes on importing into Gephi (v0.8 alpha used)
+## **** notes on importing into Gephi (v0.8 beta used)
 # import nodes then edges from CSV files. Make Node Weight be a float [it is ESSENTIAL not to leave it as a String]
 # show node labels, use "statistics" to calculate modularity
 # Use "ranking" to set node size = imported weight 

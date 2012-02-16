@@ -27,13 +27,30 @@ while(sink.number()>0)
 sink(file="HistoryVis.log", append=FALSE, type="output", split=TRUE)
 
 ##
+## Compute the time-slice operation parameters from the "init" values
+##
+num.slices<-(end.month-start.month+12*(end.year-start.year))/slice.size+1
+if(slice.size==interpolate.size){
+   num.interpolate <- num.slices
+}else{
+   num.interpolate<-slice.size*(num.slices-1)/interpolate.size+1
+}
+init.date<-as.POSIXlt(paste(start.year,start.month,"1",sep="-"), tz = "GMT")
+#slice dates define the filtering of documents.
+slice.start.dates<-as.POSIXlt(seq.POSIXt(init.date, by=paste(slice.size,"months"), length.out=num.slices))
+#interpolate dates define the plotting, whether or not an interpolation has actually occurred
+# hence they are offset to the centre of slices as well as (usually) interspersing the slice periods
+interpolate.start.dates<-as.POSIXlt(seq.POSIXt(init.date, by=paste(interpolate.size,"months"), length.out=num.interpolate))
+interpolate.start.dates$mon<-interpolate.start.dates$mon+(slice.size/2)
+
+##
 ## Read in the abstracts. NB this code allows for vectors of csv file names
 ##
 #(aside) rbinding tables is faster and better than merging corpora using tm_combine, which leads to problematical duplicate document ids.
 table<-NULL
-for (src in 1:length(abstracts.csv)){
+for (src in 1:length(sets.csv)){
    # read in CSV with format year,pages,title,authors,abstract,keywords. There is a header row. title/authors/keywords are delimited by "
-   tmp_table<-read.csv(paste(source.dir,abstracts.csv[[src]],sep="/"),header=TRUE,sep=",",quote="\"")
+   tmp_table<-read.csv(paste(source.dir,sets.csv[[src]],sep="/"),header=TRUE,sep=",",quote="\"")
    #accumulate the table            
    table<-rbind(table,tmp_table)
    tmp_table<-NULL
@@ -41,7 +58,11 @@ for (src in 1:length(abstracts.csv)){
 # now read in the possibly-cumulated table to a corpus, handling the metadata via mapping
 #create a mapping from datatable column names to PlainTextDocument attribute names
 #"Keywords" and after are user-defined "localmetadata" properties while the rest are standard tm package document metadata fields
-map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url", Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")
+if(brew.type=="c"){
+   map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url", Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")
+   }else{
+       map<-list(Content="content", DateTimeStamp="datestamp", Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")  
+   }
 #use the mapping while reading the dataframe source to create a coprus with metadata
 corp<-Corpus(DataframeSource(table), readerControl=list(reader= readTabular(mapping=map)))
 # Standard document-term matrix of the entire corpus, use the standard stopword set with a few modifications!
@@ -94,8 +115,11 @@ for (i.run in 1:length(term.lists)){
       q.start.date$mday<-q.start.date$mday-1
       q.end.date<-end.date
       q.end.date$mday<-q.end.date$mday-1
-      slice.doc_bool<-tm_index(corp,FUN=sFilter, doclevel = TRUE, useMeta = FALSE,
-            paste("datetimestamp<='",q.end.date,"' & datetimestamp>'",q.start.date,"'",sep=""))
+#       slice.doc_bool<-tm_index(corp,FUN=sFilter, doclevel = TRUE, useMeta = FALSE,
+#             paste("datetimestamp<='",q.end.date,"' & datetimestamp>'",q.start.date,"'",sep=""))
+      #changed from using tm_index because it seemed not to work with month-level periods
+      dts<-as.POSIXlt(unlist(meta(corp,"DateTimeStamp",type="local")))
+      slice.doc_bool<- (dts>q.start.date) & (dts<=q.end.date)
       slice.docs.n<-sum(slice.doc_bool)
       #this is lazy, should really do imputation
       if(slice.docs.n == 0){

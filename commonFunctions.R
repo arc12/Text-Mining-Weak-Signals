@@ -70,7 +70,7 @@ LogTerms<-function(fileName, terms, words=NULL){
 
 CustomStopwords<-function(){
    #+  "paper" (which is common in journal/proceedings abstracts!)
-   SW<-c(stopwords(language = "en"),"paper","studentspsila")
+   SW<-c(stopwords(kind = "en"),"paper","studentspsila")
    #- some terms (and various expansions) that are relevant to the education domain
    SW<-SW[-grep("group", SW)]
    SW<-SW[-grep("problem", SW)]
