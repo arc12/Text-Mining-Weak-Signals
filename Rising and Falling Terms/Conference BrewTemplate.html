@@ -135,16 +135,16 @@ dt{text-decoration:underline;}
 <h1>Conference Scan: <%=title%> <%=conf.year.recent%></h1>
 <%figure<-1%>
 <p>This is an un-interpreted and automatically-generated report on emerging, rising and falling terms from the abstracts of the 
-<%if(length(conference.title)==1){%>
- <%=conference.title%>.
+<%if(length(set.title)==1){%>
+ <%=set.title%>.
 <%}else{
- for(i in 1:length(conference.title)){
-  if(i==length(conference.title)){%>
-   and <%=conference.title[i]%>.
- <%}else if (i==length(conference.title)-1){%>
-   <%=conference.title[i]%> 
+ for(i in 1:length(set.title)){
+  if(i==length(set.title)){%>
+   and <%=set.title[i]%>.
+ <%}else if (i==length(set.title)-1){%>
+   <%=set.title[i]%> 
  <%}else{%>
-   <%=conference.title[i]%>,
+   <%=set.title[i]%>,
  <%}#end if
  }#end loop
 }#end if%>
@@ -462,13 +462,13 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 </tr>
 </table>
 
-<%if(length(conference.name)==1){%>
+<%if(length(set.name)==1){%>
 <p><%if(show.abstracts){-%>Quoted abstracts are &copy; the publisher, <%=publisher.series%>.<%}%> Papers and a full set of abstracts may be <a href="<%=publisher.url%>">found on the publisher's website</a> and other information may be found on the <a href="<%=last.conference.url%>">conference website</a>.</p>
 <%}else{%>
 <p><%if(show.abstracts){-%>Quoted abstracts are &copy; the respective publisher, as follows:<%}else{%>Conference proceedings and other information may be found at:<%}%></p>
 <ul>
-<%for(conf in 1:length(conference.name)){%>
-<li><%=conference.name[conf]%> - <a href="<%=publisher.url[conf]%>">publisher website</a><%if(last.conference.url[conf]!=""){%>,  <%=conf.year.recent%> <a href="<%=last.conference.url[conf]%>">conference website</a><%}%>.</li>
+<%for(conf in 1:length(set.name)){%>
+<li><%=set.name[conf]%> - <a href="<%=publisher.url[conf]%>">publisher website</a><%if(last.conference.url[conf]!=""){%>,  <%=conf.year.recent%> <a href="<%=last.conference.url[conf]%>">conference website</a><%}%>.</li>
 <%}#end loop%>
 </ul>
 <%}#end if%>
