@@ -476,7 +476,7 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 </table>
 <%if(source.type=="b"){%>
 	<p>The blog content analysed was crawled by the <a href="http://dbis.rwth-aachen.de/cms/projects/mediabase">Mediabase</a>, for which thanks to Michael Derntl and colleagues at <a href="http://dbis.rwth-aachen.de/cms">RWTH Aachen DBIS</a> (and TELMap partners).</p>
-<%>}else{%>
+<%}else{%>
 <%if(length(set.name)==1){%>
 <p><%if(show.abstracts){-%>Quoted abstracts are &copy; the publisher, <%=publisher.series%>.<%}%> Papers and a full set of abstracts may be <a href="<%=publisher.url%>">found on the publisher's website</a> and other information may be found on the <a href="<%=last.conference.url%>">conference website</a>.</p>
 <%}else{%>
