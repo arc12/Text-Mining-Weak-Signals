@@ -1,12 +1,12 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
 <head>
-<title>Conference Scan: <%=title%> <%=conf.year.recent%></title>
+<title><%=h1%></title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 <meta name="AUTHOR" content="Adam Cooper"/>
 <!--
 ## ***Made available using the The MIT License (MIT)***
-# Copyright (c) 2011, Adam Cooper
+# Copyright (c) 2012, Adam Cooper
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 # 
@@ -132,9 +132,9 @@ dt{text-decoration:underline;}
         -->
 </head>
 <body  onload="startAll();">
-<h1>Conference Scan: <%=title%> <%=conf.year.recent%></h1>
+<h1><%=h1%></h1>
 <%figure<-1%>
-<p>This is an un-interpreted and automatically-generated report on emerging, rising and falling terms from the abstracts of the 
+<p>This is an un-interpreted and automatically-generated report on emerging, rising and falling terms from the <%=doc.pseudonym%>s of the 
 <%if(length(set.title)==1){%>
  <%=set.title%>.
 <%}else{
@@ -149,46 +149,59 @@ dt{text-decoration:underline;}
  }#end loop
 }#end if%>
 
-It is one part of the <a href="http://blogs.cetis.ac.uk/adam/2011/05/12/weak-signals-and-text-mining-i-an-introduction-to-weak-signals/">&quot;Weak Signals Analysis&quot; work of the TEL-Map Project</a>. The same analytical method is also applied to blogs, hence the term "document" is used in plots; this may be equated to an abstract in this report.</p>
+It is one part of the <a href="http://blogs.cetis.ac.uk/adam/2011/05/12/weak-signals-and-text-mining-i-an-introduction-to-weak-signals/">&quot;Weak Signals Analysis&quot; work of the TEL-Map Project</a>. The same analytical method is also applied to different kind of source data, hence the term "document" is used in plots; this may be equated to &quot;<%=doc.pseudonym%>&quot; in this report.</p>
 
 <p><em>All plots will open in a new window/tab as 1000x1000 pixel images if clicked on.</em></p>
+
 <h2>The Method</h2>
-<p>The analysis involves the application of text mining to the abstracts of the conference proceedings. The set of abstracts from the target year (<%=conf.year.recent%>) is contrasted against a set from the previous <%=conf.years.in_past%> years. Pearson's "Chi Squared" test is applied to determine the probability that the frequency of terms in both of these two samples could be from the same hypothetical distribution. The probability that the difference in term frequency could be ascribed to chance - assuming this hypothesis is true - must be less than <%=100*thresh.pval%>% for a term to be presented in this report. This is referred to as the "significance threshold" below.</p>
+<p>The analysis involves the application of text mining to the <%=docs.pseudonym.long%> divided into two sets according to time:
+<ul>
+<%if(source.type=="b"){%>
+<li><strong>Target</strong>: <%=doc.pseudonym%>s published during the <%=recent.months%> months between <%=format(key.date, date.format)%> and <%=format(last.date, date.format)%>.</li>
+<li><strong>Previous</strong>: <%=doc.pseudonym%>s published during the previous <%=recent.months%> months (back to <%=format(start.date, date.format)%>).</li>
+<%}else{%>
+<li><strong>Target</strong>: <%=doc.pseudonym%>s from <%=conf.year.recent%> conferences</li>
+<li><strong>Previous</strong>: <%=doc.pseudonym%>s from the previous <%=conf.years.in_past%> years</li>
+<%}%>
+</ul>
+</p>
+ 
+<p>Pearson's "Chi Squared" test is applied to determine the probability that the frequency of terms in both of these two samples could be from the same hypothetical distribution. The probability that the difference in term frequency could be ascribed to chance - assuming this hypothesis is true - must be less than <%=100*thresh.pval%>% for a term to be presented in this report. This is referred to as the "significance threshold" below.</p>
 
 <p>Further informaton about the text mining process being used is <a href="http://blogs.cetis.ac.uk/adam/2011/05/12/weak-signals-and-text-mining-ii-text-mining-background-and-application-ideas/">available elsewhere</a> but for the purpose of interpretation it should be noted that &quot;stemming&quot; and &quot;stop-word&quot; removal has been used. &quot;Stop-word&quot; removal means that common words are removed before beginning the analysis. &quot;Stemming&quot; involves the conversion of similar words that differ only by their ending into a truncated form that is used as the &quot;term&quot; in the analysis. For the purpose of readability the shortest word that produces the term is generally given, although sometimes the algorithm fails and the stemmed version is shown. This should be born in mind when examining the results.</p>
 
-<p>Four views on the differences between the target and previous years' abstracts are presented:
+<p>Four views on the differences between the Target and Previous sets of <%=doc.pseudonym%>s are presented:
 <ul>
-   <li><strong>New Terms</strong>, where this report highlights terms that meet the significance threshold and appear in at least <%=doc_count.thresh%> different target-year abstracts but not at all in the previous years.</li>
-   <li><strong>Rising Terms</strong>, where term frequency rises by a statistically-significant amount and has an average frequency of less than <%=100*max.past.freq%>% in the previous years set. A term must also appear in at least <%=doc_count.thresh%> different target-year abstracts. The Rising Terms view focusses on possible weak signals, possible <em>new</em> trends.</li>
-   <li><strong>Established Terms</strong> are similar to "Rising Terms" but appear with a frequency of <%=100*max.past.freq%>% or more on average in the previous years and hence are considered to be established upwards trends rather than indicators of a possible weak signal. Since this report is primarily concerned with Weak Signal detection, relatively little emphasis is given to Established Terms.</li>
-   <li><strong>Falling Terms</strong>, are those terms showing a decrease between the previous years set and the target-year abstracts that exceeds a significance threshold of <%=100*thresh.pval.falling%>% (a more lenient condition is used for falling terms).</li>
+   <li><strong>New Terms</strong>, where this report highlights terms that meet the significance threshold and appear in at least <%=doc_count.thresh%> different Target <%=doc.pseudonym%>s but not at all in the Previous set.</li>
+   <li><strong>Rising Terms</strong>, where term frequency rises by a statistically-significant amount and has an average frequency of less than <%=100*max.past.freq%>% in the Previous set. A term must also appear in at least <%=doc_count.thresh%> different Target <%=doc.pseudonym%>s. The Rising Terms view focusses on possible weak signals, possible <em>new</em> trends.</li>
+   <li><strong>Established Terms</strong> are similar to "Rising Terms" but appear with a frequency of <%=100*max.past.freq%>% or more on average in the Previous set and hence are considered to be established upwards trends rather than indicators of a possible weak signal. Since this report is primarily concerned with Weak Signal detection, relatively little emphasis is given to Established Terms.</li>
+   <li><strong>Falling Terms</strong>, are those terms showing a decrease between the Previous set and the Target <%=doc.pseudonym%>s that exceeds a significance threshold of <%=100*thresh.pval.falling%>% (a more lenient condition is used for falling terms).</li>
 </ul>
-<em>For Rising, Established and Falling Terms, the % change is calculated on the proportion of all stemmed words that are the term in question. For example if 2.00% of stemmed words in the previous years set was &quot;learn&quot; and 2.12% pertains to the current set, then the rise is 6%.</em>
+<em>For Rising, Established and Falling Terms, the % change is calculated on the proportion of all stemmed words that are the term in question. For example if 2.00% of stemmed words in the previous set was &quot;learn&quot; and 2.12% pertains to the current set, then the rise is 6%.</em>
 </p>
 
 <h2>Summary Statistics and Overall Pattern</h2>
 <h3>Corpus Statistics</h3>
-<p>There are <%=sum(!past.doc_ids.bool)%> abstracts in <%=conf.year.recent%> and <%=sum(past.doc_ids.bool)%> in the <%=conf.years.in_past%> previous years. Within these abstracts, which define the corpus, there are <%=length(Terms(dtm.tf))%> distinct terms after removing stop words and applying stemming. The summary statistics for the number of times each term appears in the corpus are: mean=<%=summary(dtm.tf.sums)[["Mean"]]%>, median=<%=summary(dtm.tf.sums)[["Median"]]%>, maximum=<%=summary(dtm.tf.sums)[["Max."]]%>.</p>
+<p>There are <%=sum(!past.doc_ids.bool)%> <%=doc.pseudonym%>s in the Target set and <%=sum(past.doc_ids.bool)%> <%=doc.pseudonym%>s in the Previous set. Within these <%=doc.pseudonym%>s, which define the corpus, there are <%=length(Terms(dtm.tf))%> distinct terms after removing stop words and applying stemming. The summary statistics for the number of times each term appears in the corpus are: mean=<%=summary(dtm.tf.sums)[["Mean"]]%>, median=<%=summary(dtm.tf.sums)[["Median"]]%>, maximum=<%=summary(dtm.tf.sums)[["Max."]]%>.</p>
 
 <p>For the set of New Terms:
 <ul>
-   <li>the number of times each term appears in at least <%=doc_count.thresh%> different abstracts the target set but before applying the significance test has: mean=<%=raw.summary.new[["Mean"]]%>, median=<%=raw.summary.new[["Median"]]%>, maximum=<%=raw.summary.new[["Max."]]%>.</li>
-   <li>after selecting terms above the significance threshold, there are <%=length(Terms(dtm.tf.new))%> terms in scope which appear in <%=length(Docs(dtm.tf.new))%> out of the <%=sum(!past.doc_ids.bool)%> target abstracts.</li>
+   <li>the number of times each term appears in at least <%=doc_count.thresh%> different <%=doc.pseudonym%>s the Target set but before applying the significance test has: mean=<%=raw.summary.new[["Mean"]]%>, median=<%=raw.summary.new[["Median"]]%>, maximum=<%=raw.summary.new[["Max."]]%>.</li>
+   <li>after selecting terms above the significance threshold, there are <%=length(Terms(dtm.tf.new))%> terms in scope which appear in <%=length(Docs(dtm.tf.new))%> out of the <%=sum(!past.doc_ids.bool)%> Target set <%=doc.pseudonym%>s.</li>
 </ul>
 
 For the set of Rising Terms:
 <ul>
-   <li>the % rise from the previous years to the target year before applying the significance test has: mean=<%=raw.summary.rise[["Mean"]]%>, median=<%=raw.summary.rise[["Median"]]%>, maximum=<%=raw.summary.rise[["Max."]]%>.</li>
-   <li>after selecting terms above the significance threshold, there are <%=length(Terms(dtm.tf.rising))%> terms in scope which appear in <%=length(Docs(dtm.tf.rising))%> out of the <%=sum(!past.doc_ids.bool)%> target abstracts.</li>
+   <li>the % rise in frequency from the Previous set to the Target set before applying the significance test has: mean=<%=raw.summary.rise[["Mean"]]%>, median=<%=raw.summary.rise[["Median"]]%>, maximum=<%=raw.summary.rise[["Max."]]%>.</li>
+   <li>after selecting terms above the significance threshold, there are <%=length(Terms(dtm.tf.rising))%> terms in scope which appear in <%=length(Docs(dtm.tf.rising))%> out of the <%=sum(!past.doc_ids.bool)%> Target set <%=doc.pseudonym%>s.</li>
 </ul>
 
-The set of Falling Terms (the % fall from the previous years to the target year) before applying the singificance test has summary statistics of: mean=<%=raw.summary.fall[["Mean"]]%>, median=<%=raw.summary.fall[["Median"]]%>, maximum=<%=raw.summary.fall[["Max."]]%>.
+The set of Falling Terms (the % fall in frequency from the Previous to the Target set) before applying the singificance test has summary statistics of: mean=<%=raw.summary.fall[["Mean"]]%>, median=<%=raw.summary.fall[["Median"]]%>, maximum=<%=raw.summary.fall[["Max."]]%>.
 </p>
 
 <h3>New Terms</h3>
 <div class="cap-img"><a href="Images/NewTermFrequencies.png" target="image_win"><img src="Images/NewTermFrequencies.png" alt="New Term Frequencies" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: The number of terms that appear 1,2,3... times in the target year set not at all in the previous years. In this case there are <%=term.sums.new.t[doc_count.thresh+2]%> new terms that appear <%=doc_count.thresh+2%> times. NB: the low end is suppressed due to the requirement that terms appear in at lest <%=doc_count.thresh%> documents.</div>
+Figure <%=figure%><%figure<-figure+1%>: The number of terms that appear 1,2,3... times in the target set set not at all in the previous set. In this case there are <%=term.sums.new.t[doc_count.thresh+2]%> new terms that appear <%=doc_count.thresh+2%> times. NB: the low end is suppressed due to the requirement that terms appear in at lest <%=doc_count.thresh%> documents.</div>
 
 <!--reset layout-->
 <div class="clear"/><p></p>
@@ -197,43 +210,43 @@ Figure <%=figure%><%figure<-figure+1%>: The number of terms that appear 1,2,3...
 <div class="cap-img"><a href="Images/RisingTerm_Distribution.png" target="image_win"><img src="Images/RisingTerm_Distribution.png" alt="Rising Term Distribution" width="500" height="500" /></a><BR/>
 Figure <%=figure%><%figure<-figure+1%>: Number of terms with a given % rise before applying the significance test.</div>
 <div class="cap-img"><a href="Images/FallingTerm_Distribution.png" target="image_win"><img src="Images/FallingTerm_Distribution.png" alt="Falling Term Distribution" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Number of terms with a given % fall before filtering out those terms that do not meet the criterion of the significance test. A 100% fall indicates that the term does not appear in the target year's abstracts.</div>
+Figure <%=figure%><%figure<-figure+1%>: Number of terms with a given % fall before filtering out those terms that do not meet the criterion of the significance test. A 100% fall indicates that the term does not appear in the target set's <%=doc.pseudonym%>s.</div>
 
 <!--reset layout-->
 <div class="clear"/><p></p>
 
 <h2>Auxillary Measures of Interest</h2>
-<p>In addition to the primary measures of interest - statistical significance and the percentage change - two more are calculated as an aid to judging the actual, as opposed to statistical, significance of differences between the previous years abstracts and the target-year set. The auxillary measures apply to the abstracts and are:</p>
+<p>In addition to the primary measures of interest - statistical significance and the percentage change - two more are calculated as an aid to judging the actual, as opposed to statistical, significance of differences between the Previous set of <%=doc.pseudonym%>s and the Target set. The auxillary measures apply to the <%=doc.pseudonym%>s and are:</p>
 <ul>
-<li><strong>Novelty</strong>, which is a measure of how unusual the abstract is, based on the terms appearing in it, compared to all other abstracts in the corpus.</li>
+<li><strong>Novelty</strong>, which is a measure of how unusual the <%=doc.pseudonym%> is, based on the terms appearing in it, compared to all other <%=doc.pseudonym%>s in the corpus.</li>
 <li><strong>Subjectivity</strong>, which is a measure of the fraction of the words used that are listed as generally having either positive or negative sentiment associated with their occurrence (the <a href="http://www.wjh.harvard.edu/~inquirer/homecat.htm">Harvard General Inquirer</a> lexicon is used). A high Subjectivity is assumed to indicate the author's active interest rather than passive observation; active interest may correlate with weak signals. A subjectivity of 0.1 indicates 10% of the words (after removel of stopwords) have connotations of positive or negative sentiment.</li>
 </ul>
 
 <div class="cap-img"><a href="Images/AbsoluteNovelty.png" target="image_win"><img src="Images/AbsoluteNovelty.png" alt="Absolute Novelty" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Distribution of novelty measure among abstracts.<br/>Novelty= 1 - the maximum similarity (specifically the <a href="http://en.wikipedia.org/wiki/Cosine_similarity">cosine similarity</a>) between the abstract and any other abstract in the corpus.</div>
+Figure <%=figure%><%figure<-figure+1%>: Distribution of novelty measure among <%=doc.pseudonym%>s.<br/>Novelty= 1 - the maximum similarity (specifically the <a href="http://en.wikipedia.org/wiki/Cosine_similarity">cosine similarity</a>) between the <%=doc.pseudonym%> and any other <%=doc.pseudonym%> in the corpus.</div>
 <div class="cap-img"><a href="Images/StandardisedNovelty.png" target="image_win"><img src="Images/StandardisedNovelty.png" alt="Standardised Novelty" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Distribution of standardised novelty measure among abstracts.<br/>An abstract with median novelty will have a standardised novelty of 0 and a unique abstract a value of 1. Negative values indicate an abstract that has a closer &quot;neighbour&quot; than the median.</div>
+Figure <%=figure%><%figure<-figure+1%>: Distribution of standardised novelty measure among <%=doc.pseudonym%>s.<br/>A document with median novelty will have a standardised novelty of 0 and a unique <%=doc.pseudonym%>s a value of 1. Negative values indicate a document that has a closer &quot;neighbour&quot; than the median.</div>
 
 <!--reset layout-->
 <div class="clear"/>
 
-<p>Since conference abstracts are quite short, hence contain few terms after stopword removal, and the corpus size is modest, the Novelty Measure is typically skewed towards a high value. In this case it is not realistic to identity truely novel abstracts, whereas a high negative value for the Standardised Novely is a reasonalble indicator of similarity.</p>
-<p>The papers containing the highest novelty scores are <a href="#novelty_abs">listed below</a>.</p>
+<p>The Novelty Measure is particularly unreliable when <%=doc.pseudonym%>s are quite short, hence contain few terms after stopword removal, and if the corpus size is modest. In this case, the distribution of novelty scores is typically skewed towards a high value. In this case it is not realistic to identity truely novel <%=doc.pseudonym%>s, whereas a high negative value for the Standardised Novely is a reasonalble indicator of similarity.</p>
+<p>The <%=doc.pseudonym%>s containing the highest novelty scores are <a href="#novelty_abs">listed below</a>.</p>
 
 <div class="cap-img"><a href="Images/SentimentComparison.png" target="image_win"><img src="Images/SentimentComparison.png" alt="Positive and Negative Sentiment and Subjectivity Score" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Comparative distribution of positive and negative sentiment and subjectivity acore among abstracts.<br/>The central box has a range defined by the 1st and 3rd quartiles and the limits of the &quot;whiskers&quot; are no more than 1.5x the interquartile range away from the box. Abstracts outside the range of the whiskers are individually plotted as circles and are deemed to be &quot;outliers&quot;. The central bar indicates the median and the cross indicates the mean.</div>
-<div class="cap-img"><a href="Images/TopSubjectivity.png" target="image_win"><img src="Images/TopSubjectivity.png" alt="Abstracts with Highest Subjectivity Score" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Balance of sentiment among the 10% most-subjective abstracts.</div>
+Figure <%=figure%><%figure<-figure+1%>: Comparative distribution of positive and negative sentiment and subjectivity acore among <%=doc.pseudonym%>s.<br/>The central box has a range defined by the 1st and 3rd quartiles and the limits of the &quot;whiskers&quot; are no more than 1.5x the interquartile range away from the box. <%=doc.Pseudonym%>s outside the range of the whiskers are individually plotted as circles and are deemed to be &quot;outliers&quot;. The central bar indicates the median and the cross indicates the mean.</div>
+<div class="cap-img"><a href="Images/TopSubjectivity.png" target="image_win"><img src="Images/TopSubjectivity.png" alt="Highest Subjectivity Score" width="500" height="500" /></a><BR/>
+Figure <%=figure%><%figure<-figure+1%>: Balance of sentiment among the 10% most-subjective <%=doc.pseudonym%>s.</div>
 
 <!--reset layout-->
 <div class="clear"/>
-<p>The papers containing the highest subjectivity scores are <a href="#subj_abs">listed below</a>.</p>
+<p>The <%=doc.pseudonym%>s containing the highest subjectivity scores are <a href="#subj_abs">listed below</a>.</p>
 
 <h2>Significant New Terms</h2>
-<div>Significant New Terms appear for the first time in at least <%=doc_count.thresh%> different abstracts in the target year of <%=conf.year.recent%> and meet the  <%=100*thresh.pval%>% "significance threshold". <%=in_themes.msg.new%></div>
+<div>Significant New Terms appear for the first time in at least <%=doc_count.thresh%> different <%=doc.pseudonym%>s in the Target set and meet the  <%=100*thresh.pval%>% "significance threshold". <%=in_themes.msg.new%></div>
 
 <div class="cap-img"><a href="Images/NewTermFrequencies_Selected.png" target="image_win"><img src="Images/NewTermFrequencies_Selected.png" alt="New Term Frequencies" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Frequencies of occurrence of the New Terms in the target year.</div>
+Figure <%=figure%><%figure<-figure+1%>: Frequencies of occurrence of the New Terms in the target set.</div>
 
 <div class="cap-img">
 	<div id="newTermCanvasContainer">
@@ -245,34 +258,34 @@ Figure <%=figure%><%figure<-figure+1%>: Frequencies of occurrence of the New Ter
  </canvas>
  </div>
  <BR/>
-Figure <%=figure%><%figure<-figure+1%>: Wordcloud of frequencies of occurrence of the New Terms in the target year, coloured and sized according to term frequency.<br/>Uses <a href="http://www.goat1000.com/tagcanvas.php">TagCanvas</a> by &quot;goat 1000&quot;.</div>
+Figure <%=figure%><%figure<-figure+1%>: Wordcloud of frequencies of occurrence of the New Terms in the target set, coloured and sized according to term frequency.<br/>Uses <a href="http://www.goat1000.com/tagcanvas.php">TagCanvas</a> by &quot;goat 1000&quot;.</div>
 
 <!--reset layout-->
 <div class="clear"/>
-<p>The papers containing the significant new terms are <a href="#new_abs">listed below</a>.</p>
+<p>The <%=doc.pseudonym%>s containing the significant new terms are <a href="#new_abs">listed below</a>.</p>
 
 <div class="cap-img"><a href="Images/NewTerm_DocOccurrence_Bar.png" target="image_win"><img src="Images/NewTerm_DocOccurrence_Bar.png" alt="New Terms: Document Occurrence" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: The number of abstracts containing each New Term. A New Term that appears in a large number of abstracts is likely to be a stronger indication of a new trend that a New Term that is concentrated in a single abstract.</div>
+Figure <%=figure%><%figure<-figure+1%>: The number of <%=doc.pseudonym%>s containing each New Term. A New Term that appears in a large number of <%=doc.pseudonym%>s is likely to be a stronger indication of a new trend that a New Term that is concentrated in a single <%=doc.pseudonym%>.</div>
 <div class="cap-img"><a href="Images/NewTerm_DocOccurrence_Heat.png" target="image_win"><img src="Images/NewTerm_DocOccurrence_Heat.png" alt="Heatmap of Nearly-New Terms: Document Occurrence" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Heatmap to show the distribution of the New Terms among abstracts. Red cells indicate the term does not appear. Orange cells indicate a relatively less-frequent term and yellow cells indicate terms that are relatively more frequent <em>among the New Terms in a given document</em>. This also shows how terms may be clustered according to their occurrence and how abstracts may be clustered according to the Terms within them. The numbers are the identifiers assigned to each paper.</div>
+Figure <%=figure%><%figure<-figure+1%>: Heatmap to show the distribution of the New Terms among <%=doc.pseudonym%>s. Red cells indicate the term does not appear. Orange cells indicate a relatively less-frequent term and yellow cells indicate terms that are relatively more frequent <em>among the New Terms in a given document</em>. This also shows how terms may be clustered according to their occurrence and how <%=doc.pseudonym%>s may be clustered according to the Terms within them. The numbers are the identifiers assigned to each paper.</div>
 
 <!--reset layout-->
 <div class="clear"/>
-<p><em>Note: In plots such as the above, where terms are shown they will usually be a short word but may occasionally be truncated or have an unusual ending. This is a consequence of the stemming process, where related words are rendered into a single form that is used in the processing. The word that actually occurs in a given abstract may be one of the related forms. The unusual endings occur when the reverse-lookup algorithm fails. It should also be noted that punctuation is removed so hyphenated forms become concatenated. An unfamiliar term may be an abbreviation or project/product acronym.</em></p>
+<p><em>Note: In plots such as the above, where terms are shown they will usually be a short word but may occasionally be truncated or have an unusual ending. This is a consequence of the stemming process, where related words are rendered into a single form that is used in the processing. The word that actually occurs in a given <%=doc.pseudonym%>s may be one of the related forms. The unusual endings occur when the reverse-lookup algorithm fails. It should also be noted that punctuation is removed so hyphenated forms become concatenated. An unfamiliar term may be an abbreviation or project/product acronym.</em></p>
 
 
 <div class="cap-img"><a href="Images/NewTermNovelty.png" target="image_win"><img src="Images/NewTermNovelty.png" alt="New Terms: Spread of Novelty Score" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Spread of standardised novelty among abstracts containing each New Term.</div>
+Figure <%=figure%><%figure<-figure+1%>: Spread of standardised novelty among <%=doc.pseudonym%>s containing each New Term.</div>
 <div class="cap-img"><a href="Images/NewTermSubjectivity.png" target="image_win"><img src="Images/NewTermSubjectivity.png" alt="New Terms: Spread of Subjectivity Score" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Spread of subjectivity score among abstracts containing each New Term.</div>
+Figure <%=figure%><%figure<-figure+1%>: Spread of subjectivity score among <%=doc.pseudonym%>s containing each New Term.</div>
 
 <!--reset layout-->
 <div class="clear"/>
-<p><em>Note: care should be exercised in interpreting these two plots since the number of abstracts containing each term is very small.</em></p>
-<p>The papers containing the significant new terms are <a href="#new_abs">listed below</a>.</p>
+<p><em>Note: care should be exercised in interpreting these two plots since the number of <%=doc.pseudonym%>s containing each term is very small.</em></p>
+<p>The <%=doc.pseudonym%>s containing the significant new terms are <a href="#new_abs">listed below</a>.</p>
 
 <h2>Significant Rising Terms</h2>
-<div>Significant Rising Terms are those that meet the significance threshold criterion and appear in at least <%=doc_count.thresh%> different abstracts from <%=conf.year.recent%> but have an average frequency of less than <%=100*max.past.freq%>% (the "Established Term" threshold) in the previous years set. <%=in_themes.msg.rising%></div>
+<div>Significant Rising Terms are those that meet the significance threshold criterion and appear in at least <%=doc_count.thresh%> different <%=doc.pseudonym%>s in the Target set but have an average frequency of less than <%=100*max.past.freq%>% (the "Established Term" threshold) in the Previous set. <%=in_themes.msg.rising%></div>
 
 
 <div class="cap-img"><a href="Images/RisingSignificance.png" target="image_win"><img src="Images/RisingSignificance.png" alt="Rising Terms - Statistical Significance" width="500" height="500" /></a><BR/>
@@ -288,12 +301,12 @@ Figure <%=figure%><%figure<-figure+1%>: Significant rising terms and their level
  </canvas>
  </div>
  <BR/>
-Figure <%=figure%><%figure<-figure+1%>: Wordcloud coloured and sized according to significance level of the Rising Terms in the target year.<br/>Uses <a href="http://www.goat1000.com/tagcanvas.php">TagCanvas</a> by &quot;goat 1000&quot;.</div>
+Figure <%=figure%><%figure<-figure+1%>: Wordcloud coloured and sized according to significance level of the Rising Terms in the target set.<br/>Uses <a href="http://www.goat1000.com/tagcanvas.php">TagCanvas</a> by &quot;goat 1000&quot;.</div>
 
 <!--reset layout-->
 <div class="clear"/>
 
-<p>The papers containing the significant rising terms are <a href="#rising_abs">listed below</a>.</p>
+<p>The <%=doc.pseudonym%>s containing the significant rising terms are <a href="#rising_abs">listed below</a>.</p>
 
 <div class="cap-img"><a href="Images/RisingTerms_PC.png" target="image_win"><img src="Images/RisingTerms_PC.png" alt="Rising Terms - Percentage Rises" width="500" height="500" /></a><BR/>
 Figure <%=figure%><%figure<-figure+1%>: Significant rising terms and their percentage of rise. Colour coding matches the % rise. <%if(max(rise.ratio)>800){%>The plot is cut off at a ceiling of <%=rising.plot.max%>%.<%}%></div>
@@ -302,38 +315,38 @@ Figure <%=figure%><%figure<-figure+1%>: Significant rising terms and their perce
 <div class="clear"/>
 
 <div class="cap-img"><a href="Images/RisingTerms_PastRecent_Counts.png" target="image_win"><img src="Images/RisingTerms_PastRecent_Counts.png" alt="Rising Terms Past and Recent Counts" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: The number of occurrences of the Rising Terms in the past and target sets of abstracts.</div>
+Figure <%=figure%><%figure<-figure+1%>: The number of occurrences of the Rising Terms in the Previous and Target sets.</div>
 <div class="cap-img"><a href="Images/RisingTerms_PastRecent_PC.png" target="image_win"><img src="Images/RisingTerms_PastRecent_PC.png" alt="Rising Terms Past and Recent Percentages" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stemmed words that are the term in question in both the previous and target year.</div>
+Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stemmed words that are the term in question in both the previous and target set.</div>
 
 <!--reset layout-->
 <div class="clear"/>
 
 <div class="cap-img"><a href="Images/RisingTerm_DocOcurrence_Bar.png" target="image_win"><img src="Images/RisingTerm_DocOcurrence_Bar.png" alt="Rising Terms: Document Ocurrence" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: The number of abstracts containing each Significant Rising Term. The colour coding matches the % rise in the proportion of term occurrence.  A Term that appears in a large number of abstracts is likely to be a stronger indication of a new trend that a Term that is concentrated in a single abstract.</div>
+Figure <%=figure%><%figure<-figure+1%>: The number of <%=doc.pseudonym%>s containing each Significant Rising Term. The colour coding matches the % rise in the proportion of term occurrence.  A Term that appears in a large number of <%=doc.pseudonym%>s is likely to be a stronger indication of a new trend that a Term that is concentrated in a single <%=doc.pseudonym%>.</div>
 <div class="cap-img"><a href="Images/RisingTerm_DocOcurrence_Heat.png" target="image_win"><img src="Images/RisingTerm_DocOcurrence_Heat.png" alt="Rising Terms: Document Ocurrenc Heatmap" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Heatmap to show the distribution of the Rising Terms among abstracts. Red cells indicate the term does not appear. Orange cells indicate a relatively less-frequent term and yellow cells indicate terms that are relatively more frequent <em>in a given document</em>. This also shows how terms may be clustered according to their occurrence and how abstracts may be clustered according to the Terms within them. The numbers are the identifiers assigned to each paper.</div>
+Figure <%=figure%><%figure<-figure+1%>: Heatmap to show the distribution of the Rising Terms among <%=doc.pseudonym%>s. Red cells indicate the term does not appear. Orange cells indicate a relatively less-frequent term and yellow cells indicate terms that are relatively more frequent <em>in a given document</em>. This also shows how terms may be clustered according to their occurrence and how <%=doc.pseudonym%>s may be clustered according to the Terms within them. The numbers are the identifiers assigned to each <%=doc.pseudonym%>.</div>
 
 <!--reset layout-->
 <div class="clear"/>
 
 <div class="cap-img"><a href="Images/RisingTermNovelty.png" target="image_win"><img src="Images/RisingTermNovelty.png" alt="Rising Terms: Spread of Novelty Score" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Spread of standardised novelty among abstracts containing each Rising Term.</div>
+Figure <%=figure%><%figure<-figure+1%>: Spread of standardised novelty among <%=doc.pseudonym%>s containing each Rising Term.</div>
 <div class="cap-img"><a href="Images/RisingTermSubjectivity.png" target="image_win"><img src="Images/RisingTermSubjectivity.png" alt="Rising Terms: Spread of Subjectivity Score" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Spread of subjectivity score among abstracts containing each Rising Term.</div>
+Figure <%=figure%><%figure<-figure+1%>: Spread of subjectivity score among <%=doc.pseudonym%>s containing each Rising Term.</div>
 
 <!--reset layout-->
 <div class="clear"/>
-<p><em>Note: care should be exercised in interpreting these two plots since the number of abstracts for some terms is very small.</em></p>
+<p><em>Note: care should be exercised in interpreting these two plots since the number of <%=doc.pseudonym%>s for some terms is very small.</em></p>
 
 <h2>Correlation Between New and Rising Terms</h2>
-<p>This shows how significant terms from either the "New" and "Rising" sets appear together in abstracts. The visualisation is created using <a href="http://gephi.org/">Gephi</a> (v0.8 alpha). Using Gephi provides for good interactivity; the <a href="Gephi/Significance.gephi">RisingTerm-Co-occurrence.gephi</a> file can be downloaded and used in Gephi.</p>
+<p>This shows how significant terms from either the "New" and "Rising" sets appear together in <%=doc.pseudonym%>s. The visualisation is created using <a href="http://gephi.org/">Gephi</a> (v0.8 alpha). Using Gephi provides for good interactivity; the <a href="Gephi/Significance.gephi">RisingTerm-Co-occurrence.gephi</a> file can be downloaded and used in Gephi.</p>
 
 <div class="cap-sd"><a href="Gephi/Significance.png" target="image_win"><img src="Gephi/Significance.png" alt="Term Co-occurrence Graph" width="800" height="800" /></a><BR/>
 Figure <%=figure%><%figure<-figure+1%>: Graph of Co-occurrence of New and Rising Terms.<br/>Interpreting the graph: terms are colour coded according to clustering aparrent in the results; the nodes are scaled according to the statistical significance; the lines joining the nodes are scaled according to the number of co-occurrences.</div>
 
 <div class="clear"/>
-<p>The papers containing the significant rising terms are <a href="#rising_abs">listed below</a>.</p>
+<p>The <%=doc.pseudonym%>s containing the significant rising terms are <a href="#rising_abs">listed below</a>.</p>
 
 <!--
 <div class="cap-sd"><div id="seadragon"></div><BR/>
@@ -342,7 +355,7 @@ Figure <%=figure%><%figure<-figure+1%>: Rising Term Co-occurrence Map. The node 
 
 
 <h2>Significant Established Terms</h2>
-These are terms with a statistically-significant increase but with a freqency of <%=100*max.past.freq%>% or more on average in the years prior to <%=conf.year.recent%> and hence are considered to be established upwards trends rather than indicators of a possible weak signal. Since this report is primarily concerned with Weak Signal detection, relatively little emphasis is given to Established Terms.
+These are terms with a statistically-significant increase but with a freqency of <%=100*max.past.freq%>% or more on average in the Previous set and hence are considered to be established upwards trends rather than indicators of a possible weak signal. Since this report is primarily concerned with Weak Signal detection, relatively little emphasis is given to Established Terms.
 
 <div class="cap-img"><a href="Images/EstablishedRisingTerms_PC.png" target="image_win"><img src="Images/EstablishedRisingTerms_PC.png" alt="Established Terms - Percentage Rises" width="500" height="500" /></a><BR/>
 Figure <%=figure%><%figure<-figure+1%>: Significant rising terms and their percentage of rise. Colour coding is identical to the Rising Term plot. <%if(max(established.rise.ratio)>800){%>The plot is cut off at a ceiling of <%=rising.plot.max%>%.<%}%></div>
@@ -362,21 +375,21 @@ Figure <%=figure%><%figure<-figure+1%>: Significant falling terms. Colour coding
 <div class="clear"/>
 
 <div class="cap-img"><a href="Images/FallingTerms_PastRecent_Counts.png" target="image_win"><img src="Images/FallingTerms_PastRecent_Counts.png" alt="Falling Terms Past and Recent Counts" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: The number of occurrences of the Falling Terms in the past and target sets of abstracts.</div>
+Figure <%=figure%><%figure<-figure+1%>: The number of occurrences of the Falling Terms in the previous and target sets of <%=doc.pseudonym%>s.</div>
 
 <div class="cap-img"><a href="Images/FallingTerms_PastRecent_PC.png" target="image_win"><img src="Images/FallingTerms_PastRecent_PC.png" alt="Falling Terms Past and Recent Percentage" width="500" height="500" /></a><BR/>
-Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stemmed words that are the term in question in both the previous and target year.</div>
+Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stemmed words that are the term in question in both the previous and target sets.</div>
 
 <!--reset layout-->
 <div class="clear"/><p></p>
 
-<h2>Papers Highlighted by the Analysis</h2>
-<p>Papers marked &quot;Top 10 Abstract&quot; are those where the abstract contains the greatest number of distinct terms that are either Rising, Established or New.</p>
+<h2><%=doc.Pseudonym%>s Highlighted by the Analysis</h2>
+<p><%=doc.Pseudonym%>s marked &quot;** Top 10 **&quot; are those where the <%=doc.pseudonym%> contains the greatest number of distinct terms that are either Rising, Established or New.</p>
 <a name="new_abs"></a>
-<h3>Papers Containing the Significant New Terms</h3>
-<em>See the end of this report for information about the <a href="#credits">source of abstracts and access to the conference proceedings</a>.</em>
+<h3><%=doc.Pseudonym%>s Containing the Significant New Terms</h3>
+<em>See the end of this report for information about the <a href="#credits">source of <%=doc.pseudonym%>s</a>.</em>
 <%for (i in 1:length(new.doclist)){%>
-<h4>Papers Containing &quot;<%=names(new.doclist[i])%>&quot;</h4>
+<h4><%=doc.Pseudonym%>s Containing &quot;<%=names(new.doclist[i])%>&quot;</h4>
 <dl>
 <%df<-new.doclist[[i]]%>
 <%for (j in 1:length(df[,1])){%>
@@ -384,7 +397,7 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <dd>
 <em><%=df[j,"authors"]%>, <%=paste(df[j,"origin"],df[j,"date"])%> (id=<%=df[j,"id"]%>
 <%if(!is.na(top10[df[j,"id"]])){%>
-*Top 10 Abstract*<%}-%>)<br/>
+** Top 10 **<%}-%>)<br/>
 <%=paste("Ancillary Measures: Novelty=",round(as.numeric(df[j,"std.novelty"]),digits=3),", Subjectivity=",round(as.numeric(df[j,"subjectivity"]),digits=3), "Max Author Betweenness=",signif(as.numeric(df[j,"max.betweenness"]),digits=3))-%></em><br/>
 <%if(show.abstracts){%>
 <%=df[j,"abstract"]%>
@@ -395,10 +408,10 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <%}#i-loop%>
 
 <a name="rising_abs"></a>
-<h3>Papers Containing the Significant Rising Terms</h3>
-<em>See the end of this report for information about the <a href="#credits">source of abstracts and access to the conference proceedings</a>.</em>
+<h3><%=doc.Pseudonym%>s Containing the Significant Rising Terms</h3>
+<em>See the end of this report for information about the <a href="#credits">source of <%=doc.pseudonym%>s</a>.</em>
 <%for (i in 1:length(rising.doclist)){%>
-<h4>Papers Containing &quot;<%=names(rising.doclist[i])%>&quot;</h4>
+<h4><%=doc.Pseudonym%>s Containing &quot;<%=names(rising.doclist[i])%>&quot;</h4>
 <dl>
 <%df<-rising.doclist[[i]]%>
 <%for (j in 1:length(df[,1])){%>
@@ -406,7 +419,7 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <dd>
 <em><%=df[j,"authors"]%>, <%=paste(df[j,"origin"],df[j,"date"])%> (id=<%=df[j,"id"]%>
 <%if(!is.na(top10[df[j,"id"]])){%>
-*Top 10 Abstract*<%}-%>)<br/>
+** Top 10 **<%}-%>)<br/>
 <%=paste("Ancillary Measures: Novelty=",round(as.numeric(df[j,"std.novelty"]),digits=3),", Subjectivity=",round(as.numeric(df[j,"subjectivity"]),digits=3), "Max Author Betweenness=",signif(as.numeric(df[j,"max.betweenness"]),digits=3))-%></em><br/>
 <%if(show.abstracts){%>
 <%=df[j,"abstract"]%>
@@ -417,15 +430,15 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <%}#i-loop%>
 
 <a name="novelty_abs"></a>
-<h3>Abstracts with a Standardised Novelty Score Exceeding <%=std.novelty.min%></h3>
-<em>See the end of this report for information about the <a href="#credits">source of abstracts and access to the conference proceedings</a>.</em>
+<h3><%=doc.Pseudonym%>s with a Standardised Novelty Score Exceeding <%=std.novelty.min%></h3>
+<em>See the end of this report for information about the <a href="#credits">source of <%=doc.pseudonym%>s</a>.</em>
 <dl>
 <%for (j in 1:length(df.std.nov.extreme[,1])){%>
 <dt><a href="<%=df.std.nov.extreme[j,"url"]%>"><%=df.std.nov.extreme[j,"heading"]%></a></dt>
 <dd>
 <em><%=df.std.nov.extreme[j,"authors"]%>, <%=paste(df.std.nov.extreme[j,"origin"],df.std.nov.extreme[j,"date"])%> (id=<%=df.std.nov.extreme[j,"id"]%>
 <%if(!is.na(top10[df.std.nov.extreme[j,"id"]])){%>
-*Top 10 Abstract*<%}-%>)<br/>
+** Top 10 **<%}-%>)<br/>
 <%=paste("Ancillary Measures: Novelty=",round(as.numeric(df.std.nov.extreme[j,"std.novelty"]),digits=3),", Subjectivity=",round(as.numeric(df.std.nov.extreme[j,"subjectivity"]),digits=3), "Max Author Betweenness=",signif(as.numeric(df.std.nov.extreme[j,"max.betweenness"]),digits=3))-%></em><br/>
 <%if(show.abstracts){%>
 <%=df.std.nov.extreme[j,"abstract"]%>
@@ -435,16 +448,16 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 </dl>
 
 <a name="subj_abs"></a>
-<h3>Subjectivity Upper Outlier Abstracts</h3>
-<em>See the end of this report for information about the <a href="#credits">source of abstracts and access to the conference proceedings</a>.</em>
-<p>Papers are listed with abstracts having a subjectivity score greater than the 3rd quartile subjectivity + 1.5x the interquartile range.</p>
+<h3>Subjectivity Upper Outlier <%=doc.Pseudonym%>s</h3>
+<em>See the end of this report for information about the <a href="#credits">source of <%=doc.pseudonym%>s</a>.</em>
+<p><%=doc.Pseudonym%>s are listed that have a subjectivity score greater than the 3rd quartile subjectivity + 1.5x the interquartile range.</p>
 
 <dl>
 <%for (j in 1:length(df.subj.outliers[,1])){%>
 <dt><a href="<%=df.subj.outliers[j,"url"]%>"><%=df.subj.outliers[j,"heading"]%></a></dt>
 <dd>
 <em><%=df.subj.outliers[j,"authors"]%>, <%=paste(df.subj.outliers[j,"origin"],df.subj.outliers[j,"date"])%> (id=<%=df.subj.outliers[j,"id"]%><%if(!is.na(top10[df.subj.outliers[j,"id"]])){%>
-*Top 10 Abstract*<%}-%>)<br/>
+** Top 10 **<%}-%>)<br/>
 <%=paste("Ancillary Measures: Novelty=",round(as.numeric(df.subj.outliers[j,"std.novelty"]),digits=3),", Subjectivity=",round(as.numeric(df.subj.outliers[j,"subjectivity"]),digits=3), "Max Author Betweenness=",signif(as.numeric(df.subj.outliers[j,"max.betweenness"]),digits=3))-%></em><br/>
 <%if(show.abstracts){%>
 <%=df.subj.outliers[j,"abstract"]%>
@@ -461,7 +474,9 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 	<td>This work, its images and original text are &copy;2011 Adam Cooper, Institute for Educational Cybernetics, University of Bolton, UK.<BR/><span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Adam Cooper</span> has licenced it under a <a rel="license" href="http://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0 Unported License</a></td>
 </tr>
 </table>
-
+<%if(source.type=="b"){%>
+	<p>The blog content analysed was crawled by the <a href="http://dbis.rwth-aachen.de/cms/projects/mediabase">Mediabase</a>, for which thanks to Michael Derntl and colleagues at <a href="http://dbis.rwth-aachen.de/cms">RWTH Aachen DBIS</a> (and TELMap partners).</p>
+<%>}else{%>
 <%if(length(set.name)==1){%>
 <p><%if(show.abstracts){-%>Quoted abstracts are &copy; the publisher, <%=publisher.series%>.<%}%> Papers and a full set of abstracts may be <a href="<%=publisher.url%>">found on the publisher's website</a> and other information may be found on the <a href="<%=last.conference.url%>">conference website</a>.</p>
 <%}else{%>
@@ -472,12 +487,15 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <%}#end loop%>
 </ul>
 <%}#end if%>
+<%}%>
 
 <p>This work was undertaken as part of the <a href="http://www.telmap.org">TEL-Map Project</a>; TEL-Map is a support and coordination action within EC IST FP7 Technology Enhanced Learning.<img src="http://www.learningfrontiers.eu/sites/all/themes/learningfrontiers/images/footer-EU-logo.jpg" /></p>
 <HR/>
-<em>Generated using Brew with &quot;Conference BrewTemplate.html&quot; v0.3.<br/>
+<em>Generated using Brew with R<br/>
 Source code for processing and formatting is available <a href="https://github.com/arc12/Text-Mining-Weak-Signals">on GitHub</a>.<br/>
-Thanks to Michael Ley for maintaining <a href="http://www.informatik.uni-trier.de/~ley/db/">DBLP</a> which has greatly helped to stream-line the data collection and to Michael Derntl and colleagues at <a href="http://dbis.rwth-aachen.de/cms">RWTH Aachen DBIS</a> (and TELMap partners) for the author betweenness centrality data.</em>
+<%if(source.type=="c"){%>
+Thanks to Michael Ley for maintaining <a href="http://www.informatik.uni-trier.de/~ley/db/">DBLP</a> which has greatly helped to stream-line the data collection and to Michael Derntl and colleagues at <a href="http://dbis.rwth-aachen.de/cms">RWTH Aachen DBIS</a> (and TELMap partners) for the author betweenness centrality data.
+<%}%></em>
 <p><em>Data: the raw results are available as a <a href="Raw Results.csv">CSV download</a> under the same licence terms as this report.</em></p>
 
 </body>
