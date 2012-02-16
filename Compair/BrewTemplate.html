@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+<head>
+<title><%=title%></title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<meta name="AUTHOR" content="Adam Cooper"/>
+<!--
+## ***Made available using the The MIT License (MIT)***
+# Copyright (c) 2011, Adam Cooper
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+## ************ end licence ***************
+-->
+<!--adopt styles from TELMap. -->
+<style type="text/css">
+html, body, div, span, table, td, tr, th, tbody, tfoot, frame, iframe, object {
+	margin-top: 20px;
+	margin-bottom: 20px;		
+	font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+	font-size: 13px;
+	color: #404040;
+}
+
+a:link, a:hover {
+	color: #23a0d2;
+	text-decoration: none;
+}
+
+a:visited {
+	color: #066890;
+	text-decoration: none;
+}
+
+h2 {
+	color: #e2a12c;
+	font-size: 30px;
+	font-family: "Times New Roman", Times, serif;
+}
+
+h3 {
+	color: #494949;
+	font-family: "Times New Roman", Times, serif;
+	font-size: 16px;
+	text-transform: uppercase;	
+}
+</style>	
+	
+<!--additional style for plot boxing and captioning-->
+<style type="text/css">
+.cap-img { background-color: #F9F9F9; border: 1px solid #CCCCCC; padding: 3px; font: 11px/1.4em Arial, sans-serif; 
+margin: 0.5em 0.8em 0.5em 0.1em; float:left; width:604px;}
+.clear { clear: both;} 
+.cap-img img { border: 1px solid #CCCCCC; vertical-align:middle; margin-bottom: 3px;} 
+</style>
+
+</head>
+<body>
+<h1><%=title%></h1>
+
+<p>This is an un-interpreted and automatically-generated report to show the variation in terms used in
+<%if(brew.type=="c2"){-%>
+ the full papers of two conferences: <a href="<%=url.A%>"><%=name.A%></a> and <a href="<%=url.B%>"><%=name.B%></a>.
+  A separate subsection shows those terms that appear more frequently in papers from each conference in turn.
+<%}else if(brew.type=="b2"){-%>
+ two sets of blogs: <%=title.A%> and <%=title.B%> (data obtained from the <a href="http://dbis.rwth-aachen.de/cms/projects/mediabase">TELMap Mediabase</a> created by RWTH Aachen University).
+  A separate subsection shows those terms that appear more frequently in blog posts from each set in turn.
+ <%}-%>
+Selection criteria based on statistical significance are used to determine which terms are selected; the probability that the difference in frequency might be due to pure chance must be less than <%=p.max*100%>% in addition to other criteria to select dominant terms (see "<a href="#info">technicalities</a>").
+
+<p><em>All plots will open in a new window/tab as 1000x1000 pixel images if clicked on.</em></p>
+
+<h2><%=title.A%></h2>
+<h3>Frequency Plot</h3>
+<div class="cap-img"><a href="A_tweaked.png" target="image_win"><img src="A_tweaked.png" alt="<%=name.A%> Frequencies and Significance" width="600" height="600" /></a><BR/>
+<strong>Frequency</strong> = the fraction of terms<br />
+<strong>Significance</strong> = -log<sub>10</sub> of the probability that the difference in frequency between the conferences is "pure chance" (i.e. 3 is 1 in 1,000, 4 is 1 in 10,000 etc)<br/>
+<strong>Docs/1000</strong> = the number of documents in the set that contain the term per thousand (colour code and area of square)<br/>
+<em>Also available as <a href="A_tweaked.pdf">hi-res pdf</a>.</em></div>
+<!--reset layout-->
+<div class="clear"/><p>&nbsp;</p>
+
+<h3>Term Co-occurrence Graph</h3>
+<div class="cap-img"><a href="Co-occurrence A.png" target="image_win"><img src="Co-occurrence A.png" alt="<%=name.A%> Term Co-occurrence" width="600" height="600" /></a><BR/>
+<strong>Node size</strong> = significance<br />
+<strong>Node colour</strong> is accoring to grouping<br/>
+<strong>Edge (connector) size</strong> = number of documents containing both connected terms.<br/>
+<em>NB: only the most-connective  <%=100*edge.quantile%>% of edges are shown</em>
+</div>
+
+<!--reset layout-->
+<div class="clear"/><p>&nbsp;</p>
+
+<h2><%=title.B%></h2>
+
+<h3>Frequency Plot</h3>
+<div class="cap-img"><a href="B_tweaked.png" target="image_win"><img src="B_tweaked.png" alt="<%=name.B%> Frequencies and Significance" width="600" height="600" /></a><BR/>
+<strong>Frequency</strong> = the fraction of terms<br />
+<strong>Significance</strong> = -log<sub>10</sub> of the probability that the difference in frequency between the conferences is "pure chance" (i.e. 3 is 1 in 1,000, 4 is 1 in 10,000 etc)<br/>
+<strong>Docs/1000</strong> = the number of documents in the set that contain the term per thousand (colour code and area of square)<br/>
+<em>Also available as <a href="B_tweaked.pdf">hi-res pdf</a>.</em></div>
+
+<!--reset layout-->
+<div class="clear"/><p>&nbsp;</p>
+
+<h3>Term Co-occurrence Graph</h3>
+<div class="cap-img"><a href="Co-occurrence B.png" target="image_win"><img src="Co-occurrence B.png" alt="<%=name.A%> Term Co-occurrence" width="600" height="600" /></a><BR/>
+<strong>Node size</strong> = significance<br />
+<strong>Node colour</strong> is accoring to grouping<br/>
+<strong>Edge (connector) size</strong> = number of documents containing both connected terms.<br/>
+<em>NB: only the most-connective <%=100*edge.quantile%>% of edges are shown</em>
+</div>
+
+<!--reset layout-->
+<div class="clear"/><p>&nbsp;</p>
+
+
+<a name="info"><h2>Information</h2></a>
+<h3>Source Code, Data and Technicalities</h3>
+<p>Source code for processing and formatting is available <a href="https://github.com/arc12/Text-Mining-Weak-Signals/tree/master/Compair">on GitHub</a>.</p>
+<p><a href="data.zip">Raw results</a> are available in pairs, one of each kind being the data behind the two sections above. Gephi files are available separately for <a href="Co-occurrence A.gephi"><%=name.A%></a> and <a href="Co-occurrence B.gephi"><%=name.B%></a>. All are under the same licence terms as this report.</p>
+<p>
+The <a href="Compair.log">log file</a> contains run parameters.
+</p>
+
+<p>The technicalities of the method and explanatory notes on the content of the above downloads may be found <a href="https://github.com/arc12/Text-Mining-Weak-Signals/wiki/Technical-details-of-compair">on the GitHub wiki</a>. These notes explain the term-selection criteria.</p>
+
+<h3>Copyright, Licence and Credits</h3>
+<p>This work was undertaken as part of the <a href="http://www.telmap.org">TEL-Map Project</a>; TEL-Map is a support and coordination action within EC IST FP7 Technology Enhanced Learning.<img src="http://www.learningfrontiers.eu/sites/all/themes/learningfrontiers/images/footer-EU-logo.jpg" /></p>
+<table>
+<tr>
+	<td><a rel="license" href="http://creativecommons.org/licenses/by/3.0/"><img alt="Creative Commons Licence" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/88x31.png" /></a></td>
+	<td>This work, its images and original text are &copy;2012 Adam Cooper, Institute for Educational Cybernetics, University of Bolton, UK.<BR/><span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Adam Cooper</span> has licenced it under a <a rel="license" href="http://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0 Unported License</a></td>
+</tr>
+</table>
+
+</body>
+</html>
