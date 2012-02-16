@@ -400,7 +400,7 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 ** Top 10 **<%}-%>)<br/>
 <%=paste("Ancillary Measures: Novelty=",round(as.numeric(df[j,"std.novelty"]),digits=3),", Subjectivity=",round(as.numeric(df[j,"subjectivity"]),digits=3), "Max Author Betweenness=",signif(as.numeric(df[j,"max.betweenness"]),digits=3))-%></em><br/>
 <%if(show.abstracts){%>
-<%=df[j,"abstract"]%>
+<%=Head.Text(df[j,"abstract"])%>
 <%}#endif%>
 </dd>
 <%}#j-loop%>
@@ -422,7 +422,7 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 ** Top 10 **<%}-%>)<br/>
 <%=paste("Ancillary Measures: Novelty=",round(as.numeric(df[j,"std.novelty"]),digits=3),", Subjectivity=",round(as.numeric(df[j,"subjectivity"]),digits=3), "Max Author Betweenness=",signif(as.numeric(df[j,"max.betweenness"]),digits=3))-%></em><br/>
 <%if(show.abstracts){%>
-<%=df[j,"abstract"]%>
+<%=Head.Text(df[j,"abstract"])%>
 <%}#endif%>
 </dd>
 <%}#j-loop%>
@@ -430,6 +430,7 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 <%}#i-loop%>
 
 <a name="novelty_abs"></a>
+<%if(length(df.std.nov.extreme[,1])>0){%>
 <h3><%=doc.Pseudonym%>s with a Standardised Novelty Score Exceeding <%=std.novelty.min%></h3>
 <em>See the end of this report for information about the <a href="#credits">source of <%=doc.pseudonym%>s</a>.</em>
 <dl>
@@ -441,13 +442,15 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 ** Top 10 **<%}-%>)<br/>
 <%=paste("Ancillary Measures: Novelty=",round(as.numeric(df.std.nov.extreme[j,"std.novelty"]),digits=3),", Subjectivity=",round(as.numeric(df.std.nov.extreme[j,"subjectivity"]),digits=3), "Max Author Betweenness=",signif(as.numeric(df.std.nov.extreme[j,"max.betweenness"]),digits=3))-%></em><br/>
 <%if(show.abstracts){%>
-<%=df.std.nov.extreme[j,"abstract"]%>
+<%=Head.Text(df.std.nov.extreme[j,"abstract"])%>
 <%}%>
 </dd>
 <%}#j-loop%>
 </dl>
+<%}%>
 
 <a name="subj_abs"></a>
+<%if(length(df.subj.outliers[,1])>0){%>
 <h3>Subjectivity Upper Outlier <%=doc.Pseudonym%>s</h3>
 <em>See the end of this report for information about the <a href="#credits">source of <%=doc.pseudonym%>s</a>.</em>
 <p><%=doc.Pseudonym%>s are listed that have a subjectivity score greater than the 3rd quartile subjectivity + 1.5x the interquartile range.</p>
@@ -460,11 +463,12 @@ Figure <%=figure%><%figure<-figure+1%>: Comparison of the proportion of all stem
 ** Top 10 **<%}-%>)<br/>
 <%=paste("Ancillary Measures: Novelty=",round(as.numeric(df.subj.outliers[j,"std.novelty"]),digits=3),", Subjectivity=",round(as.numeric(df.subj.outliers[j,"subjectivity"]),digits=3), "Max Author Betweenness=",signif(as.numeric(df.subj.outliers[j,"max.betweenness"]),digits=3))-%></em><br/>
 <%if(show.abstracts){%>
-<%=df.subj.outliers[j,"abstract"]%>
+<%=Head.Text(df.subj.outliers[j,"abstract"])%>
 <%}%>
 </dd>
 <%}#j-loop%>
 </dl>
+<%}%>
 
 <a name="credits">
 <h2>Copyright, Licence and Credits</h2></a>
