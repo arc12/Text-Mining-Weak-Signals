@@ -195,6 +195,8 @@ difference.mat<-1.0-tcrossprod(as.matrix(dtm.bin.recent.trimmed),
                                as.matrix(dtm.bin.trimmed)) / doc.norm.mat
 #self referential terms need "removing" (since the mat is not square, cant use "diag")
 difference.mat[difference.mat[,]==0]<-1.0
+#sometimes NaNs creep in (not sure why)
+difference.mat[is.nan(difference.mat[,])]<-1.0
 #novelty means there is no other close doc so find the smallest difference
 novelty<-apply(difference.mat,1,min)
 #the summary stats
