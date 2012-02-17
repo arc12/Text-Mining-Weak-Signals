@@ -68,7 +68,7 @@ corp<-Corpus(DataframeSource(table), readerControl=list(reader= readTabular(mapp
 # Standard document-term matrix of the entire corpus, use the standard stopword set with a few modifications!
 stop.words<-CustomStopwords()
 corp<-tm_map(corp,removeNumbers)
-corp<-tm_map(corp2,removePunctuation)
+corp<-tm_map(corp,removePunctuation)
 dtm.tf<-DocumentTermMatrix(corp, control=list(stemming=TRUE, stopwords=stop.words, minWordLength=3))
 dtm.bin<-weightBin(dtm.tf)
 # pull out the sentiment data
