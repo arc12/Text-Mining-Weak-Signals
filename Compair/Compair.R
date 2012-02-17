@@ -57,7 +57,11 @@ if(source.type == "PDF"){
 ## Compute 
 ##
 makeDTM<-function(corp){
-   DocumentTermMatrix(corp, control = list(stemming=TRUE, stopwords=c(stopwords(kind = "en"),tolower(extra.stopwords)), minWordLength=3, removeNumbers=TRUE, removePunctuation=TRUE))
+   corp<-tm_map(corp,removeNumbers)
+   corp<-tm_map(corp,removePunctuation)
+   DocumentTermMatrix(corp, control=list(stemming=TRUE,
+                                         stopwords=c(stopwords(kind = "en"),tolower(extra.stopwords)),
+                                         minWordLength=3))
 }
 
 dtm.A <- makeDTM(corp.A)
@@ -92,6 +96,9 @@ sum.terms.A<-sum(freqs.A)
 sum.terms.B<-sum(freqs.B)
 docs.A<-col_sums(dtm.bin.A)
 docs.B<-col_sums(dtm.bin.B)
+
+#can rm the dtms here - no longer needed (but the binarry occurences are)
+rm(dtm.A, dtm.B)
 
 #combine the two named lists into a data frame - i.e. with columns as the union set of terms and zeros for missing values
 v_combine<-function(A,B){

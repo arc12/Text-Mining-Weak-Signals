@@ -98,8 +98,13 @@ print("Stopwords being used")
 print(stop.words)
 cat(paste(paste(rep("-",79),collapse="")),"\n\n")
 #Here we go////
-dtm.tf<-DocumentTermMatrix(corp,
-  control=list(stemming=TRUE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=TRUE))
+#changed from a simple DocumentTermMatrix(corp, control=list(stemming=TRUE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=TRUE))
+#because the new release of "tm" seeks to EFF things up (e.g. "badges," does not stem to "badg" but "badges " does)
+corp2<-tm_map(corp,removeNumbers)#corp is left since we want to get the doc text later for users to see
+corp2<-tm_map(corp2,removePunctuation)
+dtm.tf<-DocumentTermMatrix(corp2, control=list(stemming=TRUE, stopwords=stop.words, minWordLength=3))
+# dtm.tf<-DocumentTermMatrix(corp,
+#   control=list(stemming=TRUE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=TRUE))
 #dtm.bin<-weightBin(dtm.tf)
 #terms.doc.cnt<-col_sums(dtm.bin) #the number of docs containing >=1 occurrence of the term
 #compute some corpus and term statistics FOR INFORMATION
@@ -211,6 +216,7 @@ full.doc.norm.mat<-sqrt(tcrossprod(row_sums(dtm.bin.trimmed),row_sums(dtm.bin.tr
 full.difference.mat<-1.0-tcrossprod(as.matrix(dtm.bin.trimmed),
                                as.matrix(dtm.bin.trimmed)) / full.doc.norm.mat
 diag(full.difference.mat)<-1.0
+full.difference.mat[is.nan(full.difference.mat[,])]<-1.0
 full.novelty<-apply(full.difference.mat,1,min)
 #
 standardised.novelty<-(novelty-median(full.novelty))/(1-median(full.novelty))
