@@ -43,7 +43,7 @@ setwd(output.dir)
 #                    "CAL",
 #                    "ECTEL",
 #                    "ICWL")#only used for abstracts
-set.csv <- c("CETIS Blogs 20110101-20120301.csv","NonCETIS Blogs 20110101-20120301.csv")
+set.csv <- c("CETIS Blogs 20110101-20120301.csv","CETIS Blogs 20090101-20120301.csv","NonCETIS Blogs 20110101-20120301.csv")
 # this determines the source type: conference abstracts or blog content
 source.type="b"#a is for abstracts, b is for blogs
 

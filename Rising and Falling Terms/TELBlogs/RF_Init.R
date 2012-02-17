@@ -35,7 +35,7 @@ title<-"Rising and Falling Terms - CETIS Blogs"
 source.type="b"#c is for conference abstracts, b is for blogs
 
 # these three (set.xxxxx) apply whichever source type is used
-sets.csv <- c("CETIS Blogs 20110101-20120301 with metrics.csv")
+sets.csv <- c("CETIS Blogs 20090101-20120301 with metrics.csv")
 set.name <- c("CETIS")
 set.title <- c("CETIS Blogs")
 
@@ -68,8 +68,8 @@ dir.create("Wordle", showWarnings=FALSE)
 # key date is the one after which documents are considered to be in the "recent set"
 if(source.type=="b"){
    # for blogs key date is an N month period before the start of the current month
-   recent.months<-3#set to 3 to look at the last quarter
-   prior.months<-12#use the previous 12 months to compare against (if in dataset)
+   recent.months<-6#set to 3 to look at the last quarter
+   prior.months<-24#use the previous 30 months to compare against (if in dataset)
    key.date<-as.POSIXlt(Sys.Date(), tz = "GMT")#today
    key.date$mday<-1
    last.date<-key.date   
@@ -115,13 +115,13 @@ authors.table<-NA
 ##         normally the same between different sources of the same kind for comparability
 ##
 # how many documents must the term appear in to be listed. This is in addition to the frequency thresholds. A value of 2 is expected, i.e. ignore terms that appear in only one doc
-doc_count.thresh <- 2
+doc_count.thresh <- 3
 # p-value to accept the "alternative hypothesis" that there is something interesting
-thresh.pval<-0.005 #i.e. accept a .5% chance that null hypothesis falsely rejected
-thresh.pval.falling<-0.01 #use a more lenient threshold for falling terms
+thresh.pval<-0.002 #i.e. accept a .2% chance that null hypothesis falsely rejected
+thresh.pval.falling<-0.005 #use a more lenient threshold for falling terms
 #max frequency of term in the past set for eligibility as a weak signal.
 #Above this, sigifnicant risers are "established terms"
-max.past.freq<-0.0002 #i.e. 0.02%
+max.past.freq<-0.0005 #i.e. 0.05%
 # *for plotting* cap rising % at this level. If value greater then plot is effectively cut off
 rising.plot.max<-800
 

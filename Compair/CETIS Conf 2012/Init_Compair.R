@@ -66,3 +66,5 @@ p.max<-0.001
 ##
 # edges (for gephi) will only be exported if the weight is >= the following quantile of calculated edge weights
 edge.quantile <- 0.9 #suggest default of 0.75
+
+source("/home/arc1/R Projects/Text Mining Weak Signals/Compair/Compair.R")

@@ -158,7 +158,7 @@ It is one part of the <a href="http://blogs.cetis.ac.uk/adam/2011/05/12/weak-sig
 <ul>
 <%if(source.type=="b"){%>
 <li><strong>Target</strong>: <%=doc.pseudonym%>s published during the <%=recent.months%> months between <%=format(key.date, date.format)%> and <%=format(last.date, date.format)%>.</li>
-<li><strong>Previous</strong>: <%=doc.pseudonym%>s published during the previous <%=recent.months%> months (back to <%=format(start.date, date.format)%>).</li>
+<li><strong>Previous</strong>: <%=doc.pseudonym%>s published during the previous <%=prior.months%> months (back to <%=format(start.date, date.format)%>).</li>
 <%}else{%>
 <li><strong>Target</strong>: <%=doc.pseudonym%>s from <%=conf.year.recent%> conferences</li>
 <li><strong>Previous</strong>: <%=doc.pseudonym%>s from the previous <%=conf.years.in_past%> years</li>
