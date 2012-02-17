@@ -112,12 +112,21 @@ df<-rbind(df,v_combine(docs.A,docs.B))
 rownames(df)<-c("freqA","freqB","docsA","docsB")
 cat(paste("Merging the terms lists ->",length(df[1,]),"terms"), file = log.file, sep = "\n", append = TRUE)
 
+# plot a histogram of the frequency distribution and mark off the min/max limits in use
+hist(log10(as.numeric(df["freqA",]+df["freqB",])), main = "Histogram of Term Frequency", xlab="Log of Term Occurrence", ylab="No. of Terms", breaks=50)
+abline(v=log10(min.term.freq*(sum.terms.A+sum.terms.B)), col="blue")
+abline(v=log10(max.term.freq*(sum.terms.A+sum.terms.B)), col="red")
+
 #remove low freq and low doc-count terms (and apply the max freq too)
 min.count<-as.integer(min.term.freq*(sum.terms.A+sum.terms.B))
-cat(paste("Will eliminate terms with freq <", min.term.freq*100,
+cat(paste("Will eliminate terms with joint (A+B) set freq <", min.term.freq*100,
           "%, which equates to ",min.count,
           " term occurrences (aggregated over both sets)", sep=""),
                         file = log.file, sep = "\n", append = TRUE)
+cat(paste("Will eliminate terms with freq in either A or B >", max.term.freq*100,
+          "% which equates to removing ",sum(df["freqA",]>max.term.freq*sum.terms.A),
+          " and ",sum(df["freqB",]>max.term.freq*sum.terms.B)," terms.", sep=""),
+                                                file = log.file, sep = "\n", append = TRUE)
 df<-df[,(df["freqA",]+df["freqB",])>=min.count]
 df<-df[,(df["docsA",]+df["docsB",])>=min.docs]
 df<-df[,df["freqA",]<=max.term.freq*sum.terms.A]
