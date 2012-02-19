@@ -69,7 +69,7 @@ dir.create("Wordle", showWarnings=FALSE)
 if(source.type=="b"){
    # for blogs key date is an N month period before the start of the current month
    recent.months<-6#set to 3 to look at the last quarter
-   prior.months<-24#use the previous 30 months to compare against (if in dataset)
+   prior.months<-30#use the previous 30 months to compare against (if in dataset)
    key.date<-as.POSIXlt(Sys.Date(), tz = "GMT")#today
    key.date$mday<-1
    last.date<-key.date   
@@ -117,8 +117,8 @@ authors.table<-NA
 # how many documents must the term appear in to be listed. This is in addition to the frequency thresholds. A value of 2 is expected, i.e. ignore terms that appear in only one doc
 doc_count.thresh <- 3
 # p-value to accept the "alternative hypothesis" that there is something interesting
-thresh.pval<-0.002 #i.e. accept a .2% chance that null hypothesis falsely rejected
-thresh.pval.falling<-0.005 #use a more lenient threshold for falling terms
+thresh.pval<-0.0005 #i.e. accept a .05% chance that null hypothesis falsely rejected
+thresh.pval.falling<-0.001 #use a more lenient threshold for falling terms
 #max frequency of term in the past set for eligibility as a weak signal.
 #Above this, sigifnicant risers are "established terms"
 max.past.freq<-0.0005 #i.e. 0.05%

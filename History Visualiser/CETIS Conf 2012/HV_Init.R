@@ -24,32 +24,43 @@ brew.type<-"b"# c=conference abstracts, b=blog posts
 dir.create(output.dir, showWarnings=TRUE)
 setwd(output.dir)
 #these are combined into one corpus
-sets.csv <- "CETIS Blogs 20110101-20120301 with metrics.csv"
+sets.csv <- "CETIS Blogs 20090101-20120301 with metrics.csv"
 #c("CETIS Blogs 20110101-20120301 with metrics.csv","NonCETIS Blogs 20110101-20120301 with metrics.csv")
                   
 ##
 ## Run properties - normally the same between different sources of the same kind for comparability
 ##
 today<-as.POSIXlt(Sys.Date(), tz = "GMT")
-start.year<-2011
+start.year<-2009
 start.month<-1#generally set to 1
 end.year<-2012
 end.month<-1#generally set to 1 unless total period<2 years or so NB this determines the start of the last slice
 # data interval control.
-slice.size<-2 #how many months in a time slice used in the analysis. the last slice is is from start month 1 in the end.year to the end of month "slice.size" in end.year
+slice.size<-4 #how many months in a time slice used in the analysis. the last slice is is from start month 1 in the end.year to the end of month "slice.size" in end.year
 interpolate.size<-1 #number of months between interpolated points in the output; 1 "row" is created for each interval. No interpolation if slice.size = interpolate.size
 
 
 ##
 ## Which Terms to run for
 ##
-title.common<-"CETIS Blogs - Jan 2011-Feb 2012"
-titles<-c("familiar terms")
-          #"Run the Second")#should match each of the entries in the following list
+title.common<-"CETIS Blogs - Jan 2009-Feb 2012"
+#the following titles should match each of the entries in the following list
+titles<-c("select dominant terms (c.f. EdTech generally)",
+          "select rising terms (last 6 months)",
+          "select established rising (last 6 months)",
+          "select falling terms (last 6 months)")
+          
 # NB!!!!!!!!! these are the STEMMED terms
-term.lists<-list(Familiar=c("blog","content","databas","ontolog","project","technolog","data"))
+# NB2!!! if you get the stemmed term wrong then a "subscript out of bounds" error occurs later on
+term.lists<-list(Familiar=c("data","level","design","innov","inform", "manag","institut"),
+                 Rising=c("eassess","badg","literaci","registri","mobil","skill"),
+                 Established=c("assess","feedback","compet","staff"),
+                 Falling=c("cloud","oer","rdfs","semant","wave","repositori"))
 # .... and these are the pretty versions for display
-word.lists<-list(Familiar=c("blog","content","database","ontology","project","technology","data"))
+word.lists<-list(Familiar=c("data","level","design","innovation","information", "management","institutions"),
+                 Rising=c("e-assessment","badge","literacies","registry","mobile","skill"),
+                 Established=c("assessment","feedback","competence","staff"),
+                 Falling=c("cloud","oer","RDFS","semantic","wave","repositories"))
 
 ##
 ## End setup
