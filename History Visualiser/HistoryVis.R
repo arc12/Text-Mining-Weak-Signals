@@ -131,8 +131,9 @@ for (i.run in 1:length(term.lists)){
       #select only these documents in the DTMs
       dtm.tf.slice<-dtm.tf[slice.doc_bool,]
       dtm.bin.slice<-dtm.bin[slice.doc_bool,]
-      #get the total term count for the slice
+      #get the total term and counts for the slice
       total.terms<-sum(row_sums(dtm.tf.slice))     
+      total.docs<-sum(slice.doc_bool)
       #calculate term frequency (%) and document count ** for the terms aposite to the current run
       #NB: if run.terms contains a term which is not in the DTM, this gives a "subscript out of bounds" error - these MUST be the stemmed forms.
       dtm.tf.slice<-dtm.tf.slice[,run.terms]
@@ -143,7 +144,7 @@ for (i.run in 1:length(term.lists)){
       print(slice.freq)
       dtm.bin.slice<-dtm.bin.slice[,run.terms]
       dtm.bin.slice<-dtm.bin.slice[col_sums(dtm.bin.slice)>0,]
-      slice.docs<-100*col_sums(dtm.bin.slice)/length(Docs(dtm.bin.slice))
+      slice.docs<-100*col_sums(dtm.bin.slice)/total.docs
       data.slices.docs<-rbind(data.slices.docs,slice.docs)
       print("Document fraction (%):")
       print(slice.docs)
