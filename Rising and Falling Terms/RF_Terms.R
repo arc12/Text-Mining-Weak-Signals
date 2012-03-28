@@ -57,7 +57,9 @@ for (src in 1:length(sets.csv)){
 # now read in the possibly-cumulated table to a corpus, handling the metadata via mapping
 #create a mapping from datatable column names to PlainTextDocument attribute names
 #"Keywords" is a user-defined "localmetadata" property while the rest are standard tm package document metadata fields
+#also does some pre-processing: "fixes" year-only input for conferences to be a valid format (even though this is NOT the actual date)
 if(source.type=="c"){
+   table[,"year"]<-ISOdate(table[,"year"],7,1)
    map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year",
                   Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url",
                   Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")
@@ -73,7 +75,7 @@ corp<-Corpus(DataframeSource(table), readerControl=list(reader= readTabular(mapp
 
 # trim the corpus so that documents come only from the used date range
 #changed from using tm_index because it seemed not to work with month-level periods
-dts<-as.POSIXlt(unlist(meta(corp,"DateTimeStamp",type="local")))
+dts<-as.POSIXlt(unlist(meta(corp,"DateTimeStamp",type="local")), origin="1970-01-01")
 filter.bool<- (dts>start.date) & (dts<=last.date)
 corp<-corp[filter.bool]
 
@@ -87,6 +89,9 @@ if(is.null(pos.score)){
 }
 neg.score<-unlist(meta(corp,tag="Negative", type="local"))
 subj.score<-unlist(meta(corp,tag="Subjectivity", type="local"))
+
+# Dump the corpus because this is useful for other processing
+save(corp, file="Corpus.RData")
 
 ## -----
 ## Standard pre-processing to get a document-term matrix of the entire corpus.

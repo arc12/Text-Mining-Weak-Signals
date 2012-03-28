@@ -22,7 +22,7 @@ setwd(output.dir)
 title<-"Rising and Falling Terms - Conference Proceedings from ICALT, CAL, ECTEL and ICWL"
 
 # this determines the source type: conference abstracts or blog content
-source.type="b"#c is for conference abstracts, b is for blogs
+source.type="c"#c is for conference abstracts, b is for blogs
 
 # these three (set.xxxxx) apply whichever source type is used
 sets.csv <- c("ICALT Abstracts 2005-2011 with metrics.csv",
