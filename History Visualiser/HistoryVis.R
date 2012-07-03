@@ -1,5 +1,5 @@
 ## ***Made available using the The MIT License (MIT)***
-# Copyright (c) 2011, Adam Cooper
+# Copyright (c) 2012, Adam Cooper
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 # 
@@ -59,6 +59,7 @@ for (src in 1:length(sets.csv)){
 #create a mapping from datatable column names to PlainTextDocument attribute names
 #"Keywords" and after are user-defined "localmetadata" properties while the rest are standard tm package document metadata fields
 if(brew.type=="c"){
+   table[,"year"]<-ISOdate(table[,"year"],7,1)
    map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url", Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")
    }else{
        map<-list(Content="content", DateTimeStamp="datestamp", Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")  
@@ -97,6 +98,15 @@ for (i.run in 1:length(term.lists)){
    run.terms<-unlist(term.lists[i.run])
    run.name<-names(term.lists[i.run])
    run.words<-unlist(word.lists[i.run])
+   # make sure the specified terms are actually present in the DTM (otherwise get an error)
+   ok.terms.bool<-run.terms %in% Terms(dtm.tf)
+   if(sum(!ok.terms.bool)>0){
+      print("The following are not present and will not be plotted:")
+      print(paste(run.terms[!ok.terms.bool], sep=", "))
+      run.terms<-run.terms[ok.terms.bool]
+      run.words<-run.words[ok.terms.bool]
+   }
+   #prep dataframes to receive the slice data
    data.slices.freq<-data.frame()
    data.slices.docs<-data.frame()
    data.slices.positive<-data.frame()
@@ -119,7 +129,7 @@ for (i.run in 1:length(term.lists)){
 #       slice.doc_bool<-tm_index(corp,FUN=sFilter, doclevel = TRUE, useMeta = FALSE,
 #             paste("datetimestamp<='",q.end.date,"' & datetimestamp>'",q.start.date,"'",sep=""))
       #changed from using tm_index because it seemed not to work with month-level periods
-      dts<-as.POSIXlt(unlist(meta(corp,"DateTimeStamp",type="local")))
+      dts<-as.POSIXlt(unlist(meta(corp,"DateTimeStamp",type="local")), origin="1970-01-01")
       slice.doc_bool<- (dts>q.start.date) & (dts<=q.end.date)
       slice.docs.n<-sum(slice.doc_bool)
       #this is lazy, should really do imputation
