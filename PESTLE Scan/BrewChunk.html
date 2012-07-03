@@ -1,0 +1,32 @@
+<a name="<%=names(sentiment.dics)[[lex]]%>"/>
+<h2><%=names(sentiment.dics)[[lex]]%></h2>
+<p>Summary statistics of scores after eliminating zero-scoring documents:
+<ul>
+<li>Mean = <%=format(summary(lex.score.nz)["Mean"],digits=3)%></li>
+<li>Median = <%=format(summary(lex.score.nz)["Median"],digits=3)%></li>
+<li>Third Quartile = <%=format(summary(lex.score.nz)["3rd Qu."],digits=3)%></li>
+<li>Maximum = <%=format(summary(lex.score.nz)["Max."],digits=3)%></li>
+</ul>
+For comparison between different lexicons, rescale according to the lexicon size. For <%=names(sentiment.dics)[[lex]]%>, there are <%=length(sentiment.dics[[lex]])%> words.
+</p>
+
+<table>
+<%for(kk in topDocs){%>      
+<tr>
+<td>
+<strong><%=table[kk,"authors"]%></strong><br/>
+<a href="<%=table[kk,"url"]%>"><%=table[kk,"title"]%></a>
+</td>
+<td style="border-style: solid; border-color:<%=score.pal[min(100*lex.score[kk,1],length(score.pal))]%>">score<br/><%=format(lex.score[kk,1],digits=3)%></td>
+</tr>
+<tr>
+<td colspan="2"><%=strtrim(table[kk,"content"], 500)%>...</td>
+</tr>
+<tr>
+<td colspan="2">
+<em>
+Contains terms: <%=paste(Terms(dtm.tf.unstemmed.lex[kk,col_sums(dtm.tf.unstemmed.lex[kk,])>0]), collapse=", ")%>
+</em>
+</tr>
+<%}%>
+</table>
