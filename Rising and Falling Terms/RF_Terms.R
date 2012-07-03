@@ -144,7 +144,7 @@ if(!is.na(recent.themes.txt)){
 #past.doc_ids.bool<-tm_index(corp,FUN=sFilter, doclevel = TRUE, useMeta = FALSE,
 #paste("datetimestamp<'",key.date,"'",sep=""))
 #changed since tm_index seems broken
-dts<-as.POSIXlt(unlist(meta(corp,"DateTimeStamp",type="local")))
+dts<-as.POSIXlt(unlist(meta(corp,"DateTimeStamp",type="local")),origin="1970-01-01")
 past.doc_ids.bool<- (dts<key.date)
 print(paste(sum(past.doc_ids.bool),"documents in the reference set and",sum(!past.doc_ids.bool)," documents in the target set",sep=" "))
 term.sums.past<-col_sums(dtm.tf[past.doc_ids.bool,])
@@ -170,6 +170,7 @@ if(is.na(authors.table)){
       authors<-papers.table[as.character(dblp_url[[i]]),"AUTHOR_IDS"]
       if(is.na(authors)){
          print(paste("Paper in abstracts CSV was not found in authorship CSV: DBLP URL=",as.character(dblp_url[[i]])))
+         max.betweenness[i]<-0.0
       }else{
          authors.sep<-unlist(strsplit(authors,","))
          betweenness<-authors.table[authors.sep,]
@@ -215,6 +216,49 @@ print("Summary Stats for Novelty")
 print(novelty.summary)
 #if the histogram is very skew to high values (e.g. 0.8) then it isn't possible to ident novel
 basic.hist(novelty,"Absolute Novelty Values","minimum(1 - similarity)","Images/AbsoluteNovelty.png", Breaks=20)
+
+# ##
+# ## create an "annealed" version by randomly swapping terms (bin occ) between documents
+# ## in order to see what kind of distribution would occur by chance.
+# ##
+# dtm.annealed <- dtm.bin.trimmed
+# dl<-length(Docs(dtm.annealed))
+# tl<-length(Terms(dtm.annealed))
+# d<-1:dl
+# t<-1:tl
+# 
+# for(i in 1:10000){
+#    d.swap<-sample(d,2,replace=FALSE)#docs to swap terms between
+#    d1<-d.swap[1]
+#    d2<-d.swap[2]
+#    t.swap<-sample(t,2,replace=FALSE)
+#    t1<-t.swap[1]#sample(which(col_sums(dtm.annealed[d1,])>0 & !col_sums(dtm.annealed[d2,])>0),1)#
+#    t2<-t.swap[2]#sample(which(col_sums(dtm.annealed[d2,])>0 & !col_sums(dtm.annealed[d1,])>0),1)#
+#    v1<-col_sums(dtm.annealed[d1,t1])
+#    v2<-col_sums(dtm.annealed[d2,t2])
+#    #swap by adding a difference matrix, with a fifth-element to make it the right size
+#    diff.mat<-simple_triplet_matrix(c(d1,d1,d2,d2,dl), c(t1,t2,t1,t2,tl),c(-v1,v2,v1,-v2,0))
+#    dtm.annealed<-dtm.annealed+diff.mat
+# }
+# #a made-up "recent"set
+# dtm.annealed.recent<-dtm.annealed[!past.doc_ids.bool,]
+# a.doc.norm.mat<-sqrt(tcrossprod(row_sums(dtm.annealed.recent),row_sums(dtm.annealed)))
+# a.difference.mat<-1.0-tcrossprod(as.matrix(dtm.annealed.recent),
+#                                as.matrix(dtm.annealed))/ a.doc.norm.mat
+# #self referential terms need "removing" (since the mat is not square, cant use "diag")
+# a.difference.mat[a.difference.mat[,]==0]<-1.0
+# #sometimes NaNs creep in (not sure why)
+# a.difference.mat[is.nan(a.difference.mat[,])]<-1.0
+# #novelty means there is no other close doc so find the smallest difference
+# a.novelty<-apply(a.difference.mat,1,min)
+# #the summary stats
+# a.novelty.summary<-summary(a.novelty)
+# print("Summary Stats for Annealed Set Novelty")
+# print(a.novelty.summary)
+# #if the histogram is very skew to high values (e.g. 0.8) then it isn't possible to ident novel
+# basic.hist(a.novelty,"Annealed Set Absolute Novelty Values","minimum(1 - similarity)","Images/AnnealedAbsoluteNovelty.png", Breaks=20)
+
+
 # calculate a standardised novelty to try to compensate for varying skewness
 #NB the median is calculated FOR ALL document novelty in the corpus, not just for the recent set, so repeat earlier calc but now for full cross product
 full.doc.norm.mat<-sqrt(tcrossprod(row_sums(dtm.bin.trimmed),row_sums(dtm.bin.trimmed)))
@@ -474,7 +518,7 @@ colorized.barplot(rise.ratio.trunc, Main="Rising Terms", Ylab="% Rise in Target 
 # Plot the frequency of occurrence of the rising terms in the past and recent sets as a stacked bar chart
 r.term.sums.recent<-col_sums(dtm.tf.rising)
 r.term.sums.past<-col_sums(dtm.tf[past.doc_ids.bool,Terms(dtm.tf.rising)])
-pair.barplot(X.past=r.term.sums.past/past.recent.ratio, X.target=r.term.sums.recent,
+pair.barplot(X.past=r.term.sums.past, X.target=r.term.sums.recent,
                 Main="Un-scaled Rising Terms", Ylab="Term Occurrence",
                 Names=rising.selected.words,
                 OutputFile="Images/RisingTerms_PastRecent_Counts.png")
@@ -542,7 +586,7 @@ colorized.barplot(fall.ratio, Main="Falling Terms", Ylab="% Fall in Target Set",
 #plots showing previous/target occurrences for falling terms, sim to rising
 f.term.sums.recent<-col_sums(dtm.tf[!past.doc_ids.bool,names(p.falling)])
 f.term.sums.past<-col_sums(dtm.tf[past.doc_ids.bool,names(p.falling)])
-pair.barplot(X.past=f.term.sums.past/past.recent.ratio, X.target=f.term.sums.recent,
+pair.barplot(X.past=f.term.sums.past, X.target=f.term.sums.recent,
                 Main="Un-scaled Falling Terms", Ylab="Term Occurrence",
                 Names=falling.selected.words,
                 OutputFile="Images/FallingTerms_PastRecent_Counts.png")
@@ -754,7 +798,7 @@ write.csv(edges1.df, file="Gephi/SignificantTerm-Co-occurence Edges.csv", row.na
 # # - generally apply one step of expansion x1.2
 
 ##       
-## find docs containing the above-threshold new terms, sorted most-numerous first
+## find docs containing the above-threshold new terms
 ##
 #new.selected.term.ids.asc<-order(term.sums.new.sel, decreasing=TRUE)
 #dtm.bin.new<-dtm.bin.new[,names(term.sums.new.sel[new.selected.term.ids.asc])]
@@ -769,7 +813,7 @@ for (i in Terms(dtm.bin.new)){
    print(paste("Documents containing term:",i)) #########################
    doc_ids.for.term<-Docs(dtm.bin.new[row_sums(dtm.bin.new[,i])>0,])
    corp.for.term<-corp.new[doc_ids.for.term]
-   new.doclist[[ii]]<-ExtractDocs(corp.for.term, ExtraMeta=extra.meta, DocIds=doc_ids.for.term)
+   new.doclist[[ii]]<-ExtractDocs(corp.for.term, ExtraMeta=extra.meta, DocIds=doc_ids.for.term, display.dateLength)
    ii<-ii+1
    print("============")
 }
@@ -779,7 +823,7 @@ sink()
 sink(file="RF_Terms.log", append=TRUE, type="output", split=TRUE)
         
 ##       
-## find docs containing the above-threshold rising terms, sorted most-rising first
+## find docs containing the above-threshold rising terms
 ##
 # improve this - find URL for each 
 #rising.selected.term.ids.asc<-order(rise.ratio, decreasing=TRUE)
@@ -798,12 +842,24 @@ for (i in Terms(dtm.bin.rising)){
    print(paste("Documents containing term:",i))
    doc_ids.for.term<-Docs(dtm.bin.rising[row_sums(dtm.bin.rising[,i])>0,])
    corp.for.term<-corp.rising[doc_ids.for.term]
-   rising.doclist[[ii]]<-ExtractDocs(corp.for.term, ExtraMeta=extra.meta, DocIds=doc_ids.for.term)
+   rising.doclist[[ii]]<-ExtractDocs(corp.for.term, ExtraMeta=extra.meta, DocIds=doc_ids.for.term, display.dateLength)
    ii<-ii+1
    print("============")
 }
 names(rising.doclist)<-rising.selected.words
   
+##
+##
+## do something like this for selected docs to create a small ternary plot of sentiment for each doc and maybe a larger plot of all docs.
+## problem is that "Objective" isn't actually calculated but assumed to be all non-pos/neg words, which is wrong. SentiWordNet would be better...
+##
+##
+#pt<-data.frame(positive=0.5,negative=0.25,objective=0.25)
+#col<-c("#C000C0") /calc this to match sentiment. leave G=00
+#ternaryplot(pt,    col = col,    pch = 19,    bg = "lightgray",
+#            grid_color = "black",    labels = "none",    main = "Sentiment", cex=2.0)
+
+
 # re-jig back to showing on console and logging
 sink()
 sink(file="RF_Terms.log", append=TRUE, type="output", split=TRUE)
@@ -812,9 +868,9 @@ sink(file="RF_Terms.log", append=TRUE, type="output", split=TRUE)
 ## Documents containing extreme or outlier "auxillary metrics" - novelty or subjectivity
 ##
 #novelty
-df.std.nov.extreme<-ExtractDocs(corp,  ExtraMeta=extra.meta, DocIds=names(std.nov.extreme))
+df.std.nov.extreme<-ExtractDocs(corp,  ExtraMeta=extra.meta, DocIds=names(std.nov.extreme[order(std.nov.extreme, decreasing=TRUE)]), display.dateLength)
 #Subjectivity
-df.subj.outliers<-ExtractDocs(corp, ExtraMeta=extra.meta, DocIds=names(subj.outliers))
+df.subj.outliers<-ExtractDocs(corp, ExtraMeta=extra.meta, DocIds=names(subj.outliers[order(subj.outliers, decreasing=TRUE)]), display.dateLength)
 
 ##
 ## find docs containing several different above-threshold rising terms. 
@@ -848,7 +904,7 @@ for (j in corp.key_docs){
         
 #dump a CSV of the recent docs, with lists of terms and ancillary measures
 #DO not include the abstracts so that it may be published with less risk of IPR issues
-df.dump<-ExtractDocs(corp, ExtraMeta=extra.meta, DocIds=Docs(dtm.tf)[!past.doc_ids.bool], Print=FALSE)
+df.dump<-ExtractDocs(corp, ExtraMeta=extra.meta, DocIds=Docs(dtm.tf)[!past.doc_ids.bool], display.dateLength, Print=FALSE)
 df.dump["abstract"]<-NULL
 rownames(df.dump)<-df.dump[["id"]]#make rownames be the doc ids
 #this cannot be done with sapply() since col_sums cannot currently cope with repeated indeces
