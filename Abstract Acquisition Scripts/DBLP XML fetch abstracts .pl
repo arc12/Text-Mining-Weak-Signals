@@ -4,6 +4,7 @@
 ## Extract the abstract and compose a CSV output along with the metadata from the XML
 ## ******** designed to work with IEEE ICALT, Elsevier/Sciencedirect CAL and Springer EC-TEL, ICWL, ICHL proceedings 
 
+##TOTAL FUCKERS - SPRINGER HAVE CHANGED IT SO THAT ABSTRACTS ARE CONCEALED, THIS NO LONGER WORKS
 
 ##NB: some older papers (especially) in DBLP do not have <ee> content
 
@@ -21,16 +22,17 @@ my $abs_got = 0;
 my $no_url = 0;
 my $booktitle="";
 my $publisher="";
-my $min_year = 2005;
+my $min_year = 2008;
 my $max_year = 2011;
-my $conf = "ICWL";
-my $infile = "../Source Data/Raw and Part-Processed/".$conf."/".$conf." inproceedings.xml";
+my $conf = "ICHL";
+my $infile = "../Source Data/Raw and Part-Processed/".$conf."/".$conf." inproceedings ".$max_year.".xml";
 my $outfile = "../Source Data/".$conf." Abstracts ".$min_year."-".$max_year.".csv";
 print "Starting - acquire abstracts $min_year -> $max_year \n";
 
 unlink $outfile;
 open(OUTFILE, ">".$outfile);
-print OUTFILE "year,pages,title,authors,abstract,keywords,url,dblp_url\n";
+#uncomment the following line UNLESS intending to append the outfile to an existing CSV
+#print OUTFILE "year,pages,title,authors,abstract,keywords,url,dblp_url\n";
 
 # Read in the XML and start looping over <inproceedings> elements
 # forcearry ensures that "author" is always read in as an array even if only 1 author element
@@ -79,104 +81,121 @@ foreach my $item (@{$xml->{inproceedings}}){
 			#the DOI request is redirected, this will happen automatically...
 			my $request = HTTP::Request->new(GET => $url);
 			my $response = $ua->request($request);
-			#scrape the abstract
-			my @html = split /\n/, $response->content();
 			my $abstract = "";
 			my $donext=0;
-			# A DIFFERENT SCRAPER FOR EACH PUBLISHER (which is indicated by the <booktitle> element
-			for ($publisher) {
-				if    (/Springer/){
-					foreach my $line (@html){ #reads line by line from response content
-						#print "L:". $line ."\n\n";
-						if($donext == 1 && $line =~ /<\/div>/){
-							$abs_got++;
-							last;
+			#guard against no response
+			if ($response->is_success) {
+				# A DIFFERENT SCRAPER FOR EACH PUBLISHER (which is indicated by the <booktitle> element
+				for ($publisher) {
+					if    (/Springer/){
+						#Springer hides their abstract - only shown using ajax on a "show..." click.
+						#However, we can frig the URL to fetch what ajax does
+						my $newurl = $response->request()->url();
+						$newurl =~ s/\?MUD=MP/primary/;
+						my $newrequest = HTTP::Request->new(GET => $newurl);
+						my $response = $ua->request($newrequest);
+						my @html = split /\n/, $response->content();
+						if ($response->is_success) {
+							foreach my $line (@html){ #reads line by line from response content
+								#print "L:". $line ."\n\n";
+								if($donext == 1 && $line =~ /<\/div>/){
+									$abs_got++;
+									last;
+								}
+								if($line =~ /class=\"Abstract\".*>(.*)/){
+									$line=$1;
+									$donext=1;							
+								}
+								if($donext == 1){
+									$line =~ s/<.*?>//g;#remove html tags
+									$line=~s/^\s+//; #remove leading spaces
+									chomp($line);
+									$abstract .= $line . " ";
+								}
+							}
+							
+							#print "ABS:". $abstract . "\n\n";
+						}		
+					}
+					elsif (/Sciencedirect/){
+						#scrape the abstract directly from the HTTP response
+						my @html = split /\n/, $response->content();
+						foreach my $line (@html){ #reads line by line from response content
+							#WAS PREVIOUSLY if($line =~ /<div><h3 class=\"h3\">Abstract<\/h3>(.*)<\/p><\/div>/){
+							if($line =~ /<div class=\"abstract svAbstract\"><h2 class=\"secHeading\" id=\"section_abstract\">Abstract<\/h2>(.*)<\/p><\/div>/){
+								$abstract = $1;
+								$abstract =~ s/<.*?>//g;#remove html tags
+								$abstract=~s/^\s+//; #remove leading spaces
+								chomp($abstract);
+								$abs_got++;
+								last;
+							}
 						}
-						if($line =~ /class=\"Abstract\".*>(.*)/){
-							$line=$1;
-							$donext=1;							
-						}
-						if($donext == 1){
-							$line =~ s/<.*?>//g;#remove html tags
-							$line=~s/^\s+//; #remove leading spaces
-							chomp($line);
-							$abstract .= $line . " ";
-						}
-						
-						#print "ABS:". $abstract . "\n\n";
-					}		
-				}
-				elsif (/Sciencedirect/){
-					foreach my $line (@html){ #reads line by line from response content
-						if($line =~ /<div><h3 class=\"h3\">Abstract<\/h3>(.*)<\/p><\/div>/){
-							$abstract = $1;
-							$abstract =~ s/<.*?>//g;#remove html tags
-							$abstract=~s/^\s+//; #remove leading spaces
-							chomp($abstract);
-							$abs_got++;
-							last;
+					}						
+					elsif (/IEEE/){
+						#scrape the abstract directly from the HTTP response
+						my @html = split /\n/, $response->content();
+						foreach my $line (@html){ #reads line by line from response content
+							#print ">>> $line \n";
+							$line =~ s/\r//; #get \r in 2008 and 2009!
+							#This works with one style (2008)
+							if($donext == 1){
+								$line =~ s/<.*?>//g;#remove html tags
+								$line=~s/^\s+//; #remove leading spaces
+								chomp($line);
+								$abstract = $line;
+								$abs_got++;
+								last;
+							}
+							if($line =~ /<h2>Abstract<\/h2>/){
+								$donext=1;
+							}
+							#This works with another style (the main one)
+							if($line =~ /class=\"abs-articlesummary\"/){
+								$line =~ s/<.*?>//g;#remove html tags
+								$line=~s/^\s+//; #remove leading spaces
+								chomp($line);
+								$abstract = $line;
+								$abs_got++;
+								last;
+							}
 						}
 					}
-				}						
-				elsif (/IEEE/){
-					foreach my $line (@html){ #reads line by line from response content
-						#print ">>> $line \n";
-						$line =~ s/\r//; #get \r in 2008 and 2009!
-						#This works with one style (2008)
-						if($donext == 1){
-							$line =~ s/<.*?>//g;#remove html tags
-							$line=~s/^\s+//; #remove leading spaces
-							chomp($line);
-							$abstract = $line;
-							$abs_got++;
-							last;
-						}
-						if($line =~ /<h2>Abstract<\/h2>/){
-							$donext=1;
-						}
-						#This works with another style (the main one)
-						if($line =~ /class=\"abs-articlesummary\"/){
-							$line =~ s/<.*?>//g;#remove html tags
-							$line=~s/^\s+//; #remove leading spaces
-							chomp($line);
-							$abstract = $line;
-							$abs_got++;
-							last;
-						}
+					else{
+						print "**** error ****\n";#this should never happen
 					}
-				}
-				else{
-					print "**** error ****\n";#this should never happen
-				}
-			}     
-			
-			
-			$abstract=~s/^\s+//; #remove leading spaces
-			$abstract=~s/\s+$//; #remove trailing spaces			
-			#deal with pesky symbols - left and right single quote marks, normal quotes etc
-			#a general s/\&.*;// would be too risky
-			$abstract =~ s/\"//g;
-			$abstract =~ s/'//g; #occurs as students' and later gets converted to &psila; leading to studentspsila in the TM
-			$abstract =~ s/\&nbsp;/ /g;
-			$abstract =~ s/\&amp;/and/g;
-			$abstract =~ s/\&ndash;/-/g;
-			$abstract =~ s/\&.5;//g;
-			$abstract =~ s/\&.4;//g;
-			$abstract =~ s/\&.3;//g;
-			$abstract =~ s/\&.2;//g;
-			$abstract =~ s/\&#.*;//g;
-			
-			#$abstract =~ s/\&lsquo;//g;
-			#$abstract =~ s/\&rsquo;//g;
-			#$abstract =~ s/\&ldquo;//g;
-			#$abstract =~ s/\&rdquo;//g;
-			#$abstract =~ s/\&psila;//g;
-			#$abstract =~ s/\&trade;//g;
-			#$abstract =~ s/\&bull;//g;
-			$title =~ s/\"//g;
+				}     
+				
+				
+				$abstract=~s/^\s+//; #remove leading spaces
+				$abstract=~s/\s+$//; #remove trailing spaces			
+				#deal with pesky symbols - left and right single quote marks, normal quotes etc
+				#a general s/\&.*;// would be too risky
+				$abstract =~ s/\"//g;
+				$abstract =~ s/'//g; #occurs as students' and later gets converted to &psila; leading to studentspsila in the TM
+				$abstract =~ s/\&nbsp;/ /g;
+				$abstract =~ s/\&amp;/and/g;
+				$abstract =~ s/\&ndash;/-/g;
+				$abstract =~ s/\&.5;//g;
+				$abstract =~ s/\&.4;//g;
+				$abstract =~ s/\&.3;//g;
+				$abstract =~ s/\&.2;//g;
+				$abstract =~ s/\&#.*;//g;
+				
+				$abstract =~ s/\&lsquo;//g;
+				$abstract =~ s/\&rsquo;//g;
+				$abstract =~ s/\&ldquo;//g;
+				$abstract =~ s/\&rdquo;//g;
+				#$abstract =~ s/\&psila;//g;
+				#$abstract =~ s/\&trade;//g;
+				#$abstract =~ s/\&bull;//g;
+				$title =~ s/\"//g;
 
-            print "$year $title \n $abstract\n";
-			print OUTFILE "$year,$pages,\"$title\",\"$authors\",\"$abstract\",\"\",$url,\"$dblp_url\"\n"
+				print "$year $title \n $abstract\n";
+				print OUTFILE "$year,$pages,\"$title\",\"$authors\",\"$abstract\",\"\",$url,\"$dblp_url\"\n"
+			}else{
+				print "Fetch of DOI URL ". $url . " failed\n\n";
+			}
 		}else{
 			print "No DOI URL found: $year $title\n\n";
 			$no_url++;

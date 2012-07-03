@@ -35,17 +35,19 @@ output.dir<-paste(home.dir,"Source Data",sep="/")
 setwd(output.dir)
 
 #each one of these will be looped over NB the origin.tag must be in the same order as set.csv
-# set.csv <- c("ICALT Abstracts 2005-2011.csv",
-#                    "CAL Abstracts 2007-2009.csv",
-#                    "ECTEL Abstracts 2006-2011.csv",
-#                    "ICWL Abstracts 2005-2011.csv")
-# origin.tag <- c("ICALT",
-#                    "CAL",
-#                    "ECTEL",
-#                    "ICWL")#only used for abstracts
-set.csv <- c("CETIS Blogs 20110101-20120301.csv","CETIS Blogs 20090101-20120301.csv","NonCETIS Blogs 20110101-20120301.csv")
+set.csv <- c("ICALT Abstracts 2005-2011.csv",
+                   "CAL Abstracts 2007-2011.csv",
+                   "ECTEL Abstracts 2006-2011.csv",
+                   "ICWL Abstracts 2005-2011.csv",
+                   "ICHL Abstracts 2008-2011.csv")
+origin.tag <- c("ICALT",
+                   "CAL",
+                   "ECTEL",
+                   "ICWL",
+                   "ICHL")#only used for abstracts
+# set.csv <- c("CETIS Blogs 20110101-20120301.csv","CETIS Blogs 20090101-20120301.csv","NonCETIS Blogs 20110101-20120301.csv")
 # this determines the source type: conference abstracts or blog content
-source.type="b"#a is for abstracts, b is for blogs
+source.type="a"#a is for abstracts, b is for blogs
 
 ##
 ## Prepare lexicon for sentiment analysis
@@ -71,6 +73,7 @@ for(i in 2:length(inquirer.table[1,])){
 ##
 for (src in 1:length(set.csv)){
    inFile<-set.csv[src]
+   print(paste("Processing: ",inFile))
    outFile<-paste(strtrim(inFile,nchar(inFile)-4),"with metrics.csv")
    # read in CSV with format year,pages,title,authors,abstract,keywords,url,dblp_url.
    #There is a header row. DBLP_URL is the vital key into the author centrality data
@@ -96,11 +99,21 @@ for (src in 1:length(set.csv)){
    # NB this is an UNSTEMMED treatment
    # Sentiment is scored as the fraction of words in the document that are listed in the relevant sentiment dictionary/lexicon. Multiple occurrences count.
    # "subjectivity" is the sum of positive and negative scores
-   # -- positive scores
    stop.words<-CustomStopwords()
+   # no dictionary to get the total word count
    dtm.tf.unstemmed.all<-DocumentTermMatrix(corp,
    control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE))
    doc.term.sums<-row_sums(dtm.tf.unstemmed.all)
+   #make sure we remove empty documents
+   empty.docs.bool<-doc.term.sums<1
+   if(sum(empty.docs.bool)>0){
+      doc.term.sums<-doc.term.sums[!empty.docs.bool]
+      dtm.tf.unstemmed.all<-dtm.tf.unstemmed.all[!empty.docs.bool]
+      corp<-corp[!empty.docs.bool]
+      table<-table[!empty.docs.bool,]
+      print(paste("Removed document item with no text content:",paste(which(empty.docs.bool))))
+   }
+   # -- positive scores
    dtm.tf.unstemmed.p<-DocumentTermMatrix(corp,
    control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics[["Positive"]])))
    pos.score<-row_sums(dtm.tf.unstemmed.p)/doc.term.sums

@@ -15,7 +15,7 @@
 # Given a corpus, extra metadata and a list of document IDs, extract document metadata and content into a dataframe
 # and optionally print out the extracted info
 #ExtraMeta is a data frame with Doc IDs as row names, columns for max betweenness and Std Novelty
-ExtractDocs<-function(Corp, ExtraMeta, DocIds, Print=TRUE){
+ExtractDocs<-function(Corp, ExtraMeta, DocIds, DateLength=4, Print=TRUE){
    empty.field.c<-rep(NA,length(DocIds))
    df<-data.frame(origin=empty.field.c, date=empty.field.c,
          heading=empty.field.c, authors=empty.field.c, id=empty.field.c,
@@ -27,7 +27,8 @@ ExtractDocs<-function(Corp, ExtraMeta, DocIds, Print=TRUE){
    for (j in DocIds){
       #BEWARE order is critical!
       df[jj,]<-c(as.character(meta(Corp[[j]], tag="Origin")),
-         as.character(meta(Corp[[j]], tag="DateTimeStamp")), as.character(meta(Corp[[j]], tag="Heading")),
+         substr(as.character(meta(Corp[[j]], tag="DateTimeStamp")),1,DateLength),
+         as.character(meta(Corp[[j]], tag="Heading")),
          as.character(meta(Corp[[j]], tag="Author")), as.character(meta(Corp[[j]], tag="ID")),
          as.character(meta(Corp[[j]], tag="URL")), as.character(meta(Corp[[j]], tag="DBLP_URL")),
          as.character(Corp[[j]]),
@@ -70,7 +71,7 @@ LogTerms<-function(fileName, terms, words=NULL){
 
 CustomStopwords<-function(){
    #+  "paper" (which is common in journal/proceedings abstracts!)
-   SW<-c(stopwords(kind = "en"),"paper","studentspsila")
+   SW<-c(stopwords(kind = "en"),"paper","studentspsila","conference")
    #- some terms (and various expansions) that are relevant to the education domain
    SW<-SW[-grep("group", SW)]
    SW<-SW[-grep("problem", SW)]
