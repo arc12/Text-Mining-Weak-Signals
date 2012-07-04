@@ -50,7 +50,7 @@ interpolate.start.dates$mon<-interpolate.start.dates$mon+(slice.size/2)
 table<-NULL
 for (src in 1:length(sets.csv)){
    # read in CSV with format year,pages,title,authors,abstract,keywords. There is a header row. title/authors/keywords are delimited by "
-   tmp_table<-read.csv(paste(source.dir,sets.csv[[src]],sep="/"),header=TRUE,sep=",",quote="\"")
+   tmp_table<-read.csv(paste(source.dir,sets.csv[[src]],sep="/"),header=TRUE,sep=",",quote="\"",stringsAsFactors=FALSE)
    #accumulate the table            
    table<-rbind(table,tmp_table)
    tmp_table<-NULL
@@ -62,15 +62,15 @@ if(brew.type=="c"){
    table[,"year"]<-ISOdate(table[,"year"],7,1)
    map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url", Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")
    }else{
-       map<-list(Content="content", DateTimeStamp="datestamp", Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")  
+      map<-list(Content="content", Heading="title", Author="authors", DateTimeStamp="datestamp", Origin="origin",URL="url", Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")  
    }
 #use the mapping while reading the dataframe source to create a coprus with metadata
 corp<-Corpus(DataframeSource(table), readerControl=list(reader= readTabular(mapping=map)))
 # Standard document-term matrix of the entire corpus, use the standard stopword set with a few modifications!
 stop.words<-CustomStopwords()
-corp<-tm_map(corp,removeNumbers)
-corp<-tm_map(corp,removePunctuation)
-dtm.tf<-DocumentTermMatrix(corp, control=list(stemming=TRUE, stopwords=stop.words, minWordLength=3))
+# corp<-tm_map(corp,removeNumbers)
+# corp<-tm_map(corp,removePunctuation)
+dtm.tf<-DocumentTermMatrix(corp, control=list(stemming=TRUE, stopwords=stop.words, minWordLength=3, removePunctuation=TRUE, removeNumbers=TRUE))
 dtm.bin<-weightBin(dtm.tf)
 # pull out the sentiment data
 pos.score<-unlist(meta(corp,tag="Positive", type="local"))
@@ -87,6 +87,13 @@ dtm.tf.sums<-col_sums(dtm.tf)
 cat("\n")
 print("Summary Stats of (Total) Term Occurrences in the Corpus")
 print(summary(dtm.tf.sums))
+
+# a bunch of data frames to accumulate the grouped results while the following nest of 2 loops operates
+group.or.slices.freq<-data.frame()
+group.or.slices.docs<-data.frame()
+group.or.slices.positive<-data.frame()
+group.or.slices.negative<-data.frame()
+group.or.slices.subjectivity<-data.frame()
 
 ##
 ## Start to get results.
