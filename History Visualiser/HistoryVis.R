@@ -18,6 +18,21 @@ library("slam")
 library("brew")
 #library("rjson")
 
+doBrew<-function(page.name, isGroup=FALSE){
+   #Create the HTML/JS for the Google Chart using a Brew Template
+   html.filename<-paste(page.name,".html",sep="")   
+   web.page.url<-paste(web.page.base,html.filename,sep="/")
+   gadget.filename<-paste(page.name,"gadget.xml",sep=" ")
+   gadget.url.encoded<-URLencode(paste(web.page.base,gadget.filename,sep="/"), reserved=TRUE)
+   
+   isGadget=FALSE   
+   brew(file=paste(brew.dir,"HV Brew Template.html",sep="/"),
+        output=html.filename,run=TRUE)
+   isGadget=TRUE
+   brew(file=paste(brew.dir,"HV Brew Template.html",sep="/"),
+        output=gadget.filename,run=TRUE)
+}
+
 ##
 ## NB {data_set_name}/HV_Init.R should be run first to establish the run parameters
 ##
@@ -88,12 +103,20 @@ cat("\n")
 print("Summary Stats of (Total) Term Occurrences in the Corpus")
 print(summary(dtm.tf.sums))
 
-# a bunch of data frames to accumulate the grouped results while the following nest of 2 loops operates
-group.or.slices.freq<-data.frame()
-group.or.slices.docs<-data.frame()
-group.or.slices.positive<-data.frame()
-group.or.slices.negative<-data.frame()
-group.or.slices.subjectivity<-data.frame()
+# a bunch of matrices to accumulate the grouped results while the following nest of 2 loops operates
+# group.template<-data.frame(matrix(ncol=length(term.lists),nrow=0))
+# colnames(group.template)<-names(term.lists)
+gmat.template<-matrix(ncol=length(term.lists),nrow=num.slices)
+gmat.or.slices.freq<-gmat.template
+gmat.or.slices.docs<-gmat.template
+gmat.or.slices.positive<-gmat.template
+gmat.or.slices.negative<-gmat.template
+gmat.or.slices.subjectivity<-gmat.template
+# gmat.and.slices.freq<-gmat.template
+# gmat.and.slices.docs<-gmat.template
+# gmat.and.slices.positive<-gmat.template
+# gmat.and.slices.negative<-gmat.template
+# gmat.and.slices.subjectivity<-gmat.template
 
 ##
 ## Start to get results.
@@ -152,17 +175,22 @@ for (i.run in 1:length(term.lists)){
       total.terms<-sum(row_sums(dtm.tf.slice))     
       total.docs<-sum(slice.doc_bool)
       #calculate term frequency (%) and document count ** for the terms aposite to the current run
-      #NB: if run.terms contains a term which is not in the DTM, this gives a "subscript out of bounds" error - these MUST be the stemmed forms.
+      #NB: if run.terms contains a term which is not in the DTM, this gives a "subscript out of bounds" error - these should be the stemmed forms (previously checked).
       dtm.tf.slice<-dtm.tf.slice[,run.terms]
+      all.term.docs<-row_sums(dtm.bin.slice)==length(run.terms) #which docs contain all terms
       dtm.tf.slice<-dtm.tf.slice[col_sums(dtm.tf.slice)>0,]
       slice.freq<-100*col_sums(dtm.tf.slice)/total.terms
       data.slices.freq<-rbind(data.slices.freq,slice.freq)
+      gmat.or.slices.freq[slice,i.run]<-sum(slice.freq)
+      #gmat.and.slices.freq[slice,i.run]<-100*sum(col_sums(dtm.tf.slice[all.term.docs,]))/total.terms
       print("Frequences (%):")
       print(slice.freq)
       dtm.bin.slice<-dtm.bin.slice[,run.terms]
       dtm.bin.slice<-dtm.bin.slice[col_sums(dtm.bin.slice)>0,]
       slice.docs<-100*col_sums(dtm.bin.slice)/total.docs
       data.slices.docs<-rbind(data.slices.docs,slice.docs)
+      gmat.or.slices.docs[slice,i.run]<-sum(slice.docs)
+      #gmat.and.slices.docs[slice,i.run]<-100*sum(col_sums(dtm.bin.slice[all.term.docs,]))/total.docs
       print("Document fraction (%):")
       print(slice.docs)
       #calculate the "subjectivity" for each term according to the subjectivity of containing documents
@@ -175,17 +203,29 @@ for (i.run in 1:length(term.lists)){
          sent.negative[nt]<-mean(neg.score[Docs(dtm.tf.slice[as.matrix(dtm.tf.slice[,nt])>0,nt])])
          subjectivity[nt]<-mean(subj.score[Docs(dtm.tf.slice[as.matrix(dtm.tf.slice[,nt])>0,nt])])
       }
-      sent.positive[is.nan(subjectivity)]<-0.0
-      sent.negative[is.nan(subjectivity)]<-0.0
+      sent.positive[is.nan(sent.positive)]<-0.0
+      sent.negative[is.nan(sent.negative)]<-0.0
       subjectivity[is.nan(subjectivity)]<-0.0
       data.slices.positive<-rbind(data.slices.positive,sent.positive)
       data.slices.negative<-rbind(data.slices.negative,sent.negative)
       data.slices.subjectivity<-rbind(data.slices.subjectivity,subjectivity)
+      #the groups require special treatment
+      or.docs<-Docs(dtm.tf.slice)[row_sums(dtm.tf.slice)>0]
+      and.docs<-Docs(dtm.tf.slice)[all.term.docs]
+      gmat.or.slices.positive[slice,i.run]<-mean(pos.score[or.docs])
+      gmat.or.slices.negative[slice,i.run]<-mean(neg.score[or.docs])
+      gmat.or.slices.subjectivity[slice,i.run]<-mean(subj.score[or.docs])
+      gmat.or.slices.positive[is.nan(gmat.or.slices.positive)]<-0.0
+      gmat.or.slices.negative[is.nan(gmat.or.slices.negative)]<-0.0
+      gmat.or.slices.subjectivity[is.nan(gmat.or.slices.subjectivity)]<-0.0
+#       gmat.and.slices.positive[slice,i.run]<-mean(pos.score[and.docs])
+#       gmat.and.slices.negative[slice,i.run]<-mean(neg.score[and.docs])
+#       gmat.and.slices.subjectivity[slice,i.run]<-mean(subj.score[and.docs])
       print("Subjectivity:")
       print(subjectivity)
    }
    # assemble the data into a convenient array for processing in a Brew template, interpolating if necessary
-   row.count<-num.interpolate*length(run.terms)
+   #row.count<-num.interpolate*length(run.terms)
    #data.rows<-array(0,c(row.count,7))#this is destined for JSON in the Brew template
    data.rows<-data.frame()
    #interpolate 
@@ -211,21 +251,50 @@ for (i.run in 1:length(term.lists)){
                                              data.slices.positive[,t],
                                              data.slices.negative[,t]))
    }
-   
-   #Create the HTML/JS for the Google Chart using a Brew Template
-   html.filename<-paste(run.name,".html",sep="")   
-   web.page.url<-paste(web.page.base,html.filename,sep="/")
-   gadget.filename<-paste(run.name,"gadget.xml",sep=" ")
-   gadget.url.encoded<-URLencode(paste(web.page.base,gadget.filename,sep="/"), reserved=TRUE)
-   
-   isGadget=FALSE   
-   brew(file=paste(brew.dir,"HV Brew Template.html",sep="/"),
-     output=html.filename,run=TRUE)
-   isGadget=TRUE
-   brew(file=paste(brew.dir,"HV Brew Template.html",sep="/"),
-     output=gadget.filename,run=TRUE)
+   doBrew(run.name)
 }
 
+
+
+##
+## Groups special treatment
+##
+if(length(do.groups)>0){
+#pick out only those grouped stats that have been selected
+gmat.or.slices.freq<-data.frame(gmat.or.slices.freq[,names(term.lists)%in%do.groups])
+gmat.or.slices.docs<-data.frame(gmat.or.slices.docs[,names(term.lists)%in%do.groups])
+gmat.or.slices.positive<-data.frame(gmat.or.slices.positive[,names(term.lists)%in%do.groups])
+gmat.or.slices.negative<-data.frame(gmat.or.slices.negative[,names(term.lists)%in%do.groups])
+gmat.or.slices.subjectivity<-data.frame(gmat.or.slices.subjectivity[,names(term.lists)%in%do.groups])
+
+#interpolate 
+if(slice.size > interpolate.size){
+   gmat.or.slices.freq<-sapply(gmat.or.slices.freq,
+                            function(x) spline(x, method="natural", n=num.interpolate)$y)
+   gmat.or.slices.docs<-sapply(gmat.or.slices.docs,
+                            function(x) spline(x, method="natural", n=num.interpolate)$y)
+   gmat.or.slices.positive<-sapply(gmat.or.slices.positive,
+                                function(x) spline(x, method="natural", n=num.interpolate)$y)
+   gmat.or.slices.negative<-sapply(gmat.or.slices.negative,
+                                function(x) spline(x, method="natural", n=num.interpolate)$y)
+   gmat.or.slices.subjectivity<-sapply(gmat.or.slices.subjectivity,
+                                    function(x) spline(x, method="natural", n=num.interpolate)$y)
+}
+data.rows<-data.frame()
+do.groups.pretty<-sub("\\."," ",do.groups) #prettify
+for(g in 1:length(do.groups)){
+   data.rows<-rbind(data.rows, data.frame(rep(do.groups.pretty[g],num.interpolate),
+                                          as.character(interpolate.start.dates),
+                                                gmat.or.slices.freq[,g],
+                                                gmat.or.slices.docs[,g],
+                                                gmat.or.slices.subjectivity[,g],
+                                                gmat.or.slices.positive[,g],
+                                                gmat.or.slices.negative[,g]))
+}
+
+run.title<-"Groups of Terms"#used in brew template... messy coding :-(
+doBrew("Groups", isGroup=TRUE)
+}
 #stop logging
 sink()
    

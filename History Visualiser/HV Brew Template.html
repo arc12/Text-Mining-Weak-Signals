@@ -19,7 +19,8 @@
     
   <style type="text/css">
 	body { background-color: #efefef; padding: 10px;}
-	div.nice { width: 270px; float: left; padding: 10px;}
+	div.nice { width: 270px; float: left; padding: 10px; font-size: 14px; font-family: arial; color: black;}
+	div.chart {width: 800px; float: left; padding: 5px;}
 	div.clear { clear: both;} 
 	div.reduced {font-size: 12px; font-family: arial; color: black; clear: both;}
   </style>
@@ -51,6 +52,7 @@
         	data.addColumn('number', 'Negative Sentiment');
         	data.addRows([
         	//injected data from R. cannot use rjson because types vary
+        		<%row.count<-length(data.rows[,1])-%>
         		<%for(i in 1:row.count){%>
         		['<%=as.character(data.rows[i,1])%>',new Date('<%=as.character(data.rows[i,2])%>'),<%=data.rows[i,3]%>,<%=data.rows[i,4]%>,<%=data.rows[i,5]%>,<%=data.rows[i,6]%>,<%=data.rows[i,7]%>]
 			<%if(i<row.count){%>,<%}%>
@@ -68,7 +70,50 @@
 <%if(!isGadget){-%>
 <h1><%=title.common%> - <%=run.title%></h1>
 <%}-%>
-<div id="chart_div"></div>
+
+<div id="chart_div" class="chart"></div>
+<%if(isGadget){%>
+<div class="reduced">
+<%if(isGroup){%>
+<p>Group details: 
+<%for(i in 1:length(do.groups)){
+word.list<-word.lists[do.groups[i]]%>
+<em><a href="<%=do.groups[i]%>.html"><%=do.groups.pretty[i]%></a></em>
+<%}%>
+<%}else{
+if(run.name%in%do.groups){%>
+<a href="Groups.html">View terms as a group</a>.
+<%}%>
+<p>Other sets:
+<%for (other.set in 1:length(term.lists)){
+if(other.set != i.run){%>
+<a href="<%=names(term.lists[other.set])%>.html"><%=titles[other.set]%></a>
+<%}
+}
+}%>
+<%}else{%>
+<div class="nice">
+<%if(isGroup){%>
+<p>Group details:</p>
+<%for(i in 1:length(do.groups)){
+word.list<-word.lists[do.groups[i]]%>
+<p><em><a href="<%=do.groups[i]%>.html"><%=do.groups.pretty[i]%></a></em><br/>
+(<%=paste(unlist(word.list),collapse=", ")%>)</p>
+<%}%>
+<%}else{
+if(run.name%in%do.groups){%>
+<p><a href="Groups.html">View terms as a group</a>.</p>
+<%}%>
+<p>Other sets:</p>
+<%for (other.set in 1:length(term.lists)){
+if(other.set != i.run){%>
+<p><a href="<%=names(term.lists[other.set])%>.html"><%=titles[other.set]%></a></p>
+<%}
+}
+}%>
+<%}%>
+
+</div>
 <div class="reduced">
 <%if(isGadget){-%>
 <p><a href="<%=web.page.url-%>" target="_new">Larger version</a> with more options and more info...</p>

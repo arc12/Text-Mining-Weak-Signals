@@ -46,15 +46,37 @@ interpolate.size<-3 #number of months between interpolated points in the output;
 ## Which Terms to run for
 ##
 title.common<-"Conference Proceedings from ICALT, ECTEL, CAL, ICHL and ICWL"
-titles<-c("Fabrizio Basic Keywords",
-          "Fabrizio Additional Keywords")
           #"Run the Second")#should match each of the entries in the following list
 # NB!!!!!!!!! these are the STEMMED terms
-term.lists<-list(FG.Basic=c('lms','vle','lcms','eportfolio','game','gestur','metadata','adapt','open','social','ubiquit','semant','agent','cloud','broadband','video'),
-                 FG.Additional=c('platform','immers','standard','blog','twitter','wiki','tablet','smartphon','mobil','stream'))
+term.lists<-list(Learning.Platforms=c('lms','vle','lcms','eportfolio','platform'),
+                 Social.Software=c('social','blog','twitter','wiki'),
+                 Devices=c('gestur','tablet','smartphon','mobil','ubiquit','pervas'),
+                 Games=c('game', "gamif","gamebas", "gameplay"),
+                 Content=c('metadata','stream','video','standard'),
+                 Infrastructure=c('cloud','broadband'),
+                 Intelligent.Systems=c('adapt','semant','agent'))
 # .... and these are the pretty versions for display
-word.lists<-list(FG.Basic=c('LMS','VLE','LCMS','E-Portfolio','Games','Gesture','Metadata','Adaptive','Open','Social','Ubiquitous','Semantic','Agents','Cloud','Broadband','Video'),
-                 FG.Additional=c('Platform','Immersive','Standards','Blog','Twitter','Wiki','Tablet','Smartphone','Mobile','Streaming'))
+word.lists<-list(Learning.Platforms=c('LMS','VLE','LCMS','E-Portfolio','Platform'),
+                 Social.Software=c('Social','Blog','Twitter','Wiki'),
+                 Devices=c('Gestural','Tablet','Smartphone','Mobile','Ubiquitous','Pervasive'),
+                 Games=c('Game', "Gamification","Game-based", "Game-play"),
+                 Content=c('Metadata','Stream','Video','Standard'),
+                 Infrastructure=c('Cloud','Broadband'),
+                 Intelligent.Systems=c('Adapt','Semantic','Agent'))
+titles<-sub("\\."," ",names(term.lists))#lazy way to titles is to replace "." in the list element names - override if necessary
+#titles<-c("Fabrizio Basic Keywords", "Fabrizio Additional Keywords")
+
+# The folloowing indicates which of the lists above is treated as a group. Two plots are made to show group-level stats
+# one plot (OR) sums the occurrence of terms in each list and the other plot counts only documents where all (AND) terms appear
+# NB: the strings in go.groups must exactly match the list item names in term.lists (and "." characters are replaced with " " in output)
+do.groups=c("Learning.Platforms","Social.Software","Devices","Games","Content","Infrastructure","Intelligent.Systems")
+
+## PREVIOUS
+# term.lists<-list(FG.Basic=c('lms','vle','lcms','eportfolio','game','gestur','metadata','adapt','open','social','ubiquit','semant','agent','cloud','broadband','video'),
+#                  FG.Additional=c('platform','immers','standard','blog','twitter','wiki','tablet','smartphon','mobil','stream'))
+# # .... and these are the pretty versions for display
+# word.lists<-list(FG.Basic=c('LMS','VLE','LCMS','E-Portfolio','Games','Gesture','Metadata','Adaptive','Open','Social','Ubiquitous','Semantic','Agents','Cloud','Broadband','Video'),
+#                  FG.Additional=c('Platform','Immersive','Standards','Blog','Twitter','Wiki','Tablet','Smartphone','Mobile','Streaming'))
 
 ## OLD SET AS USED FOR 2010 CONF SET
 # title.common<-"Conference Proceedings from ICALT, ECTEL, CAL, ICHL and ICWL"
@@ -75,4 +97,4 @@ word.lists<-list(FG.Basic=c('LMS','VLE','LCMS','E-Portfolio','Games','Gesture','
 
 
 # in interactive execution it may be best to skip this command and to manually switch to it
-source(paste(base.dir,"History Visualiser/HistoryVis.R", sep="/"))
+#source(paste(base.dir,"History Visualiser/HistoryVis.R", sep="/"))
