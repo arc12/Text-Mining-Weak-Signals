@@ -143,6 +143,10 @@ cat(paste(paste(rep("-",79),collapse="")),"\n\n")
 # there may be more time-efficient approaches here, better than creating and using the corpus union BUT at least this approach is clear!
 corp.AB<-c(corp.A,corp.B)
 words.AB<-stemCompletion(colnames(df),corp.AB,type="prevalent")
+# a hack because the stemCompletion heuristic fails
+if("teach" %in% colnames(df)){
+   words.AB["teach"]<-"teach" #otherwise it becomes "teacher", which is a distinct stemmed form
+}
 words.AB[words.AB==""]<-names(words.AB[words.AB==""])
 freq.AB<-as.vector(df["freqA",]+df["freqB",])
 names(freq.AB)<-words.AB
@@ -178,6 +182,13 @@ words.A<-stemCompletion(colnames(df.A),corp.A,type="prevalent")
 words.A[words.A==""]<-names(words.A[words.A==""])
 words.B<-stemCompletion(colnames(df.B),corp.B,type="prevalent")
 words.B[words.B==""]<-names(words.B[words.B==""])
+# a hack because the stemCompletion heuristic fails
+if("teach" %in% colnames(df.A)){
+   words.A["teach"]<-"teach" #otherwise it becomes "teacher", which is a distinct stemmed form
+}
+if("teach" %in% colnames(df.B)){
+   words.B["teach"]<-"teach" #otherwise it becomes "teacher", which is a distinct stemmed form
+}
 
 # plot an all-together
 squares.plot<-function(X,Y,Z,Labels,Main,FileName){
@@ -262,6 +273,11 @@ gephi.csv(df.B,words.B,dtm.bin.B,"B")
 # - when exporting to PNG, usually need to set a 25% margin (or more) otherwise it gets cropped!
 
 #Create HTML report
+if(brew.type=="c2"){
+   doc.type="paper"
+}else{
+   doc.type="blog"
+}
 brew(file=paste(my.dir,"BrewTemplate.html",sep="/"), output="Report.html",run=TRUE)
 
 #stop logging
