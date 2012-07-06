@@ -62,19 +62,19 @@ margin: 0.5em 0.8em 0.5em 0.1em; float:left; width:604px;}
 <h1><%=title%></h1>
 
 <p>This is an un-interpreted and automatically-generated report to show the variation in terms used in
-<%if(brew.type=="c2"){-%>
- the full papers of two conferences: <a href="<%=url.A%>"><%=name.A%></a> and <a href="<%=url.B%>"><%=name.B%></a>.
+<%if(brew.type=="c2"){%>
+ the full text of papers from two conferences: <a href="<%=url.A%>"><%=name.A%></a> and <a href="<%=url.B%>"><%=name.B%></a>.
   A separate subsection shows those terms that appear more frequently in papers from each conference in turn.
-<%}else if(brew.type=="b2"){-%>
+<%}else if(brew.type=="b2"){%>
  two sets of blogs: <%=title.A%> and <%=title.B%> (data obtained from the <a href="http://dbis.rwth-aachen.de/cms/projects/mediabase">TELMap Mediabase</a> created by RWTH Aachen University).
   A separate subsection shows those terms that appear more frequently in blog posts from each set in turn.
- <%}-%>
+ <%}%>
 Selection criteria based on statistical significance are used to determine which terms are selected; the probability that the difference in frequency might be due to pure chance must be less than <%=p.max*100%>% in addition to other criteria to select dominant terms (see "<a href="#info">technicalities</a>").
 
 <p><em>All plots will open in a new window/tab as 1000x1000 pixel images if clicked on. The "Wordle" is 1024x768.</em></p>
 
 <h2>Overview of Selected Terms</h2>
-<p>Only middle-frequency words are considered; the comparison is between terms that are neither very common nor very rare in the aggregate of all blogs being analysed.</p>
+<p>Only middle-frequency words are considered; the comparison is between terms that are neither very common nor very rare in the aggregate of all <%=doc.type%>s being analysed.</p>
 <div class="cap-img"><a href="AB Pre-sig Wordle.jpg" target="image_win"><img src="AB Pre-sig Wordle.jpg" alt="Word cloud of compared terms" width="600" height="450" /></a><BR/>
 Word cloud for both sets combined: word sizes indicate frequency.</div>
 
@@ -92,10 +92,10 @@ Word cloud for both sets combined: word sizes indicate frequency.</div>
 
 <h3>Term Co-occurrence Graph</h3>
 <div class="cap-img"><a href="Co-occurrence A.png" target="image_win"><img src="Co-occurrence A.png" alt="<%=name.A%> Term Co-occurrence" width="600" height="600" /></a><BR/>
-<strong>Node size</strong> = significance<br />
+<strong>Node size</strong> = relative significance<br />
 <strong>Node colour</strong> is accoring to grouping<br/>
 <strong>Edge (connector) size</strong> = number of documents containing both connected terms.<br/>
-<em>NB: only the most-connective  <%=100*edge.quantile%>% of edges are shown</em>
+<em>NB: only edges in the top <%=100*(1.0-edge.quantile)%>% are shown</em>
 </div>
 
 <!--reset layout-->
@@ -114,11 +114,11 @@ Word cloud for both sets combined: word sizes indicate frequency.</div>
 <div class="clear"/><p>&nbsp;</p>
 
 <h3>Term Co-occurrence Graph</h3>
-<div class="cap-img"><a href="Co-occurrence B.png" target="image_win"><img src="Co-occurrence B.png" alt="<%=name.A%> Term Co-occurrence" width="600" height="600" /></a><BR/>
-<strong>Node size</strong> = significance<br />
+<div class="cap-img"><a href="Co-occurrence B.png" target="image_win"><img src="Co-occurrence B.png" alt="<%=name.B%> Term Co-occurrence" width="600" height="600" /></a><BR/>
+<strong>Node size</strong> = relative significance<br />
 <strong>Node colour</strong> is accoring to grouping<br/>
 <strong>Edge (connector) size</strong> = number of documents containing both connected terms.<br/>
-<em>NB: only the most-connective <%=100*edge.quantile%>% of edges are shown</em>
+<em>NB: only edges in the top <%=100*(1.0-edge.quantile)%>% are shown</em>
 </div>
 
 <!--reset layout-->
