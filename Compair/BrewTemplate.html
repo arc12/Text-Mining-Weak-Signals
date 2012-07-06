@@ -76,12 +76,13 @@ Selection criteria based on statistical significance are used to determine which
 <h2>Overview of Selected Terms</h2>
 <p>Only middle-frequency words are considered; the comparison is between terms that are neither very common nor very rare in the aggregate of all <%=doc.type%>s being analysed.</p>
 <div class="cap-img"><a href="AB Pre-sig Wordle.jpg" target="image_win"><img src="AB Pre-sig Wordle.jpg" alt="Word cloud of compared terms" width="600" height="450" /></a><BR/>
-Word cloud for both sets combined: word sizes indicate frequency.</div>
+Word cloud for both sets combined and before considering difference in occurrence between the two sets of <%=doc.type%>s: word sizes indicate frequency.</div>
 
 <div class="clear"/><p>&nbsp;</p>
 
 <h2><%=title.A%></h2>
 <h3>Frequency Plot</h3>
+<p>This plot shows those terms with a statistically-significant higher frequency in <%=title.A%> <%=doc.type%>s.</p>
 <div class="cap-img"><a href="A_tweaked.png" target="image_win"><img src="A_tweaked.png" alt="<%=name.A%> Frequencies and Significance" width="600" height="600" /></a><BR/>
 <strong>Frequency</strong> = the fraction of terms<br />
 <strong>Significance</strong> = -log<sub>10</sub> of the probability that the difference in frequency between the conferences is "pure chance" (i.e. 3 is 1 in 1,000, 4 is 1 in 10,000 etc)<br/>
@@ -91,6 +92,7 @@ Word cloud for both sets combined: word sizes indicate frequency.</div>
 <div class="clear"/><p>&nbsp;</p>
 
 <h3>Term Co-occurrence Graph</h3>
+<p>This plot shows the extent to which pairs of the higher frequency terms occur together in the same <%=doc.type%>.</p>
 <div class="cap-img"><a href="Co-occurrence A.png" target="image_win"><img src="Co-occurrence A.png" alt="<%=name.A%> Term Co-occurrence" width="600" height="600" /></a><BR/>
 <strong>Node size</strong> = relative significance<br />
 <strong>Node colour</strong> is accoring to grouping<br/>
@@ -104,6 +106,7 @@ Word cloud for both sets combined: word sizes indicate frequency.</div>
 <h2><%=title.B%></h2>
 
 <h3>Frequency Plot</h3>
+<p>This plot shows those terms with a statistically-significant higher frequency in <%=title.B%> <%=doc.type%>s.</p>
 <div class="cap-img"><a href="B_tweaked.png" target="image_win"><img src="B_tweaked.png" alt="<%=name.B%> Frequencies and Significance" width="600" height="600" /></a><BR/>
 <strong>Frequency</strong> = the fraction of terms<br />
 <strong>Significance</strong> = -log<sub>10</sub> of the probability that the difference in frequency between the conferences is "pure chance" (i.e. 3 is 1 in 1,000, 4 is 1 in 10,000 etc)<br/>
@@ -114,6 +117,7 @@ Word cloud for both sets combined: word sizes indicate frequency.</div>
 <div class="clear"/><p>&nbsp;</p>
 
 <h3>Term Co-occurrence Graph</h3>
+<p>This plot shows the extent to which pairs of the higher frequency terms occur together in the same <%=doc.type%>.</p>
 <div class="cap-img"><a href="Co-occurrence B.png" target="image_win"><img src="Co-occurrence B.png" alt="<%=name.B%> Term Co-occurrence" width="600" height="600" /></a><BR/>
 <strong>Node size</strong> = relative significance<br />
 <strong>Node colour</strong> is accoring to grouping<br/>
