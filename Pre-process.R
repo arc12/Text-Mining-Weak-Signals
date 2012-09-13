@@ -34,24 +34,24 @@ library("RSQLite")
 
 source("/home/arc1/R Projects/Text Mining Weak Signals/commonFunctions.R")
 home.dir<-"/home/arc1/R Projects/Text Mining Weak Signals"
-output.dir<-paste(home.dir,"Source Data/MB",sep="/")
+output.dir<-paste(home.dir,"Source Data/Abstracts",sep="/")
 db.dir<-paste(home.dir,"Source Data",sep="/")
 setwd(output.dir)
 
 #each one of these will be looped over NB the origin.tag must be in the same order as set.csv
-# set.csv <- c("ICALT Abstracts 2005-2011.csv",
-#                    "CAL Abstracts 2007-2011.csv",
-#                    "ECTEL Abstracts 2006-2011.csv",
-#                    "ICWL Abstracts 2005-2011.csv",
-#                    "ICHL Abstracts 2008-2011.csv")
+set.csv <- c("ICALT Abstracts 2005-2011.csv",
+                   "CAL Abstracts 2007-2011.csv",
+                   "ECTEL Abstracts 2006-2011.csv",
+                   "ICWL Abstracts 2005-2011.csv",
+                   "ICHL Abstracts 2008-2011.csv")
 origin.tag <- c("ICALT",
                 "CAL",
                 "ECTEL",
                 "ICWL",
                 "ICHL")#only used for abstracts
-set.csv <- c("MB Blogs 20090101-20100101.csv")
+#set.csv <- "MB Blogs 2012-07-01 to 2012-09-11.csv"#c("MB Blogs 20090101-20100101.csv", "MB Blogs 20100101-20120630.csv")
 # this determines the source type: conference abstracts or blog content
-source.type="b"#a is for abstracts, b is for blogs
+source.type="a"#a is for abstracts, b is for blogs
 sqlite.filename <- "TMWS Data A.sqlite" #set to NA for output to a CSV file
 
 # preparation for output destination
@@ -105,11 +105,11 @@ for (src in 1:length(set.csv)){
    # read in CSV with format year,pages,title,authors,abstract,keywords,url,dblp_url.
    #There is a header row. DBLP_URL is the vital key into the author centrality data
    table<-read.csv(inFile,header=TRUE,sep=",",quote="\"",stringsAsFactors=FALSE)
-   #remove cases where date is empty
-   table<-table[!table[,"datestamp"]=="",]
    # choose an appropriate mapping and other source-specific preliminaries
    #"Keywords" and after are user-defined "localmetadata" properties while the rest are standard tm package document metadata fields
    if(source.type == "a"){
+      #remove cases where date is empty
+      table<-table[!table[,"year"]=="",]
       #insert the "origin" as a new column
       origin<-rep(origin.tag[src], length(table[,1]))
       table<-cbind(origin,table)
@@ -117,6 +117,8 @@ for (src in 1:length(set.csv)){
       sqlTemplate<-"insert or replace into abstract (origin, year, pages, title, authors, abstract, keywords, url, dblp_url, pos_score, neg_score, subj_score) values ($origin, $year, $pages, $title, $authors, $abstract, $keywords, $url, $dblp_url, $pos_score, $neg_score, $subj_score)"
       sqlCount<- "select count(1) from abstract"
    }else if(source.type == "b"){
+      #remove cases where date is empty
+      table<-table[!table[,"datestamp"]=="",]
       map<-list(Content="content", Heading="title", Author="authors", DateTimeStamp="datestamp", Origin="origin",URL="url")
       sqlTemplate<-"insert or replace into blog_post (content, title, authors, datestamp, origin, url, pos_score, neg_score, subj_score) values ($content, $title, $authors, $datestamp, $origin, $url, $pos_score, $neg_score, $subj_score)"
       sqlCount<- "select count(1) from blog_post"
@@ -172,9 +174,14 @@ for (src in 1:length(set.csv)){
       # the sqlTemplate should contain an "or replace" to avoid records with the same URL (which is a UNIQUE constraint in the database)      
       print("Begin Transaction:")
       dbBeginTransaction(db)
-      print(paste("Initial # records", dbGetQuery(db, sqlCount)[[1]],sep="="))
+      begin.count <-dbGetQuery(db, sqlCount)[[1]]
       tryCatch(doInserts(),  error=didFail)
-      print(paste("Final # records", dbGetQuery(db, sqlCount)[[1]],sep="="))
+      end.count <-dbGetQuery(db, sqlCount)[[1]]
+      print(paste("Initial # DB records=",begin.count,
+                  "; Final # DB records=", end.count,
+                  "; Inserted=", end.count-begin.count,
+                  "; Replaced=",length(table[,1])-end.count+begin.count))
+                  
    }else{
       #write out the new file
       write.csv(table, outFile, quote=TRUE, row.names=FALSE)
