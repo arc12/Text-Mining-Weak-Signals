@@ -22,11 +22,11 @@ my $abs_got = 0;
 my $no_url = 0;
 my $booktitle="";
 my $publisher="";
-my $min_year = 2008;
-my $max_year = 2011;
-my $conf = "ICHL";
+my $min_year = 2012;
+my $max_year = 2012;
+my $conf = "ICALT";
 my $infile = "../Source Data/Raw and Part-Processed/".$conf."/".$conf." inproceedings ".$max_year.".xml";
-my $outfile = "../Source Data/".$conf." Abstracts ".$min_year."-".$max_year.".csv";
+my $outfile = "../Source Data/Abstracts/".$conf." Abstracts ".$min_year."-".$max_year.".csv";
 print "Starting - acquire abstracts $min_year -> $max_year \n";
 
 unlink $outfile;
@@ -134,9 +134,12 @@ foreach my $item (@{$xml->{inproceedings}}){
 					}						
 					elsif (/IEEE/){
 						#scrape the abstract directly from the HTTP response
-						my @html = split /\n/, $response->content();
+						#since 2012 everything is on one line. This makes sure divs start on a new line otherwise later select fails
+						my $responseContent = $response->content();
+						$responseContent =~ s/<div\s/\n<div\s/g;
+						my @html = split /\n/, $responseContent;
 						foreach my $line (@html){ #reads line by line from response content
-							#print ">>> $line \n";
+#							print ">>> $line \n";
 							$line =~ s/\r//; #get \r in 2008 and 2009!
 							#This works with one style (2008)
 							if($donext == 1){
@@ -203,4 +206,4 @@ foreach my $item (@{$xml->{inproceedings}}){
 	}
 }
 close OUTFILE;
-print "\nSUMMARY: $url_found URLs found, from which $abs_got abstracts were recovered. $no_url items had not URL to retrieve\n";
+print "\nSUMMARY: $url_found URLs found, from which $abs_got abstracts were recovered. $no_url items had no URL to retrieve\n";
