@@ -10,6 +10,8 @@
 
 ##
 ## Pre-processing of abstracts/documents for Text Mining Weak Signals
+## Includes option to stuff data into a SQLite database
+##
 ## Adds the following to raw CSV files as additional columns and saves to a "...with metrics.csv" file:
 ##    - subjectivity
 ##    - positive sentiment score
@@ -28,26 +30,51 @@
 ##
 library("tm")
 library("slam")
+library("RSQLite")
 
 source("/home/arc1/R Projects/Text Mining Weak Signals/commonFunctions.R")
 home.dir<-"/home/arc1/R Projects/Text Mining Weak Signals"
-output.dir<-paste(home.dir,"Source Data",sep="/")
+output.dir<-paste(home.dir,"Source Data/MB",sep="/")
+db.dir<-paste(home.dir,"Source Data",sep="/")
 setwd(output.dir)
 
 #each one of these will be looped over NB the origin.tag must be in the same order as set.csv
-set.csv <- c("ICALT Abstracts 2005-2011.csv",
-                   "CAL Abstracts 2007-2011.csv",
-                   "ECTEL Abstracts 2006-2011.csv",
-                   "ICWL Abstracts 2005-2011.csv",
-                   "ICHL Abstracts 2008-2011.csv")
+# set.csv <- c("ICALT Abstracts 2005-2011.csv",
+#                    "CAL Abstracts 2007-2011.csv",
+#                    "ECTEL Abstracts 2006-2011.csv",
+#                    "ICWL Abstracts 2005-2011.csv",
+#                    "ICHL Abstracts 2008-2011.csv")
 origin.tag <- c("ICALT",
-                   "CAL",
-                   "ECTEL",
-                   "ICWL",
-                   "ICHL")#only used for abstracts
-# set.csv <- c("CETIS Blogs 20110101-20120301.csv","CETIS Blogs 20090101-20120301.csv","NonCETIS Blogs 20110101-20120301.csv")
+                "CAL",
+                "ECTEL",
+                "ICWL",
+                "ICHL")#only used for abstracts
+set.csv <- c("MB Blogs 20090101-20100101.csv")
 # this determines the source type: conference abstracts or blog content
-source.type="a"#a is for abstracts, b is for blogs
+source.type="b"#a is for abstracts, b is for blogs
+sqlite.filename <- "TMWS Data A.sqlite" #set to NA for output to a CSV file
+
+# preparation for output destination
+to.sqlite<-!is.na(sqlite.filename)
+if(to.sqlite){
+   # instantiate the SQLite driver in the R process
+   sqlite<- dbDriver("SQLite")
+   # open sqlite connection. db is a "connection"
+   db<- dbConnect(sqlite, dbname=paste(db.dir,sqlite.filename,sep="/"))
+   summary(db)
+   
+   ## effectively "macros" for try/catch transaction
+   doInserts <- function(){
+      dbGetPreparedQuery(db, sqlTemplate, bind.data = table)
+      print("Commit:")
+      dbCommit(db)
+   }
+   didFail <- function(e){
+      print(paste("Caught an error. DB Exception No=",dbGetException(db)$errorNum, " ", dbGetException(db)$errorMsg, sep=""))
+      print("Roll-back:")
+      dbRollback(db)
+   }
+}
 
 ##
 ## Prepare lexicon for sentiment analysis
@@ -78,6 +105,8 @@ for (src in 1:length(set.csv)){
    # read in CSV with format year,pages,title,authors,abstract,keywords,url,dblp_url.
    #There is a header row. DBLP_URL is the vital key into the author centrality data
    table<-read.csv(inFile,header=TRUE,sep=",",quote="\"",stringsAsFactors=FALSE)
+   #remove cases where date is empty
+   table<-table[!table[,"datestamp"]=="",]
    # choose an appropriate mapping and other source-specific preliminaries
    #"Keywords" and after are user-defined "localmetadata" properties while the rest are standard tm package document metadata fields
    if(source.type == "a"){
@@ -85,8 +114,12 @@ for (src in 1:length(set.csv)){
       origin<-rep(origin.tag[src], length(table[,1]))
       table<-cbind(origin,table)
       map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url")
+      sqlTemplate<-"insert or replace into abstract (origin, year, pages, title, authors, abstract, keywords, url, dblp_url, pos_score, neg_score, subj_score) values ($origin, $year, $pages, $title, $authors, $abstract, $keywords, $url, $dblp_url, $pos_score, $neg_score, $subj_score)"
+      sqlCount<- "select count(1) from abstract"
    }else if(source.type == "b"){
       map<-list(Content="content", Heading="title", Author="authors", DateTimeStamp="datestamp", Origin="origin",URL="url")
+      sqlTemplate<-"insert or replace into blog_post (content, title, authors, datestamp, origin, url, pos_score, neg_score, subj_score) values ($content, $title, $authors, $datestamp, $origin, $url, $pos_score, $neg_score, $subj_score)"
+      sqlCount<- "select count(1) from blog_post"
    }else{
       stop("Unknown source type:",source.type)
    }
@@ -102,7 +135,7 @@ for (src in 1:length(set.csv)){
    stop.words<-CustomStopwords()
    # no dictionary to get the total word count
    dtm.tf.unstemmed.all<-DocumentTermMatrix(corp,
-   control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE))
+                                            control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE))
    doc.term.sums<-row_sums(dtm.tf.unstemmed.all)
    #make sure we remove empty documents
    empty.docs.bool<-doc.term.sums<1
@@ -115,11 +148,11 @@ for (src in 1:length(set.csv)){
    }
    # -- positive scores
    dtm.tf.unstemmed.p<-DocumentTermMatrix(corp,
-   control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics[["Positive"]])))
+                                          control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics[["Positive"]])))
    pos.score<-row_sums(dtm.tf.unstemmed.p)/doc.term.sums
    # -- negative scores
    dtm.tf.unstemmed.n<-DocumentTermMatrix(corp,
-   control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics[["Negative"]])))
+                                          control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics[["Negative"]])))
    neg.score<-row_sums(dtm.tf.unstemmed.n)/doc.term.sums
    # -- subjectivity
    subj.score<-pos.score + neg.score
@@ -128,8 +161,27 @@ for (src in 1:length(set.csv)){
    rm(dtm.tf.unstemmed.p)
    rm(dtm.tf.unstemmed.n)
    # add to the data.table
-   table<-cbind(table,pos.score, neg.score, subj.score)
- 
-   #write out the new file
-   write.csv(table, outFile, quote=TRUE, row.names=FALSE)
+   table<-cbind(table,pos_score = pos.score, neg_score = neg.score, subj_score = subj.score)
+   
+   ##
+   ## OUTPUT to CSV or Database
+   ##
+   if(to.sqlite){
+      ##each of the input data sets is handled as an independent transaction of inserts
+      # hence, if there is a failure to insert a single record in a set, no records in the set will be added
+      # the sqlTemplate should contain an "or replace" to avoid records with the same URL (which is a UNIQUE constraint in the database)      
+      print("Begin Transaction:")
+      dbBeginTransaction(db)
+      print(paste("Initial # records", dbGetQuery(db, sqlCount)[[1]],sep="="))
+      tryCatch(doInserts(),  error=didFail)
+      print(paste("Final # records", dbGetQuery(db, sqlCount)[[1]],sep="="))
+   }else{
+      #write out the new file
+      write.csv(table, outFile, quote=TRUE, row.names=FALSE)
+   }
+}
+
+# properly terminate database use
+if(to.sqlite){
+   dbDisconnect(db)
 }
