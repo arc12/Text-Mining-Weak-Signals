@@ -133,19 +133,15 @@ print("Summary Stats of (Total) Term Occurrences in the Corpus")
 print(summary(dtm.tf.sums))
 
 # a bunch of matrices to accumulate the grouped results while the following nest of 2 loops operates
-# group.template<-data.frame(matrix(ncol=length(term.lists),nrow=0))
-# colnames(group.template)<-names(term.lists)
 gmat.template<-matrix(ncol=length(term.lists),nrow=num.slices)
 gmat.or.slices.freq<-gmat.template
 gmat.or.slices.docs<-gmat.template
 gmat.or.slices.positive<-gmat.template
 gmat.or.slices.negative<-gmat.template
 gmat.or.slices.subjectivity<-gmat.template
-# gmat.and.slices.freq<-gmat.template
-# gmat.and.slices.docs<-gmat.template
-# gmat.and.slices.positive<-gmat.template
-# gmat.and.slices.negative<-gmat.template
-# gmat.and.slices.subjectivity<-gmat.template
+
+# to keep the number of docs per slice (shown in HTML output)
+slice.docs.cnt<-rep(0,num.slices)
 
 ##
 ## Start to get results.
@@ -197,6 +193,8 @@ for (i.run in 1:length(term.lists)){
       if(slice.docs.n == 0){
          stop(paste("STOPPING: No documents found in period",start.date,"<= T <",end.date))
       }
+      #store for Brew. This is repeated (pointlessly) for each i.run
+      slice.docs.cnt[slice]<-slice.docs.n
       print(paste(slice.docs.n,"documents in period"))
       docs.used<-docs.used+slice.docs.n
       #select only these documents in the DTMs
@@ -208,12 +206,12 @@ for (i.run in 1:length(term.lists)){
       #calculate term frequency (%) and document count ** for the terms aposite to the current run
       #NB: if run.terms contains a term which is not in the DTM, this gives a "subscript out of bounds" error - these should be the stemmed forms (previously checked).
       dtm.tf.slice<-dtm.tf.slice[,run.terms]
-      all.term.docs<-row_sums(dtm.bin.slice)==length(run.terms) #which docs contain all terms
+      #all.term.docs<-row_sums(dtm.bin.slice)==length(run.terms) #which docs contain all terms
       dtm.tf.slice<-dtm.tf.slice[col_sums(dtm.tf.slice)>0,]
       slice.freq<-100*col_sums(dtm.tf.slice)/total.terms
       data.slices.freq<-rbind(data.slices.freq,slice.freq)
       gmat.or.slices.freq[slice,i.run]<-sum(slice.freq)
-      #gmat.and.slices.freq[slice,i.run]<-100*sum(col_sums(dtm.tf.slice[all.term.docs,]))/total.terms
+
       print("Frequences (%):")
       print(slice.freq)
       dtm.bin.slice<-dtm.bin.slice[,run.terms]
@@ -221,7 +219,7 @@ for (i.run in 1:length(term.lists)){
       slice.docs<-col_sums(dtm.bin.slice)#*100/total.docs - used to be %
       data.slices.docs<-rbind(data.slices.docs,slice.docs)
       gmat.or.slices.docs[slice,i.run]<-sum(slice.docs)
-      #gmat.and.slices.docs[slice,i.run]<-100*sum(col_sums(dtm.bin.slice[all.term.docs,]))/total.docs
+
       print("Document count:")
       print(slice.docs)
       #calculate the "subjectivity" for each term according to the subjectivity of containing documents
@@ -242,7 +240,6 @@ for (i.run in 1:length(term.lists)){
       data.slices.subjectivity<-rbind(data.slices.subjectivity,subjectivity)
       #the groups require special treatment
       or.docs<-Docs(dtm.tf.slice)[row_sums(dtm.tf.slice)>0]
-      and.docs<-Docs(dtm.tf.slice)[all.term.docs]
       gmat.or.slices.positive[slice,i.run]<-mean(pos_score[or.docs])
       gmat.or.slices.negative[slice,i.run]<-mean(neg_score[or.docs])
       gmat.or.slices.subjectivity[slice,i.run]<-mean(subj_score[or.docs])
