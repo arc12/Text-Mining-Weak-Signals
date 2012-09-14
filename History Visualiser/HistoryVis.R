@@ -16,8 +16,31 @@ library("tm")
 library("Snowball")
 library("slam")
 library("brew")
+library("RSQLite")
 #library("rjson")
 
+## SET UP DATABASE
+if(use.sqlite){
+   # instantiate the SQLite driver in the R process
+   sqlite<- dbDriver("SQLite")
+   # open sqlite connection. db is a "connection"
+   db<- dbConnect(sqlite, dbname=paste(source.dir,sqlite.filename,sep="/"))
+   summary(db)
+   
+   ## effectively "macros" for try/catch transaction
+   doInserts <- function(){
+      dbGetPreparedQuery(db, sqlTemplate, bind.data = table)
+      print("Commit:")
+      dbCommit(db)
+   }
+   didFail <- function(e){
+      print(paste("Caught an error. DB Exception No=",dbGetException(db)$errorNum, " ", dbGetException(db)$errorMsg, sep=""))
+      print("Roll-back:")
+      dbRollback(db)
+   }
+}
+
+## CONVENIENT TO USE FUNCTION FOR BREWING
 doBrew<-function(page.name, isGroup=FALSE){
    #Create the HTML/JS for the Google Chart using a Brew Template
    html.filename<-paste(page.name,".html",sep="")   
@@ -38,7 +61,7 @@ doBrew<-function(page.name, isGroup=FALSE){
 ##
 source(paste(base.dir,"commonFunctions.R",sep="/"))
 while(sink.number()>0)
-  {sink()}
+{sink()}
 sink(file="HistoryVis.log", append=FALSE, type="output", split=TRUE)
 
 ##
@@ -59,26 +82,32 @@ interpolate.start.dates<-as.POSIXlt(seq.POSIXt(init.date, by=paste(interpolate.s
 interpolate.start.dates$mon<-interpolate.start.dates$mon+(slice.size/2)
 
 ##
-## Read in the abstracts. NB this code allows for vectors of csv file names
+## Read in the abstracts. NB this code allows for vectors of csv file names or SQLite (the latter is now preferred)
+## REFACTOR the main code when CSV input is no longer supported
 ##
-#(aside) rbinding tables is faster and better than merging corpora using tm_combine, which leads to problematical duplicate document ids.
 table<-NULL
-for (src in 1:length(sets.csv)){
-   # read in CSV with format year,pages,title,authors,abstract,keywords. There is a header row. title/authors/keywords are delimited by "
-   tmp_table<-read.csv(paste(source.dir,sets.csv[[src]],sep="/"),header=TRUE,sep=",",quote="\"",stringsAsFactors=FALSE)
-   #accumulate the table            
-   table<-rbind(table,tmp_table)
-   tmp_table<-NULL
+if(use.sqlite){
+   table<-dbGetQuery(db,sql)#query, fetch all records to dataframe and clear resultset in one go
+}else{ #read csv [deprecated]
+   for (src in 1:length(sets.csv)){
+      # read in CSV with format year,pages,title,authors,abstract,keywords. There is a header row. title/authors/keywords are delimited by "
+      tmp_table<-read.csv(paste(source.dir,sets.csv[[src]],sep="/"),header=TRUE,sep=",",quote="\"",stringsAsFactors=FALSE)
+      #accumulate the table            
+      #(aside) rbinding tables is faster and better than merging corpora using tm_combine, which leads to problematical duplicate document ids.
+      table<-rbind(table,tmp_table)
+      tmp_table<-NULL
+   }
 }
+
 # now read in the possibly-cumulated table to a corpus, handling the metadata via mapping
 #create a mapping from datatable column names to PlainTextDocument attribute names
 #"Keywords" and after are user-defined "localmetadata" properties while the rest are standard tm package document metadata fields
 if(brew.type=="c"){
    table[,"year"]<-ISOdate(table[,"year"],7,1)
-   map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url", Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")
-   }else{
-      map<-list(Content="content", Heading="title", Author="authors", DateTimeStamp="datestamp", Origin="origin",URL="url", Positive="pos.score", Negative="neg.score", Subjectivity="subj.score")  
-   }
+   map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url", Positive="pos_score", Negative="neg_score", Subjectivity="subj_score")
+}else{
+   map<-list(Content="content", Heading="title", Author="authors", DateTimeStamp="datestamp", Origin="origin",URL="url", Positive="pos_score", Negative="neg_score", Subjectivity="subj_score")  
+}
 #use the mapping while reading the dataframe source to create a coprus with metadata
 corp<-Corpus(DataframeSource(table), readerControl=list(reader= readTabular(mapping=map)))
 # Standard document-term matrix of the entire corpus, use the standard stopword set with a few modifications!
@@ -88,12 +117,12 @@ stop.words<-CustomStopwords()
 dtm.tf<-DocumentTermMatrix(corp, control=list(stemming=TRUE, stopwords=stop.words, minWordLength=3, removePunctuation=TRUE, removeNumbers=TRUE))
 dtm.bin<-weightBin(dtm.tf)
 # pull out the sentiment data
-pos.score<-unlist(meta(corp,tag="Positive", type="local"))
-if(is.null(pos.score)){
+pos_score<-unlist(meta(corp,tag="Positive", type="local"))
+if(is.null(pos_score)){
    stop("Source data should be pre-processed to add sentiment/subjectivity - usee Pre-process.R")
 }
-neg.score<-unlist(meta(corp,tag="Negative", type="local"))
-subj.score<-unlist(meta(corp,tag="Subjectivity", type="local"))
+neg_score<-unlist(meta(corp,tag="Negative", type="local"))
+subj_score<-unlist(meta(corp,tag="Subjectivity", type="local"))
 
 #compute some corpus and term statistics FOR INFORMATION
 print("Computed Document Term Matrix, Term-Frequency")
@@ -144,6 +173,8 @@ for (i.run in 1:length(term.lists)){
    data.slices.subjectivity<-data.frame()
    docs.used<-0
    print(paste("Run:",run.name, " Terms:", paste(run.terms, collapse=", ")))
+   ## REFACTOR this code when CSV input is no longer supported;
+   ## direct DB query much neater!!!!!!!!!!!!!!!!!!!
    for(slice in 1:num.slices){
       #date range for this row
       start.date<-slice.start.dates[slice]
@@ -156,8 +187,8 @@ for (i.run in 1:length(term.lists)){
       q.start.date$mday<-q.start.date$mday-1
       q.end.date<-end.date
       q.end.date$mday<-q.end.date$mday-1
-#       slice.doc_bool<-tm_index(corp,FUN=sFilter, doclevel = TRUE, useMeta = FALSE,
-#             paste("datetimestamp<='",q.end.date,"' & datetimestamp>'",q.start.date,"'",sep=""))
+      #       slice.doc_bool<-tm_index(corp,FUN=sFilter, doclevel = TRUE, useMeta = FALSE,
+      #             paste("datetimestamp<='",q.end.date,"' & datetimestamp>'",q.start.date,"'",sep=""))
       #changed from using tm_index because it seemed not to work with month-level periods
       dts<-as.POSIXlt(unlist(meta(corp,"DateTimeStamp",type="local")), origin="1970-01-01")
       slice.doc_bool<- (dts>q.start.date) & (dts<=q.end.date)
@@ -187,11 +218,11 @@ for (i.run in 1:length(term.lists)){
       print(slice.freq)
       dtm.bin.slice<-dtm.bin.slice[,run.terms]
       dtm.bin.slice<-dtm.bin.slice[col_sums(dtm.bin.slice)>0,]
-      slice.docs<-100*col_sums(dtm.bin.slice)/total.docs
+      slice.docs<-col_sums(dtm.bin.slice)#*100/total.docs - used to be %
       data.slices.docs<-rbind(data.slices.docs,slice.docs)
       gmat.or.slices.docs[slice,i.run]<-sum(slice.docs)
       #gmat.and.slices.docs[slice,i.run]<-100*sum(col_sums(dtm.bin.slice[all.term.docs,]))/total.docs
-      print("Document fraction (%):")
+      print("Document count:")
       print(slice.docs)
       #calculate the "subjectivity" for each term according to the subjectivity of containing documents
       #and simultaneiously fill out rows of the data to be visualised
@@ -199,9 +230,9 @@ for (i.run in 1:length(term.lists)){
       sent.negative = vector()
       subjectivity = vector()
       for (nt in Terms(dtm.tf.slice)){
-         sent.positive[nt]<-mean(pos.score[Docs(dtm.tf.slice[as.matrix(dtm.tf.slice[,nt])>0,nt])])
-         sent.negative[nt]<-mean(neg.score[Docs(dtm.tf.slice[as.matrix(dtm.tf.slice[,nt])>0,nt])])
-         subjectivity[nt]<-mean(subj.score[Docs(dtm.tf.slice[as.matrix(dtm.tf.slice[,nt])>0,nt])])
+         sent.positive[nt]<-mean(pos_score[Docs(dtm.tf.slice[as.matrix(dtm.tf.slice[,nt])>0,nt])])
+         sent.negative[nt]<-mean(neg_score[Docs(dtm.tf.slice[as.matrix(dtm.tf.slice[,nt])>0,nt])])
+         subjectivity[nt]<-mean(subj_score[Docs(dtm.tf.slice[as.matrix(dtm.tf.slice[,nt])>0,nt])])
       }
       sent.positive[is.nan(sent.positive)]<-0.0
       sent.negative[is.nan(sent.negative)]<-0.0
@@ -212,15 +243,15 @@ for (i.run in 1:length(term.lists)){
       #the groups require special treatment
       or.docs<-Docs(dtm.tf.slice)[row_sums(dtm.tf.slice)>0]
       and.docs<-Docs(dtm.tf.slice)[all.term.docs]
-      gmat.or.slices.positive[slice,i.run]<-mean(pos.score[or.docs])
-      gmat.or.slices.negative[slice,i.run]<-mean(neg.score[or.docs])
-      gmat.or.slices.subjectivity[slice,i.run]<-mean(subj.score[or.docs])
+      gmat.or.slices.positive[slice,i.run]<-mean(pos_score[or.docs])
+      gmat.or.slices.negative[slice,i.run]<-mean(neg_score[or.docs])
+      gmat.or.slices.subjectivity[slice,i.run]<-mean(subj_score[or.docs])
       gmat.or.slices.positive[is.nan(gmat.or.slices.positive)]<-0.0
       gmat.or.slices.negative[is.nan(gmat.or.slices.negative)]<-0.0
       gmat.or.slices.subjectivity[is.nan(gmat.or.slices.subjectivity)]<-0.0
-#       gmat.and.slices.positive[slice,i.run]<-mean(pos.score[and.docs])
-#       gmat.and.slices.negative[slice,i.run]<-mean(neg.score[and.docs])
-#       gmat.and.slices.subjectivity[slice,i.run]<-mean(subj.score[and.docs])
+      #       gmat.and.slices.positive[slice,i.run]<-mean(pos_score[and.docs])
+      #       gmat.and.slices.negative[slice,i.run]<-mean(neg_score[and.docs])
+      #       gmat.and.slices.subjectivity[slice,i.run]<-mean(subj_score[and.docs])
       print("Subjectivity:")
       print(subjectivity)
    }
@@ -230,16 +261,22 @@ for (i.run in 1:length(term.lists)){
    data.rows<-data.frame()
    #interpolate 
    if(slice.size > interpolate.size){
-        data.slices.freq<-sapply(data.slices.freq,
-                                    function(x) spline(x, method="natural", n=num.interpolate)$y)
-        data.slices.docs<-sapply(data.slices.docs,
-                                    function(x) spline(x, method="natural", n=num.interpolate)$y)
-        data.slices.positive<-sapply(data.slices.positive,
-                                    function(x) spline(x, method="natural", n=num.interpolate)$y)
-        data.slices.negative<-sapply(data.slices.negative,
-                                    function(x) spline(x, method="natural", n=num.interpolate)$y)
-        data.slices.subjectivity<-sapply(data.slices.subjectivity,
-                                    function(x) spline(x, method="natural", n=num.interpolate)$y)
+      data.slices.freq<-sapply(data.slices.freq,
+                               function(x) spline(x, method="natural", n=num.interpolate)$y)
+      data.slices.docs<-sapply(data.slices.docs,
+                               function(x) spline(x, method="natural", n=num.interpolate)$y)
+      data.slices.positive<-sapply(data.slices.positive,
+                                   function(x) spline(x, method="natural", n=num.interpolate)$y)
+      data.slices.negative<-sapply(data.slices.negative,
+                                   function(x) spline(x, method="natural", n=num.interpolate)$y)
+      data.slices.subjectivity<-sapply(data.slices.subjectivity,
+                                       function(x) spline(x, method="natural", n=num.interpolate)$y)
+      # cancel out negative values, make 0.0 be a "hard floor"
+      data.slices.freq[data.slices.freq<0.0]<-0.0
+      data.slices.docs[data.slices.docs<0.0]<-0.0
+      data.slices.positive[data.slices.positive<0.0]<-0.0
+      data.slices.negative[data.slices.negative<0.0]<-0.0
+      data.slices.subjectivity[data.slices.subjectivity<0.0]<-0.0
    }
    #loop over terms to build a "denormalised" form of the data for the google chart code
    for(t in 1:length(run.terms)){
@@ -260,42 +297,45 @@ for (i.run in 1:length(term.lists)){
 ## Groups special treatment
 ##
 if(length(do.groups)>0){
-#pick out only those grouped stats that have been selected
-gmat.or.slices.freq<-data.frame(gmat.or.slices.freq[,names(term.lists)%in%do.groups])
-gmat.or.slices.docs<-data.frame(gmat.or.slices.docs[,names(term.lists)%in%do.groups])
-gmat.or.slices.positive<-data.frame(gmat.or.slices.positive[,names(term.lists)%in%do.groups])
-gmat.or.slices.negative<-data.frame(gmat.or.slices.negative[,names(term.lists)%in%do.groups])
-gmat.or.slices.subjectivity<-data.frame(gmat.or.slices.subjectivity[,names(term.lists)%in%do.groups])
-
-#interpolate 
-if(slice.size > interpolate.size){
-   gmat.or.slices.freq<-sapply(gmat.or.slices.freq,
-                            function(x) spline(x, method="natural", n=num.interpolate)$y)
-   gmat.or.slices.docs<-sapply(gmat.or.slices.docs,
-                            function(x) spline(x, method="natural", n=num.interpolate)$y)
-   gmat.or.slices.positive<-sapply(gmat.or.slices.positive,
-                                function(x) spline(x, method="natural", n=num.interpolate)$y)
-   gmat.or.slices.negative<-sapply(gmat.or.slices.negative,
-                                function(x) spline(x, method="natural", n=num.interpolate)$y)
-   gmat.or.slices.subjectivity<-sapply(gmat.or.slices.subjectivity,
-                                    function(x) spline(x, method="natural", n=num.interpolate)$y)
-}
-data.rows<-data.frame()
-do.groups.pretty<-sub("\\."," ",do.groups) #prettify
-for(g in 1:length(do.groups)){
-   data.rows<-rbind(data.rows, data.frame(rep(do.groups.pretty[g],num.interpolate),
-                                          as.character(interpolate.start.dates),
-                                                gmat.or.slices.freq[,g],
-                                                gmat.or.slices.docs[,g],
-                                                gmat.or.slices.subjectivity[,g],
-                                                gmat.or.slices.positive[,g],
-                                                gmat.or.slices.negative[,g]))
-}
-
-run.title<-"Groups of Terms"#used in brew template... messy coding :-(
-doBrew("Groups", isGroup=TRUE)
+   #pick out only those grouped stats that have been selected
+   gmat.or.slices.freq<-data.frame(gmat.or.slices.freq[,names(term.lists)%in%do.groups])
+   gmat.or.slices.docs<-data.frame(gmat.or.slices.docs[,names(term.lists)%in%do.groups])
+   gmat.or.slices.positive<-data.frame(gmat.or.slices.positive[,names(term.lists)%in%do.groups])
+   gmat.or.slices.negative<-data.frame(gmat.or.slices.negative[,names(term.lists)%in%do.groups])
+   gmat.or.slices.subjectivity<-data.frame(gmat.or.slices.subjectivity[,names(term.lists)%in%do.groups])
+   
+   #interpolate 
+   if(slice.size > interpolate.size){
+      gmat.or.slices.freq<-sapply(gmat.or.slices.freq,
+                                  function(x) spline(x, method="natural", n=num.interpolate)$y)
+      gmat.or.slices.docs<-sapply(gmat.or.slices.docs,
+                                  function(x) spline(x, method="natural", n=num.interpolate)$y)
+      gmat.or.slices.positive<-sapply(gmat.or.slices.positive,
+                                      function(x) spline(x, method="natural", n=num.interpolate)$y)
+      gmat.or.slices.negative<-sapply(gmat.or.slices.negative,
+                                      function(x) spline(x, method="natural", n=num.interpolate)$y)
+      gmat.or.slices.subjectivity<-sapply(gmat.or.slices.subjectivity,
+                                          function(x) spline(x, method="natural", n=num.interpolate)$y)
+   }
+   data.rows<-data.frame()
+   do.groups.pretty<-gsub("\\."," ",do.groups) #prettify
+   for(g in 1:length(do.groups)){
+      data.rows<-rbind(data.rows, data.frame(rep(do.groups.pretty[g],num.interpolate),
+                                             as.character(interpolate.start.dates),
+                                             gmat.or.slices.freq[,g],
+                                             gmat.or.slices.docs[,g],
+                                             gmat.or.slices.subjectivity[,g],
+                                             gmat.or.slices.positive[,g],
+                                             gmat.or.slices.negative[,g]))
+   }
+   
+   run.title<-"Groups of Terms"#used in brew template... messy coding :-(
+   doBrew("Groups", isGroup=TRUE)
 }
 #stop logging
 sink()
-   
 
+# properly terminate database use
+if(use.sqlite){
+   dbDisconnect(db)
+}
