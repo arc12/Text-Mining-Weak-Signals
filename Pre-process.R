@@ -39,14 +39,20 @@ db.dir<-paste(home.dir,"Source Data",sep="/")
 setwd(output.dir)
 
 #each one of these will be looped over NB the origin.tag must be in the same order as set.csv
-set.csv <- c("ICALT Abstracts 2005-2011.csv",
-                   "CAL Abstracts 2007-2011.csv",
-                   "ECTEL Abstracts 2006-2011.csv",
-                   "ICWL Abstracts 2005-2011.csv",
-                   "ICHL Abstracts 2008-2011.csv")
+#set.csv <- c("ICALT Abstracts 2005-2011.csv",
+#                   "CAL Abstracts 2007-2011.csv",
+#                   "ECTEL Abstracts 2006-2011.csv",
+#                   "ICWL Abstracts 2005-2011.csv",
+#                   "ICHL Abstracts 2008-2011.csv")
+#origin.tag <- c("ICALT",
+#                "CAL",
+#                "ECTEL",
+#                "ICWL",
+#                "ICHL")#only used for abstracts
+set.csv <- c("ICALT Abstracts 2012.csv",
+             "ICWL Abstracts 2012.csv",
+             "ICHL Abstracts 2012.csv")
 origin.tag <- c("ICALT",
-                "CAL",
-                "ECTEL",
                 "ICWL",
                 "ICHL")#only used for abstracts
 #set.csv <- "MB Blogs 2012-07-01 to 2012-09-11.csv"#c("MB Blogs 20090101-20100101.csv", "MB Blogs 20100101-20120630.csv")

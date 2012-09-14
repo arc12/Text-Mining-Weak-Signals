@@ -32,7 +32,7 @@ print "Starting - acquire abstracts $min_year -> $max_year \n";
 unlink $outfile;
 open(OUTFILE, ">".$outfile);
 #uncomment the following line UNLESS intending to append the outfile to an existing CSV
-#print OUTFILE "year,pages,title,authors,abstract,keywords,url,dblp_url\n";
+print OUTFILE "year,pages,title,authors,abstract,keywords,url,dblp_url\n";
 
 # Read in the XML and start looping over <inproceedings> elements
 # forcearry ensures that "author" is always read in as an array even if only 1 author element

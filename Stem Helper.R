@@ -9,11 +9,16 @@ load("/home/arc1/R Projects/Text Mining Weak Signals Output/Rising and Falling T
 
 #space-separated list of words to stem
 #look.for<-"LMS VLE LCMS E-Portfolio Games Gesture Metadata Adaptive Open Social Ubiquitous Semantic Agents Cloud Broadband Video"
-look.for<-"Platform Immersive Standards OSS Blog Twitter Wiki Tablet Smartphone Mobile Streaming"
+look.for<-"cloud virtualisation virtualization saas paas"
+look.for<-"ebook etextbooks"
+look.for<-"analytics analytical analysis data"
+look.for<-"gesturebased gestural"
+look.for<-"context contextsensitive contextaware contextenriched location locationbased locationaware geospatial"
+look.for<-"Game gaming gamification game-based game-play"
+look.for<-"Immersive Standards OSS Blog Twitter Wiki Tablet Smartphone Mobile Streaming"
 
 #look.for<-tolower(removePunctuation(look.for))
 look.for.vec<- unlist(strsplit(look.for," "))
-
 look.for.stems<-stemDocument(tolower(removePunctuation(look.for.vec)))
 
 #now lookup shortest and prevalent forms leading to stem within the corpus
@@ -28,10 +33,8 @@ prevalent.words[completion.fails]<-names(prevalent.words[completion.fails])
 print("Looked-for words:")
 print(paste("c('",paste(look.for.vec,collapse="','"),"')", sep=""))
 
-
 print("Stemmed words:")
 print(paste("c('",paste(look.for.stems,collapse="','"),"')", sep=""))
-
 
 print("Shortest words in the given corpus to match these stems:")
 print(paste("c('",paste(shortest.words,collapse="','"),"')", sep=""))
