@@ -26,18 +26,6 @@ if(use.sqlite){
    # open sqlite connection. db is a "connection"
    db<- dbConnect(sqlite, dbname=paste(source.dir,sqlite.filename,sep="/"))
    summary(db)
-   
-   ## effectively "macros" for try/catch transaction
-   doInserts <- function(){
-      dbGetPreparedQuery(db, sqlTemplate, bind.data = table)
-      print("Commit:")
-      dbCommit(db)
-   }
-   didFail <- function(e){
-      print(paste("Caught an error. DB Exception No=",dbGetException(db)$errorNum, " ", dbGetException(db)$errorMsg, sep=""))
-      print("Roll-back:")
-      dbRollback(db)
-   }
 }
 
 ## CONVENIENT TO USE FUNCTION FOR BREWING
