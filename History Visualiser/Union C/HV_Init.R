@@ -15,7 +15,7 @@
 ## Run Properties - dependent on the source
 base.dir<-"/home/arc1/R Projects/Text Mining Weak Signals"
 source.dir<-paste(base.dir,"Source Data",sep="/")
-set.name<-"Union C 2006 to 2011"
+set.name<-"Union C 2006 to 2012"
 output.dir<-paste("/home/arc1/R Projects/Text Mining Weak Signals Output/History Visualiser",set.name,sep="/")
 brew.dir<-paste(base.dir,"History Visualiser",sep="/")
 web.page.base<-paste("http://arc12.github.com/Text-Mining-Weak-Signals-Output/History Visualiser",set.name, sep="/")
@@ -23,12 +23,19 @@ brew.type<-"c"# c=conference abstracts, b=blog posts
 
 dir.create(output.dir, showWarnings=TRUE)
 setwd(output.dir)
-#these are combined into one corpus
-sets.csv <- c("ICALT Abstracts 2005-2011 with metrics.csv",
-                   "ECTEL Abstracts 2006-2011 with metrics.csv",
-                   "ICWL Abstracts 2005-2011 with metrics.csv",
-                  "ICHL Abstracts 2008-2011 with metrics.csv",
-                   "CAL Abstracts 2007-2011 with metrics.csv")
+
+## SOURCE DATA SELECTION
+# Either a) [DEPRECATED] list csv files "with metrics" as produced by Pre-process.R These are combined into one corpus or
+#        b) Locate a SQLite Database and define a query to extract
+#sets.csv <- c("ICALT Abstracts 2005-2011 with metrics.csv",
+                   #"ECTEL Abstracts 2006-2011 with metrics.csv",
+              #"ICWL Abstracts 2005-2011 with metrics.csv",
+                  #"ICHL Abstracts 2008-2011 with metrics.csv",
+#                   "CAL Abstracts 2007-2011 with metrics.csv")
+set.csv<-NA
+sqlite.filename<-"TMWS Data A.sqlite" #set this to NA to use [deprecated] option a
+sql<-"SELECT origin, year, pages, title, authors, abstract, keywords, url, dblp_url, pos_score, neg_score, subj_score FROM abstract WHERE year >= '2006'"#BETWEEN '2006' AND '2011'"
+use.sqlite<-!is.na(sqlite.filename)
                   
 ##
 ## Run properties - normally the same between different sources of the same kind for comparability
@@ -36,65 +43,40 @@ sets.csv <- c("ICALT Abstracts 2005-2011 with metrics.csv",
 today<-as.POSIXlt(Sys.Date(), tz = "GMT")
 start.year<-2006
 start.month<-1 #default = 1
-end.year<-2011
+end.year<-2012
 end.month<-1 #default = 1. NB this determines the start of the last slice
 # data interval control.
-slice.size<-12 #how many months in a time slice used in the analysis. the last slice is is from start month 1 in the end.year to the end of month "slice.size" in end.year
+slice.size<-12 #how many months in a time slice used in the analysis.
 interpolate.size<-3 #number of months between interpolated points in the output; 1 "row" is created for each interval. No interpolation if slice.size = interpolate.size
 
 ##
 ## Which Terms to run for
 ##
 title.common<-"Conference Proceedings from ICALT, ECTEL, CAL, ICHL and ICWL"
-          #"Run the Second")#should match each of the entries in the following list
 # NB!!!!!!!!! these are the STEMMED terms
-term.lists<-list(Learning.Platforms=c('lms','vle','lcms','eportfolio','platform'),
-                 Social.Software=c('social','blog','twitter','wiki'),
-                 Devices=c('gestur','tablet','smartphon','mobil','ubiquit','pervas'),
+term.lists<-list(Cloud=c('cloud','virtualis','virtual','saa','paa'),
+                 eBooks=c('ebook', 'etextbook'),
+                 Analytics=c('analyt','data'),
+                 Gesture=c('gesturebas','gestur'),
+                 Context.Sensitive.Services=c('context','contextsensit','contextawar','contextenrich','locat','locationbas','locationawar','geospati'),
                  Games=c('game', "gamif","gamebas", "gameplay"),
-                 Content=c('metadata','stream','video','standard'),
-                 Infrastructure=c('cloud','broadband'),
-                 Intelligent.Systems=c('adapt','semant','agent'))
+                 Mobile=c('tablet','smartphon','mobil','ubiquit','pervas'),
+                 Learning.Platforms=c('lms','vle','lcms','eportfolio'))
 # .... and these are the pretty versions for display
-word.lists<-list(Learning.Platforms=c('LMS','VLE','LCMS','E-Portfolio','Platform'),
-                 Social.Software=c('Social','Blog','Twitter','Wiki'),
-                 Devices=c('Gestural','Tablet','Smartphone','Mobile','Ubiquitous','Pervasive'),
+word.lists<-list(Cloud=c('Cloud','Virtualisation','Virtual','SaaS','PaaS'),
+                 eBooks=c('eBook', 'eTextbook'),
+                 Analytics=c('Analytics','Data'),
+                 Gesture=c('Gesture-based','Gesture'),
+                 Context.Sensitive.Services=c('Context','Context-sensitive','Context-aware','Context-enriched','Location','Location-based','Location-aware','Geospatial'),
                  Games=c('Game', "Gamification","Game-based", "Game-play"),
-                 Content=c('Metadata','Stream','Video','Standard'),
-                 Infrastructure=c('Cloud','Broadband'),
-                 Intelligent.Systems=c('Adapt','Semantic','Agent'))
-titles<-sub("\\."," ",names(term.lists))#lazy way to titles is to replace "." in the list element names - override if necessary
-#titles<-c("Fabrizio Basic Keywords", "Fabrizio Additional Keywords")
+                 Mobile=c('Tablet','Smartphone','Mobile','Ubiquitous','Pervasive'),
+                 Learning.Platforms=c('LMS','VLE','LCMS','E-Portfolio','Platform'))
 
-# The folloowing indicates which of the lists above is treated as a group. Two plots are made to show group-level stats
-# one plot (OR) sums the occurrence of terms in each list and the other plot counts only documents where all (AND) terms appear
+titles<-gsub("\\."," ",names(term.lists))#lazy way to titles is to replace "." in the list element names - override if necessary
+
+# The folloowing indicates which of the lists above is treated as a group.
 # NB: the strings in go.groups must exactly match the list item names in term.lists (and "." characters are replaced with " " in output)
-do.groups=c("Learning.Platforms","Social.Software","Devices","Games","Content","Infrastructure","Intelligent.Systems")
-
-## PREVIOUS
-# term.lists<-list(FG.Basic=c('lms','vle','lcms','eportfolio','game','gestur','metadata','adapt','open','social','ubiquit','semant','agent','cloud','broadband','video'),
-#                  FG.Additional=c('platform','immers','standard','blog','twitter','wiki','tablet','smartphon','mobil','stream'))
-# # .... and these are the pretty versions for display
-# word.lists<-list(FG.Basic=c('LMS','VLE','LCMS','E-Portfolio','Games','Gesture','Metadata','Adaptive','Open','Social','Ubiquitous','Semantic','Agents','Cloud','Broadband','Video'),
-#                  FG.Additional=c('Platform','Immersive','Standards','Blog','Twitter','Wiki','Tablet','Smartphone','Mobile','Streaming'))
-
-## OLD SET AS USED FOR 2010 CONF SET
-# title.common<-"Conference Proceedings from ICALT, ECTEL, CAL, ICHL and ICWL"
-# titles<-c("terms that dipped in 2010 compared to the previous 4 years",
-#           "terms that rose in 2010 and where established in the previous 4 years",
-#           "terms that rose in 2010 from a low level in the previous 4 years")
-# #"Run the Second")#should match each of the entries in the following list
-# # NB!!!!!!!!! these are the STEMMED terms
-# term.lists<-list(Falling=c("blog","content","databas","ontolog","project","technolog"),             Established=c("activ","condit","conduct","differ","emot","game","gamebas","motiv","path","profil","strategi","tutor","video"),
-#                  Rising=c("besid","competit","eassess","figur","gameplay","gender","hybrid","negat","oral","ples","probabilist","public","qti","risk","selfreflect","serious","statement","tablet","tangibl","uptak","wil"))
-# # .... and these are the pretty versions for display
-# word.lists<-list(Falling=c("blog","content","database","ontology","project","technology"),          Established=c("active","condition","conduct","different","emotion","game","game-based","motivator","path","profile","strategies","tutor","video"),
-#                  Rising=c("besides","competitive","e-assessment","figure","game-play","gender","hybrid","negative","oral","PLEs","probabilistic","public","qti","risk","self-reflect","serious","statements","tablet","tangible","uptake","will"))
-##
-## End setup
-##
-
-
+do.groups=c("Cloud","eBooks","Analytics","Gesture","Context.Sensitive.Services","Games","Mobile","Learning.Platforms")
 
 # in interactive execution it may be best to skip this command and to manually switch to it
 #source(paste(base.dir,"History Visualiser/HistoryVis.R", sep="/"))
