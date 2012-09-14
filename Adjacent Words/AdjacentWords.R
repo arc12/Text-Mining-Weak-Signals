@@ -2,6 +2,18 @@
 ## find which words preceed and follow a given word(words) and create a directed graph to visualise this pattern, showing frequency by node weight
 
 library("igraph")
+library("RSQLite")
+
+## TO DO refactor to use database queries for year-splitting
+
+## SET UP DATABASE
+if(use.sqlite){
+   # instantiate the SQLite driver in the R process
+   sqlite<- dbDriver("SQLite")
+   # open sqlite connection. db is a "connection"
+   db<- dbConnect(sqlite, dbname=paste(source.dir,sqlite.filename,sep="/"))
+   summary(db)
+}
 
 make.table<-function(x){
    t<- table(as.factor(x))
@@ -24,19 +36,23 @@ if(split.years){
 cat(file = log.file, sep = "\n")
 
 ##
-## Read in the documents. NB this code allows for vectors of csv file names
+## Read in the documents. from SQLite (the way ahead) or vectors of csv file names
 ##
 source.table<-NULL
-for (src in 1:length(sets.csv)){
-   # read in CSV with format year,pages,title,authors,abstract,keywords. There is a header row. title/authors/keywords are delimited by "
-   tmp_table<-read.csv(paste(source.dir,sets.csv[[src]],sep="/"),header=TRUE,sep=",",quote="\"",stringsAsFactors=FALSE)
-   #accumulate the table            
-   source.table<-rbind(source.table,tmp_table)
-   tmp_table<-NULL
+if(use.sqlite){
+   source.table<-dbGetQuery(db,sql)#query, fetch all records to dataframe and clear resultset in one go
+}else{
+   for (src in 1:length(sets.csv)){
+      # read in CSV with format year,pages,title,authors,abstract,keywords. There is a header row. title/authors/keywords are delimited by "
+      tmp_table<-read.csv(paste(source.dir,sets.csv[[src]],sep="/"),header=TRUE,sep=",",quote="\"",stringsAsFactors=FALSE)
+      #accumulate the table            
+      source.table<-rbind(source.table,tmp_table)
+      tmp_table<-NULL
+   }
 }
 
 #some massaging depending on the source
-#I really should fix things up at source!!!!!!!!!!
+#I really should fix things up at source!!!!!!!!!! (or do this in SQL once direct CSV read removed)
 if(data.type=="a"){
    colnames(source.table)[colnames(source.table)=="abstract"]<-"content"
 }else if (data.type=="b"){
@@ -67,6 +83,7 @@ for(y.filter in levels(y)){
       cat(paste("Loop for:",y.filter, " N(docs)=",sum(y.bool)), file = log.file, sep = "\n")
       p<-source.table[y.bool,"content"]
    }
+   print(paste("**************", y.filter,"**************"))
    
    #change "." to something that matches as a "word"; this is used to mark end and beginning of sentence as a pseudo-word in the results
    sent.mark=" eos "
@@ -108,12 +125,19 @@ for(y.filter in levels(y)){
    }
    cut.b<-quantile(t.b, probs=q)
    cut.a<-quantile(t.a, probs=q)
-   t.b.sel<- t.b[t.b>cut.a]
-   t.a.sel<- t.a[t.a>cut.b]
+   t.b.sel<- t.b[t.b>=cut.a]
+   t.a.sel<- t.a[t.a>=cut.b]
    
    if(length(t.a.sel)==0 || length(t.b.sel)==0){
       print(paste("No useful results for", y.filter," - skipping"))
+      cat("No useful results", file=log.file, sep="\n")
    }else{
+      #print/log actual word counts as these are sometimes useful
+      cat(paste("Word count equivalent to 100% is:",sum(t.a)) ,file = log.file, sep = "\n")
+      print("Word frequencies (before):")
+      print(t.b.sel)
+      print("Word frequencies (after):")
+      print(t.a.sel)
       
       #revert the "eos" placeholder to a full stop for display
       names(t.a.sel)[names(t.a.sel)=="eos"]<-"."
@@ -162,3 +186,8 @@ for(y.filter in levels(y)){
 
 #stop logging
 close(log.file)
+
+# properly terminate database use
+if(use.sqlite){
+   dbDisconnect(db)
+}
