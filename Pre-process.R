@@ -33,6 +33,8 @@ library("slam")
 library("RSQLite")
 
 source("/home/arc1/R Projects/Text Mining Weak Signals/commonFunctions.R")
+source("/home/arc1/R Projects/Text Mining Weak Signals/sentimentFunctions.R")
+
 home.dir<-"/home/arc1/R Projects/Text Mining Weak Signals"
 output.dir<-paste(home.dir,"Source Data/Abstracts",sep="/")
 db.dir<-paste(home.dir,"Source Data",sep="/")
@@ -84,22 +86,19 @@ if(to.sqlite){
 
 ##
 ## Prepare lexicon for sentiment analysis
+##  there are two for historical reasons. refactor to one CSV and change code later
 ##
 # Read in the sentiment word lists (cols extracted from the Harvard Inquirer spreadsheet http://www.wjh.harvard.edu/~inquirer/)
+# A) positive/negative sentiment
 #The column headings MUST be "Entry,Positive,Negative"
-inquirer.table<-read.csv(paste(home.dir,"InquirerPosNeg.csv",sep="/"),
-                         header=TRUE, sep=",", quote="\"", stringsAsFactors=FALSE)
-sentiment.dics<-list()
-# for each sentiment, find out which words are relevant and for cases where there is more
-# than one usage (denoted #1 in the word), select only the first one as this is the most frequent in general
-for(i in 2:length(inquirer.table[1,])){
-   dic<-inquirer.table[,"Entry"]
-   dic<-dic[inquirer.table[,i]!=""]#limit to words for sentiment
-   dic<-sub("#1","",dic)#remove '#1' from any words containing it
-   dic<-dic[-grep("#",dic)]#remove all words still containing #
-   sentiment.dics[[i-1]]<-dic
-   names(sentiment.dics)[[i-1]] <- colnames(inquirer.table)[i]
-}
+targets<-list(Positive="Positive", Negative="Negative")
+sentiment.dics<-prepareLexicons(paste(home.dir,"InquirerPosNeg.csv",sep="/"), targets)
+# B) "PESTLE" parts
+#The column headings MUST be unchanged 
+#  but NB data.frame colnames do not allow "@" so "Econ@" becomes "Econ."
+#  list element names map to the database field names
+targets.pestle<-list(econ_score=c("Econ.","ECON"), legal_score="Legal", polit_score=c("Polit.", "POLIT"), doing_score=c("Need","Goal","Try","Means","Persist","Complet","Fail"), knowing_score=c("Know","Solve"))
+sentiment.dics.pestle<-prepareLexicons(paste(home.dir,"PESTLE Scan/InquirerPESTLE2.csv",sep="/"), targets.pestle)
 
 ##
 ## MAIN LOOP over the sets: Read-in, add columns of metrics and write-out
@@ -120,13 +119,13 @@ for (src in 1:length(set.csv)){
       origin<-rep(origin.tag[src], length(table[,1]))
       table<-cbind(origin,table)
       map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url")
-      sqlTemplate<-"insert or replace into abstract (origin, year, pages, title, authors, abstract, keywords, url, dblp_url, pos_score, neg_score, subj_score) values ($origin, $year, $pages, $title, $authors, $abstract, $keywords, $url, $dblp_url, $pos_score, $neg_score, $subj_score)"
+      sqlTemplate<-"insert or replace into abstract (origin, year, pages, title, authors, abstract, keywords, url, dblp_url, pos_score, neg_score, subj_score, econ_score, polit_score, legal_score, doing_score, knowing_score) values ($origin, $year, $pages, $title, $authors, $abstract, $keywords, $url, $dblp_url, $pos_score, $neg_score, $subj_score, $econ_score, $polit_score, $legal_score, $doing_score, $knowing_score)"
       sqlCount<- "select count(1) from abstract"
    }else if(source.type == "b"){
       #remove cases where date is empty
       table<-table[!table[,"datestamp"]=="",]
       map<-list(Content="content", Heading="title", Author="authors", DateTimeStamp="datestamp", Origin="origin",URL="url")
-      sqlTemplate<-"insert or replace into blog_post (content, title, authors, datestamp, origin, url, pos_score, neg_score, subj_score) values ($content, $title, $authors, $datestamp, $origin, $url, $pos_score, $neg_score, $subj_score)"
+      sqlTemplate<-"insert or replace into blog_post (content, title, authors, datestamp, origin, url, pos_score, neg_score, subj_score, econ_score, polit_score, legal_score, doing_score, knowing_score) values ($content, $title, $authors, $datestamp, $origin, $url, $pos_score, $neg_score, $subj_score, $econ_score, $polit_score, $legal_score, $doing_score, $knowing_score)"
       sqlCount<- "select count(1) from blog_post"
    }else{
       stop("Unknown source type:",source.type)
@@ -158,18 +157,43 @@ for (src in 1:length(set.csv)){
    dtm.tf.unstemmed.p<-DocumentTermMatrix(corp,
                                           control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics[["Positive"]])))
    pos.score<-row_sums(dtm.tf.unstemmed.p)/doc.term.sums
+   #force any v. short docs to have scores = 0.0
+   pos.score[doc.term.sums<40]<-0.0
    # -- negative scores
    dtm.tf.unstemmed.n<-DocumentTermMatrix(corp,
                                           control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics[["Negative"]])))
    neg.score<-row_sums(dtm.tf.unstemmed.n)/doc.term.sums
+   #force any v. short docs to have scores = 0.0
+   neg.score[doc.term.sums<40]<-0.0
    # -- subjectivity
    subj.score<-pos.score + neg.score
+   # add to the data.table
+   table<-cbind(table,pos_score = pos.score, neg_score = neg.score, subj_score = subj.score)
+   
+   #Loop over the "PESTLE"-related dictionaries, each column is a potentially-merged Gen Inquirer category
+   for(lex in 1:length(sentiment.dics.pestle)){
+      dtm.tf.unstemmed.lex<-DocumentTermMatrix(corp,
+           control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3,
+            removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics.pestle[[lex]])))
+      lex.score<-row_sums(dtm.tf.unstemmed.lex)/doc.term.sums
+      #force any v. short docs to have scores = 0.0
+      lex.score[doc.term.sums<40]<-0.0
+      lex.score<-as.data.frame(lex.score)
+      colnames(lex.score)<-names(sentiment.dics.pestle)[[lex]]
+      # add to the data.table
+      table<-cbind(table,lex.score)
+      print(paste("====","Processed lexicon for", names(sentiment.dics.pestle)[[lex]],"===="))
+      print("Summary stats and histograms AFTER removing score=0 documents")
+      lex.score.nz<-lex.score[lex.score[,1]>0.0,1]
+      summary.nz<- summary(lex.score.nz)
+      print(summary.nz)
+   }
+   
    # tidy up
    rm(dtm.tf.unstemmed.all)
    rm(dtm.tf.unstemmed.p)
    rm(dtm.tf.unstemmed.n)
-   # add to the data.table
-   table<-cbind(table,pos_score = pos.score, neg_score = neg.score, subj_score = subj.score)
+
    
    ##
    ## OUTPUT to CSV or Database

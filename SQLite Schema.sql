@@ -1,3 +1,4 @@
+CREATE TABLE sqlite_stat1(tbl,idx,stat);
 CREATE TABLE abstract (
     "origin" TEXT NOT NULL,
     "year" TEXT NOT NULL,
@@ -11,7 +12,9 @@ CREATE TABLE abstract (
     "pos_score" REAL,
     "neg_score" REAL,
     "subj_score" REAL
-);
+, "econ_score" REAL, "polit_score" REAL, "legal_score" REAL, "doing_score" REAL, "knowing_score" REAL);
+CREATE UNIQUE INDEX "ABSTRACT_URL_UNQ" on "abstract" (url ASC);
+CREATE INDEX "ABSTRACT_YEAR" on abstract (year ASC);
 CREATE TABLE blog_post (
     "content" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -21,10 +24,12 @@ CREATE TABLE blog_post (
     "url" TEXT NOT NULL,
     "pos_score" REAL,
     "neg_score" REAL,
-    "subj_score" REAL
+    "subj_score" REAL,
+    "econ_score" REAL,
+    "polit_score" REAL,
+    "legal_score" REAL,
+    "doing_score" REAL,
+    "knowing_score" REAL
 );
-CREATE UNIQUE INDEX "ABSTRACT_URL_UNQ" on "abstract" (url ASC);
 CREATE UNIQUE INDEX "BLOG_POST_URL_UNQ" on blog_post (url ASC);
-CREATE TABLE sqlite_stat1(tbl,idx,stat);
 CREATE INDEX "BLOG_POST_DATESTAMP" on blog_post (datestamp ASC);
-CREATE INDEX "ABSTRACT_YEAR" on abstract (year ASC);
