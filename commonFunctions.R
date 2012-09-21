@@ -1,5 +1,5 @@
 ## ***Made available using the The MIT License (MIT)***
-# Copyright (c) 2011, Adam Cooper
+# Copyright (c) 2012, Adam Cooper
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 # 
@@ -79,3 +79,153 @@ CustomStopwords<-function(){
    SW<-SW[-grep("work", SW)]
    return(SW)
 }
+
+##
+## Apply Pearson Chi^2 test to term distribution in the documents of 2 corpora to identify
+## statistically-significant rising, falling, new terms in a "recent" set vs a "past" set
+## [derived from RF_Terms.R]
+##
+
+# how many documents must the term appear in to be listed. This is in addition to the frequency thresholds. A value of 2 is expected, i.e. ignore terms that appear in only one doc
+#doc_count.thresh <- 2
+# p-value to accept the "alternative hypothesis" that there is something interesting
+#thresh.pval<-0.005 #i.e. accept a .5% chance that null hypothesis falsely rejected
+#thresh.pval.falling<-0.01 #use a more lenient threshold for falling terms
+#max frequency of term in the past set for eligibility as a weak signal.
+#Above this, sigifnicant risers are "established terms"
+#max.past.freq<-0.0002
+
+
+PearsonChanges.Corpus<-function(corpus,
+                                pastIds, recentIds,
+                                doc_count.thresh = 2,
+                                thresh.pval = 0.005,
+                                thresh.pval.falling = 0.01,
+                                max.past.freq = 0.0002,
+                                stem  = TRUE, stop.words = TRUE){
+   #libraries
+   require("tm")
+   require("Snowball")
+   require("slam")
+   require("corpora")
+   
+   ##
+   ## process the corpus to create a doc-term matrix using default or passed parameters
+   ##
+   corpus<-tm_map(corpus,removeNumbers)
+   corpus<-tm_map(corpus,removePunctuation)
+   dtm.tf<-DocumentTermMatrix(corpus, control=list(stemming=stem, stopwords=stop.words, minWordLength=3))
+   #finally trim the DTM so that it only contains docs that we need and only terms in the needed docs
+   dtm.tf<-dtm.tf[c(pastIds, recentIds),]
+   dtm.tf<-dtm.tf[,col_sums(dtm.tf)>0]
+   
+   ##
+   ## segment the DTM according to the two sets of document ids passed in.
+   ##
+   # it is helpful to retain the same Terms in each DTM for when comparisons are made
+   dtm.tf.past<-dtm.tf[pastIds]
+   dtm.tf.recent<-dtm.tf[recentIds]
+   dtm.bin.recent<-weightBin(dtm.tf.recent)
+   
+   ##
+   ##aggregate statistics
+   ##
+   term.sums.past<-col_sums(dtm.tf.past)
+   tsp.all<-sum(term.sums.past)
+   term.sums.recent<-col_sums(dtm.tf.recent)
+   tsr.all<-sum(term.sums.recent)
+   #the number of docs in the new setcontaining >=1 occurrence of the term   
+   terms.doc.cnt.recent<-col_sums(dtm.bin.recent)
+   
+   ##
+   ## GET some boolean filters for three groups, Rising, Falling and New. No decision on significance yet!
+   ##
+   #ONLY select those with a mininum number of document occurrences doc_count.thresh (except "falling")
+   #term sums of 0 in the past must be new terms, since we know the corpus sum>0
+   new.term_ids.bool <- (term.sums.past==0) & (terms.doc.cnt.recent>=doc_count.thresh)
+   #which terms should be considered in rising/falling?
+   rise.term_ids.bool <- (term.sums.recent/tsr.all>term.sums.past/tsp.all) &
+      (term.sums.past>0) & (terms.doc.cnt.recent>=doc_count.thresh)
+   fall.term_ids.bool <- (term.sums.recent/tsr.all<term.sums.past/tsp.all)
+   
+   ##
+   ## compute the term occurrences in each set (past/recent) and group (rising/falling/new)
+   ##
+   term.sums.new<-term.sums.recent[new.term_ids.bool]#the "past" is 0 of course
+   term.sums.past.rising<-term.sums.past[rise.term_ids.bool]
+   term.sums.recent.rising<-term.sums.recent[rise.term_ids.bool]
+   term.sums.past.falling<-term.sums.past[fall.term_ids.bool]
+   term.sums.recent.falling<-term.sums.recent[fall.term_ids.bool]
+   #calculate a rise/fall factor excluding any new terms
+   #basically: (recent fraction - past fraction)/(past fraction) but rescaled to a % to give "nicer" numbers for display
+   rise.ratio<-(term.sums.recent.rising*tsp.all/(tsr.all*term.sums.past.rising) -1)* 100
+   fall.ratio<-(term.sums.recent.falling*tsp.all/(tsr.all*term.sums.past.falling) -1)* 100
+      
+   ##
+   ## Apply Pearson's Chi^2 Test to each group, then filter down as appropriate
+   ##
+   p.rising<-chisq.pval(term.sums.past.rising,tsp.all ,term.sums.recent.rising, tsr.all)
+   p.falling<-chisq.pval(term.sums.past.falling,tsp.all ,term.sums.recent.falling, tsr.all)
+   p.new<-chisq.pval(0.0, tsp.all, term.sums.new, tsr.all)
+   names(p.rising)<-names(term.sums.past.rising)
+   names(p.falling)<-names(term.sums.past.falling)
+   names(p.new)<-names(term.sums.new)   
+   #which are significant is defined by the thresholds
+   sig.new.bool<-p.new<=thresh.pval
+   sig.rising.bool<-p.rising<=thresh.pval
+   sig.falling.bool<-p.falling<=thresh.pval.falling
+   #filter down the vectors of the important measures
+   rise.ratio<-rise.ratio[sig.rising.bool]
+   fall.ratio<-fall.ratio[sig.falling.bool]
+   term.sums.new<-term.sums.new[sig.new.bool]
+   #similarly finally truncate the p-value vectors now we have finished using them as filters
+   p.rising<-p.rising[sig.rising.bool]
+   p.falling<-p.falling[sig.falling.bool]# NB different threshold
+   p.new<-p.new[sig.new.bool]
+   # remove "established terms" from the rising set and hive them off to a separate list
+   established.term_ids.bool<-(term.sums.past.rising[sig.rising.bool]/tsp.all)>max.past.freq
+   p.established.rising <- p.rising[established.term_ids.bool]
+   p.rising <- p.rising[!established.term_ids.bool]
+   established.rise.ratio<-rise.ratio[established.term_ids.bool]
+   rise.ratio<-rise.ratio[!established.term_ids.bool]
+   
+
+   ##
+   ## Which documents in the corpus contain terms in the relevant new/rising/falling/established sets
+   ##
+   dtm.tf.new<-dtm.tf.recent[,names(p.new)]
+   dtm.tf.new<-dtm.tf.new[row_sums(dtm.tf.new)>0]
+   newIds<-Docs(dtm.tf.new)
+   dtm.tf.rising<-dtm.tf.recent[,names(p.rising)]
+   dtm.tf.rising<-dtm.tf.rising[row_sums(dtm.tf.rising)>0]
+   risingIds<-Docs(dtm.tf.rising)
+   dtm.tf.established<-dtm.tf.recent[,names(p.established.rising)]
+   dtm.tf.established<-dtm.tf.established[row_sums(dtm.tf.established)>0]
+   establishedIds<-Docs(dtm.tf.established)
+   dtm.tf.falling<-dtm.tf.past[,names(p.falling)]
+   dtm.tf.falling<-dtm.tf.falling[row_sums(dtm.tf.falling)>0]
+   fallingIds<-Docs(dtm.tf.falling)
+      
+   ##
+   ## Convenient structures for returning values
+   ##
+   New<-list(DTM = dtm.tf.new,
+             Frequency = term.sums.new,
+             P = p.new)
+   Rising<-list(DTM = dtm.tf.rising,
+                     Change = rise.ratio,
+                     P = p.rising)   
+   Established<-list(DTM = dtm.tf.established,
+             Change = established.rise.ratio,
+             P = p.established.rising)
+   Falling<-list(DTM = dtm.tf.falling,
+                Change = fall.ratio,
+                P = p.falling)   
+   pearsonChanges<-list(dtm.tf.past = dtm.tf.past,
+                        dtm.tf.recent = dtm.tf.recent,
+                        New, Established, Rising, Falling                        
+      )
+   class(pearsonChanges)<-"PearsonChanges"
+   
+   pearsonChanges #return value
+   }
