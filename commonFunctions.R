@@ -71,7 +71,10 @@ LogTerms<-function(fileName, terms, words=NULL){
 
 CustomStopwords<-function(){
    #+  "paper" (which is common in journal/proceedings abstracts!)
-   SW<-c(stopwords(kind = "en"),"paper","studentspsila","conference")
+   SW<-c(stopwords(kind = "en"),"paper","studentspsila","conference",
+         "january","february","march","april","may","june",
+         "july","august","september","october","november","december",
+         "jan","feb","mar","apr","jun","jul","aug","sept","oct","nov","dec")
    #- some terms (and various expansions) that are relevant to the education domain
    SW<-SW[-grep("group", SW)]
    SW<-SW[-grep("problem", SW)]
@@ -84,6 +87,8 @@ CustomStopwords<-function(){
 ## Apply Pearson Chi^2 test to term distribution in the documents of 2 corpora to identify
 ## statistically-significant rising, falling, new terms in a "recent" set vs a "past" set
 ## [derived from RF_Terms.R]
+## A list is returned for New/Rising/Established/Falling.
+## NB the DTM in $Falling is of the docs in the pastIds set whereas the other DTMs are for the recentIds
 ##
 
 # how many documents must the term appear in to be listed. This is in addition to the frequency thresholds. A value of 2 is expected, i.e. ignore terms that appear in only one doc
@@ -103,6 +108,11 @@ PearsonChanges.Corpus<-function(corpus,
                                 thresh.pval.falling = 0.01,
                                 max.past.freq = 0.0002,
                                 stem  = TRUE, stop.words = TRUE){
+   #sanity checks
+   if(length(intersect(pastIds,recentIds))>0){
+      stop("Error pastIds contains at least one Id also in recentIds.")
+   }
+   
    #libraries
    require("tm")
    require("Snowball")
@@ -118,28 +128,35 @@ PearsonChanges.Corpus<-function(corpus,
    #finally trim the DTM so that it only contains docs that we need and only terms in the needed docs
    dtm.tf<-dtm.tf[c(pastIds, recentIds),]
    dtm.tf<-dtm.tf[,col_sums(dtm.tf)>0]
-   
+      
    ##
    ## segment the DTM according to the two sets of document ids passed in.
    ##
    # it is helpful to retain the same Terms in each DTM for when comparisons are made
-   dtm.tf.past<-dtm.tf[pastIds]
-   dtm.tf.recent<-dtm.tf[recentIds]
-   dtm.bin.recent<-weightBin(dtm.tf.recent)
+   dtm.tf.past<-dtm.tf[pastIds,]
+   dtm.tf.recent<-dtm.tf[recentIds,]
    
    ##
-   ##aggregate statistics
+   ##aggregate statistics before eliminating any terms according to doc_count thresh
    ##
    term.sums.past<-col_sums(dtm.tf.past)
    tsp.all<-sum(term.sums.past)
    term.sums.recent<-col_sums(dtm.tf.recent)
    tsr.all<-sum(term.sums.recent)
-   #the number of docs in the new setcontaining >=1 occurrence of the term   
-   terms.doc.cnt.recent<-col_sums(dtm.bin.recent)
+   
+   ##
+   ## Make sure that there are at least doc_count.thresh docs containing any given term
+   ##
+   dtm.bin<-weightBin(dtm.tf)
+   dtm.tf.past<-dtm.tf.past[,col_sums(dtm.bin)>=doc_count.thresh]
+   dtm.tf.recent<-dtm.tf.recent[,col_sums(dtm.bin)>=doc_count.thresh]
    
    ##
    ## GET some boolean filters for three groups, Rising, Falling and New. No decision on significance yet!
    ##
+   #the number of docs in the new set containing >=1 occurrence of the term 
+   dtm.bin.recent<-dtm.bin[recentIds,]
+   terms.doc.cnt.recent<-col_sums(dtm.bin.recent)
    #ONLY select those with a mininum number of document occurrences doc_count.thresh (except "falling")
    #term sums of 0 in the past must be new terms, since we know the corpus sum>0
    new.term_ids.bool <- (term.sums.past==0) & (terms.doc.cnt.recent>=doc_count.thresh)
@@ -192,39 +209,58 @@ PearsonChanges.Corpus<-function(corpus,
 
    ##
    ## Which documents in the corpus contain terms in the relevant new/rising/falling/established sets
+   ## Lists are convenient structures for returning values
    ##
-   dtm.tf.new<-dtm.tf.recent[,names(p.new)]
-   dtm.tf.new<-dtm.tf.new[row_sums(dtm.tf.new)>0]
-   newIds<-Docs(dtm.tf.new)
-   dtm.tf.rising<-dtm.tf.recent[,names(p.rising)]
-   dtm.tf.rising<-dtm.tf.rising[row_sums(dtm.tf.rising)>0]
-   risingIds<-Docs(dtm.tf.rising)
-   dtm.tf.established<-dtm.tf.recent[,names(p.established.rising)]
-   dtm.tf.established<-dtm.tf.established[row_sums(dtm.tf.established)>0]
-   establishedIds<-Docs(dtm.tf.established)
+
+   if(is.na(p.new[1])){
+      l.new<-NULL
+   }else{
+      dtm.tf.new<-dtm.tf.recent[,names(p.new)]
+      dtm.tf.new<-dtm.tf.new[row_sums(dtm.tf.new)>0]
+      newIds<-Docs(dtm.tf.new)
+      l.new<-list(DTM = dtm.tf.new,
+                  Frequency = term.sums.new,
+                  P = p.new)
+   }
+   if(is.na(p.rising[1])){
+      rising<-NULL
+   }else{
+      dtm.tf.rising<-dtm.tf.recent[,names(p.rising)]
+      dtm.tf.rising<-dtm.tf.rising[row_sums(dtm.tf.rising)>0]
+      risingIds<-Docs(dtm.tf.rising)
+      rising<-list(DTM = dtm.tf.rising,
+                   Frequency = col_sums(dtm.tf.rising)/tsr.all,
+                   BaselineFrequency = col_sums(dtm.tf.past[,names(p.rising)])/tsp.all,
+                   Change = rise.ratio,
+                   P = p.rising)
+   }
+   if(is.na(p.established.rising[1])){
+      established<-NULL
+   }else{
+      dtm.tf.established<-dtm.tf.recent[,names(p.established.rising)]
+      dtm.tf.established<-dtm.tf.established[row_sums(dtm.tf.established)>0]
+      establishedIds<-Docs(dtm.tf.established)
+      established<-list(DTM = dtm.tf.established,
+                        Frequency = col_sums(dtm.tf.established)/tsr.all,
+                        BaselineFrequency = col_sums(dtm.tf.past[,names(p.established.rising)])/tsp.all,
+                        Change = established.rise.ratio,
+                        P = p.established.rising)
+   }
+   if(is.na(p.falling[1])){
+      falling<-NULL   
+   }else{
    dtm.tf.falling<-dtm.tf.past[,names(p.falling)]
    dtm.tf.falling<-dtm.tf.falling[row_sums(dtm.tf.falling)>0]
    fallingIds<-Docs(dtm.tf.falling)
-      
-   ##
-   ## Convenient structures for returning values
-   ##
-   New<-list(DTM = dtm.tf.new,
-             Frequency = term.sums.new,
-             P = p.new)
-   Rising<-list(DTM = dtm.tf.rising,
-                     Change = rise.ratio,
-                     P = p.rising)   
-   Established<-list(DTM = dtm.tf.established,
-             Change = established.rise.ratio,
-             P = p.established.rising)
-   Falling<-list(DTM = dtm.tf.falling,
-                Change = fall.ratio,
-                P = p.falling)   
-   pearsonChanges<-list(dtm.tf.past = dtm.tf.past,
-                        dtm.tf.recent = dtm.tf.recent,
-                        New, Established, Rising, Falling                        
-      )
+   falling<-list(DTM = dtm.tf.falling,
+                 Frequency = col_sums(dtm.tf.recent[,names(p.falling)])/tsr.all,
+                 BaselineFrequency = col_sums(dtm.tf.falling)/tsp.all,
+                 Change = fall.ratio,
+                 P = p.falling)
+   }  
+   
+   #combine into a single list for the return "class"
+   pearsonChanges<-list(DTM.tf=dtm.tf, New=l.new, Established=established, Rising=rising, Falling=falling)
    class(pearsonChanges)<-"PearsonChanges"
    
    pearsonChanges #return value
