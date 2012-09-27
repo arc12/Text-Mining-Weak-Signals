@@ -36,7 +36,7 @@ source("/home/arc1/R Projects/Text Mining Weak Signals/commonFunctions.R")
 source("/home/arc1/R Projects/Text Mining Weak Signals/sentimentFunctions.R")
 
 home.dir<-"/home/arc1/R Projects/Text Mining Weak Signals"
-output.dir<-paste(home.dir,"Source Data/Abstracts",sep="/")
+output.dir<-paste(home.dir,"Source Data/MB",sep="/")
 db.dir<-paste(home.dir,"Source Data",sep="/")
 setwd(output.dir)
 
@@ -51,15 +51,16 @@ setwd(output.dir)
 #                "ECTEL",
 #                "ICWL",
 #                "ICHL")#only used for abstracts
-set.csv <- c("ICALT Abstracts 2012.csv",
-             "ICWL Abstracts 2012.csv",
-             "ICHL Abstracts 2012.csv")
-origin.tag <- c("ICALT",
-                "ICWL",
-                "ICHL")#only used for abstracts
-#set.csv <- "MB Blogs 2012-07-01 to 2012-09-11.csv"#c("MB Blogs 20090101-20100101.csv", "MB Blogs 20100101-20120630.csv")
+#set.csv <- c("ICALT Abstracts 2012.csv",
+#             "ICWL Abstracts 2012.csv",
+#             "ICHL Abstracts 2012.csv")
+#origin.tag <- c("ICALT",
+#                "ICWL",
+#                "ICHL")#only used for abstracts
+
+set.csv<-  c("MB Blogs 2012-07-01 to 2012-09-11.csv","MB Blogs 20090101-20100101.csv", "MB Blogs 20100101-20120630.csv","MB Blogs Batch 2012-09-27.csv")
 # this determines the source type: conference abstracts or blog content
-source.type="a"#a is for abstracts, b is for blogs
+source.type="b"#a is for abstracts, b is for blogs
 sqlite.filename <- "TMWS Data A.sqlite" #set to NA for output to a CSV file
 
 # preparation for output destination
@@ -159,12 +160,16 @@ for (src in 1:length(set.csv)){
    pos.score<-row_sums(dtm.tf.unstemmed.p)/doc.term.sums
    #force any v. short docs to have scores = 0.0
    pos.score[doc.term.sums<40]<-0.0
+   print("Summary for positive score")
+   summary(pos.score)
    # -- negative scores
    dtm.tf.unstemmed.n<-DocumentTermMatrix(corp,
                                           control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics[["Negative"]])))
    neg.score<-row_sums(dtm.tf.unstemmed.n)/doc.term.sums
    #force any v. short docs to have scores = 0.0
    neg.score[doc.term.sums<40]<-0.0
+   print("Summary for negative score")
+   summary(neg.score)
    # -- subjectivity
    subj.score<-pos.score + neg.score
    # add to the data.table
