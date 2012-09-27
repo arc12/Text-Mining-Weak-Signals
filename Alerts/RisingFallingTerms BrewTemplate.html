@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd" 
+>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Rising and Falling Term Alerts: <%=as.character(report.date)%></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="AUTHOR" content="Adam Cooper"/>
+    <!--
+## ***Made available using the The MIT License (MIT)***
+# Copyright (c) 2012, Adam Cooper
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+## ************ end licence ***************-->
+<!--adopt styles from TELMap. -->
+<style type="text/css">
+html, body, span, frame, iframe, object {
+	margin-top: 20px;
+	margin-bottom: 20px;		
+	font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+	font-size: 13px;
+	color: #404040;
+}
+
+a:link, a:hover {
+	color: #23a0d2;
+	text-decoration: none;
+}
+
+a:visited {
+	color: #066890;
+	text-decoration: none;
+}
+
+h2 {
+	color: #e2a12c;
+	font-size: 30px;
+	font-family: "Times New Roman", Times, serif;
+}
+
+h3 {
+	color: #494949;
+	font-family: "Times New Roman", Times, serif;
+	font-size: 16px;
+	text-transform: uppercase;	
+}
+</style>	
+
+<script type="text/javascript" src="https://www.google.com/jsapi"></script><script type="text/javascript">
+    //prepare google charts
+    google.load('visualization', '1.1', {packages: ['controls']});
+    google.setOnLoadCallback(drawCharts);
+      
+function drawCharts(){
+    drawRising();
+    drawEstablished();
+    drawFalling();
+}
+
+function drawRising() {
+<%if(length(rfTerms$Rising)>0){
+label<-rising.words
+dat<-rfTerms$Rising
+baselineFreq<-round(1000000*dat$BaselineFrequency,3)
+logP<- round(-log10(dat$P),digits=1)
+change<-round(dat$Change)
+baselineFreq<-baselineFreq%>
+
+ 	var data = google.visualization.arrayToDataTable([
+        	['ID', 'Baseline Frequency', '% Rise', 'Significance'],
+        	//injected data from R. cannot use rjson because types vary
+        	<%for(i in 1:length(label)){%>
+        	['<%=as.character(label[i])%>',<%=baselineFreq[i]%>,<%=change[i]%>,<%=logP[i]%>]<%if(i<length(label)){%>,<%}-%>
+        	<%}%>
+        ]);
+        
+	var sliderY = new google.visualization.ControlWrapper({
+    	'controlType': 'NumberRangeFilter',
+    	'containerId': 'control_ry',
+    	'options': {
+      		'filterColumnLabel': '% Rise',
+      		'ui': {
+      			'label': '',
+      			'labelStacking': 'vertical',
+      			'orientation': 'vertical'}
+    		}
+  	});
+
+  	var sliderX = new google.visualization.ControlWrapper({
+    	'controlType': 'NumberRangeFilter',
+    	'containerId': 'control_rx',
+    	'options': {
+      		'filterColumnLabel': 'Baseline Frequency',
+      		'ui': {
+      			'label': '',
+      			'labelStacking': 'horizontal',
+      			'orientation': 'horizontal'}
+    		}
+  	});
+        
+         var sliderZ = new google.visualization.ControlWrapper({
+    	'controlType': 'NumberRangeFilter',
+    	'containerId': 'control_rz',
+    	'options': {
+      		'filterColumnLabel': 'Significance',
+      		'ui': {
+      			'label': '',
+      			'labelStacking': 'horizontal',
+      			'orientation': 'horizontal'}
+    		}
+  	});
+        
+  	var bubblechart_r = new google.visualization.ChartWrapper({
+    	'chartType': 'BubbleChart',
+    	'containerId': 'chart_r',
+    	'options': {
+          	title: 'Rising Significance',
+          	hAxis: {title: 'Baseline Frequency (words per million)'},
+          	vAxis: {title: '% Rise'},
+          	bubble: {textStyle: {fontSize: 11}},
+          	colorAxis: {
+          		colors: ['yellow', 'red'],
+          		minValue: <%=trunc(min(logP))%>,
+          		maxValue: <%=ceiling(max(logP))%>
+          		},
+          	sizeAxis: {minValue: 0,  maxSize: 20},
+          	chartArea:{left:80,top:60,width:'95%',height:'80%'}
+    		}
+  	});
+
+  	var dash_r = new google.visualization.Dashboard(document.getElementById('dash_r'))
+    	// Configure the slider to affect the piechart
+    	dash_r.bind(sliderX, bubblechart_r);
+    	dash_r.bind(sliderY, bubblechart_r);
+    	dash_r.bind(sliderZ, bubblechart_r);
+    	// Draw the dashboard
+    	dash_r.draw(data);
+        
+        // SELECT EVENT HANDLING is mis-behaving when NumberRangeFilters are employed. No solution found so commented out!
+        //need a ready handler to setup the select event handling
+        //google.visualization.events.addListener(bubblechart_r, 'ready', onReady);
+        //an inner function
+  	//function onReady() {
+    	//	google.visualization.events.addListener(bubblechart_r.getChart(), 'select', selectRising);
+  	//}
+	//function selectRising(){
+ 	//	var selection = bubblechart_r.getChart().getSelection();
+ 	//	var str = data.getFormattedValue(selection[0].row, 0);
+ 	//	alert(str);
+ 		//window.open(str+'.html','_self');
+  	//}
+<%}%>
+}//end of drawRising
+
+function drawEstablished() {
+<%if(length(rfTerms$Established)>0){
+label<-established.words
+dat<-rfTerms$Established
+baselineFreq<-round(1000*dat$BaselineFrequency,3)
+logP<- round(-log10(dat$P),digits=1)
+change<-round(dat$Change)%>
+
+ 	var data = google.visualization.arrayToDataTable([
+        	['ID', 'Baseline Frequency', '% Rise', 'Significance'],
+        	//injected data from R. cannot use rjson because types vary
+        	<%for(i in 1:length(label)){%>
+        	['<%=as.character(label[i])%>',<%=baselineFreq[i]%>,<%=change[i]%>,<%=logP[i]%>]<%if(i<length(label)){%>,<%}-%>
+        	<%}%>
+        ]);
+        
+	var sliderY = new google.visualization.ControlWrapper({
+    	'controlType': 'NumberRangeFilter',
+    	'containerId': 'control_ey',
+    	'options': {
+      		'filterColumnLabel': '% Rise',
+      		'ui': {
+      			'label': '',
+      			'labelStacking': 'vertical',
+      			'orientation': 'vertical'}
+    		}
+  	});
+
+  	var sliderX = new google.visualization.ControlWrapper({
+    	'controlType': 'NumberRangeFilter',
+    	'containerId': 'control_ex',
+    	'options': {
+      		'filterColumnLabel': 'Baseline Frequency',
+      		'ui': {
+      			'label': '',
+      			'labelStacking': 'horizontal',
+      			'orientation': 'horizontal'}
+    		}
+  	});
+  	        
+         var sliderZ = new google.visualization.ControlWrapper({
+    	'controlType': 'NumberRangeFilter',
+    	'containerId': 'control_ez',
+    	'options': {
+      		'filterColumnLabel': 'Significance',
+      		'ui': {
+      			'label': '',
+      			'labelStacking': 'horizontal',
+      			'orientation': 'horizontal'}
+    		}
+  	});
+        
+  	var bubblechart_e = new google.visualization.ChartWrapper({
+    	'chartType': 'BubbleChart',
+    	'containerId': 'chart_e',
+    	'options': {
+          	title: 'Rising Significance',
+          	hAxis: {title: 'Baseline Frequency (words per thousand)'},
+          	vAxis: {title: '% Rise'},
+          	bubble: {textStyle: {fontSize: 11}},
+          	colorAxis: {
+          		colors: ['yellow', 'red'],
+          		minValue: <%=trunc(min(logP))%>,
+          		maxValue: <%=ceiling(max(logP))%>
+          		},
+          	sizeAxis: {minValue: 0,  maxSize: 20},
+          	chartArea:{left:80,top:60,width:'95%',height:'80%'}
+    		}
+  	});
+
+  	var dash_e = new google.visualization.Dashboard(document.getElementById('dash_e'))
+    	// Configure the slider to affect the piechart
+    	dash_e.bind(sliderX, bubblechart_e);
+    	dash_e.bind(sliderY, bubblechart_e);
+    	dash_e.bind(sliderZ, bubblechart_e);
+    	// Draw the dashboard
+    	dash_e.draw(data);
+<%}%>
+}//end of drawEstablished
+
+
+function drawFalling() {
+<%if(length(rfTerms$Falling)>0){
+label<-falling.words
+dat<-rfTerms$Falling
+baselineFreq<-round(1000*dat$BaselineFrequency,3)
+logP<- round(-log10(dat$P),digits=1)
+change<-round(dat$Change)%>
+
+ 	var data = google.visualization.arrayToDataTable([
+        	['ID', 'Baseline Frequency', '% Fall', 'Significance'],
+        	//injected data from R. cannot use rjson because types vary
+        	<%for(i in 1:length(label)){%>
+        	['<%=as.character(label[i])%>',<%=baselineFreq[i]%>,<%=change[i]%>,<%=logP[i]%>]<%if(i<length(label)){%>,<%}-%>
+        	<%}%>
+        ]);
+        
+	var sliderY = new google.visualization.ControlWrapper({
+    	'controlType': 'NumberRangeFilter',
+    	'containerId': 'control_fy',
+    	'options': {
+      		'filterColumnLabel': '% Fall',
+      		'ui': {
+      			'label': '',
+      			'labelStacking': 'vertical',
+      			'orientation': 'vertical'}
+    		}
+  	});
+
+  	var sliderX = new google.visualization.ControlWrapper({
+    	'controlType': 'NumberRangeFilter',
+    	'containerId': 'control_fx',
+    	'options': {
+      		'filterColumnLabel': 'Baseline Frequency',
+      		'ui': {
+      			'label': '',
+      			'labelStacking': 'horizontal',
+      			'orientation': 'horizontal'}
+    		}
+  	});
+  	        
+         var sliderZ = new google.visualization.ControlWrapper({
+    	'controlType': 'NumberRangeFilter',
+    	'containerId': 'control_fz',
+    	'options': {
+      		'filterColumnLabel': 'Significance',
+      		'ui': {
+      			'label': '',
+      			'labelStacking': 'horizontal',
+      			'orientation': 'horizontal'}
+    		}
+  	});
+        
+  	var bubblechart_f = new google.visualization.ChartWrapper({
+    	'chartType': 'BubbleChart',
+    	'containerId': 'chart_f',
+    	'options': {
+          	title: 'Falling Significance',
+          	hAxis: {title: 'Baseline Frequency (words per thousand)'},
+          	vAxis: {title: '% Fall', minValue:-105},
+          	bubble: {textStyle: {fontSize: 11}},
+          	colorAxis: {
+          		colors: ['yellow', 'red'],
+          		minValue: <%=trunc(min(logP))%>,
+          		maxValue: <%=ceiling(max(logP))%>
+          		},
+          	sizeAxis: {minValue: 0,  maxSize: 20},
+          	chartArea:{left:80,top:60,width:'95%',height:'80%'}
+    		}
+  	});
+
+  	var dash_f = new google.visualization.Dashboard(document.getElementById('dash_f'))
+    	// Configure the slider to affect the piechart
+    	dash_f.bind(sliderX, bubblechart_f);
+    	dash_f.bind(sliderY, bubblechart_f);
+    	dash_f.bind(sliderZ, bubblechart_f);
+    	// Draw the dashboard
+    	dash_f.draw(data);
+<%}%>
+}//end of drawFalling
+
+      
+        
+</script>
+  </head>
+  <body>
+  <h1>Rising and Falling Term Alerts: <%=as.character(report.date)%></h1>
+   <p>These charts show which terms are rising or falling significantly in blog posts related to technology enhanced learning. Posts from the  <%=report.days%> prior to the report date are compared to a baseline of the previous <%=baseline.months%> months. Blog posts containing the largest number of rising terms are <a href="#zeitgeist">also shown</a>.</p>
+  
+  <h2>Rising Terms I</h2>
+    <p>These terms already had at least a moderate frequency in the baseline (min <%=max.past.freq*100%>%). Mouse-over the chart to view stats or adjust the sliders to zoom in.</p>
+  <div id="dash_e">
+    <table>
+      <r>
+      <td></td>
+      <td align="left"><div id="control_ez" style="margin-left:75px;"></div></td>
+      <tr>
+      <tr>
+        <td><div id="control_ey"></div></td>
+        <td><div id="chart_e" style="width: 800px; height: 550px;"></div></td>
+      </tr>
+      <tr>
+        <td></td>
+        <td align="center"><div id="control_ex"></div></td>
+      </tr>
+    </table>
+  </div>
+  
+  <h2>Rising Terms II</h2>
+   <p>These terms have rather small frequency in the baseline but are rising significantly and might be early signs of change. Mouse-over the chart to view stats or adjust the sliders to zoom in.</p>
+  <div id="dash_r">
+    <table>
+      <tr>
+      <td></td>
+      <td align="left"><div id="control_rz" style="margin-left:75px;"></div></td>
+      <tr>
+        <td><div id="control_ry"></div></td>
+        <td><div id="chart_r" style="width: 800px; height: 550px;"></div></td>
+      </tr>
+      <tr>
+        <td></td>
+        <td align="center"><div id="control_rx"></div></td>
+      </tr>
+    </table>
+  </div>
+   
+  <h2>Falling Terms</h2>
+  <p>These terms have fallen significantly compared to the baseline period. Mouse-over the chart to view stats or adjust the sliders to zoom in.</p>
+  <div id="dash_f">
+    <table>
+      <r>
+      <td></td>
+      <td align="left"><div id="control_fz" style="margin-left:75px;"></div></td>
+      <tr>
+      <tr>
+        <td><div id="control_fy"></div></td>
+        <td><div id="chart_f" style="width: 800px; height: 550px;"></div></td>
+      </tr>
+      <tr>
+        <td></td>
+        <td align="center"><div id="control_fx"></div></td>
+      </tr>
+    </table>
+  </div>
+  <h1><a name="zeitgeist"/>Zeitgeist Posts</h1>
+   <p>These are the top <%=top.n%> blog posts from the last <%=report.days%> days when ranked according to the number of different rising terms they contain. The rating shows the percentage of rising terms each post contains.</p>
+   <table>
+<%for(k in 1:top.n){
+kk<-top.doc.ids[k]%>      
+<tr style="border-style: solid; border-color:<%=score.pal[min(pal.len*ratings[kk]/100+1,pal.len)]%>">
+<td  style="border-style: solid; border-color:<%=score.pal[min(pal.len*ratings[kk]/100+1,pal.len)]%>">
+<strong><%=hits[kk,"authors"]%></strong><br/>
+<a href="<%=hits[kk,"url"]%>"><%=hits[kk,"title"]%></a><br/>
+<%=strtrim(hits[kk,"content"], 500)%>...</td>
+<td align="center"><img src="http://chart.googleapis.com/chart?chs=200x125&cht=gom&chd=t:<%=ratings[kk]%>&chco=00FFFF,0000FF,800080,FF0000,FF8040&chxt=x,y&chxl=0:|<%=ratings[kk]%>|1:|weak|strong|super"/>
+</td>
+</tr>
+<tr>
+<td><em>Contains terms: <%=paste(top.doc.words[[k]], collapse=", ")%></em></td>
+<td></td>
+</tr>
+<%}%>
+</table>
+
+
+
+  <h2>
+     Info 
+  </h2>
+  <p>
+     Blah Blah about the method? The colour coding shows an <em>estimate</em> of the statistical significance of the change; a value of 3 means a 1 in 1000 chance that the change could be attributed to random factors and a value of 10 means a 1 in 10,000,000,000 chance.
+  </p>
+  <h2>
+     Copyright, Licence and Credits 
+  </h2>
+  <p>
+     This work was undertaken as part of the <a href="http://www.telmap.org">TEL-Map Project</a>; TEL-Map is a support and coordination action within EC IST FP7 Technology Enhanced Learning.<img src="http://www.learningfrontiers.eu/sites/all/themes/learningfrontiers/images/footer-EU-logo.jpg" />
+  </p>
+  <table>
+    <tr>
+      <td>
+        <a rel="license" href="http://creativecommons.org/licenses/by/3.0/"><img alt="Creative Commons Licence" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/88x31.png" /></a>
+      </td>
+      <td>
+         This work and original text are &copy;2012 Adam Cooper, Institute for Educational Cybernetics, University of Bolton, UK. 
+        <BR/>
+        <span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Adam Cooper</span> has licenced it under a <a rel="license" href="http://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0 Unported License</a>
+      </td>
+    </tr>
+  </table>
+  </body>
+</html>
