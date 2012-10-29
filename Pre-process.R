@@ -31,20 +31,10 @@ source("/home/arc1/R Projects/Text Mining Weak Signals/sentimentFunctions.R")
 
 home.dir<-"/home/arc1/R Projects/Text Mining Weak Signals"
 db.dir<-paste(home.dir,"Source Data",sep="/")
+setwd(db.dir)
 
 
 #each one of these will be looped over NB the origin.tag must be in the same order as set.csv
-#set.csv <- c("ICALT Abstracts 2005-2011.csv",
-#                   "CAL Abstracts 2007-2011.csv",
-#                   "ECTEL Abstracts 2006-2011.csv",
-#                   "ICWL Abstracts 2005-2011.csv",
-#                   "ICHL Abstracts 2008-2011.csv")
-#origin.tag <- c("ICALT",
-#                "CAL",
-#                "ECTEL",
-#                "ICWL",
-#                "ICHL")#only used for abstracts
-
 # set.csv <- c("ICALT Abstracts 2005-2011.csv",
 #                   "CAL Abstracts 2007-2011.csv",
 #                   "ECTEL Abstracts 2006-2011.csv",
@@ -55,21 +45,37 @@ db.dir<-paste(home.dir,"Source Data",sep="/")
 #                "ECTEL",
 #                "ICWL",
 #                "ICHL")#only used for abstracts
+
 # 
-set.csv <- c("ICALT Abstracts 2012.csv",
-             "ICWL Abstracts 2012.csv",
-             "ICHL Abstracts 2012.csv",
-               "ECTEL Abstracts 2012.csv")
-origin.tag <- c("ICALT",
-                "ICWL",
-                "ICHL",
-                "ECTEL")#only used for abstracts
+# set.csv <- c("ICALT Abstracts 2012.csv",
+#              "ICWL Abstracts 2012.csv",
+#              "ICHL Abstracts 2012.csv",
+#                "ECTEL Abstracts 2012.csv")
+# origin.tag <- c("ICALT",
+#                 "ICWL",
+#                 "ICHL",
+#                 "ECTEL")#only used for abstracts
 
 
-#set.csv<-  c(R2 Blogs 20090101-20090701.csv")
+set.csv<-  c("MB/R2 Blogs 20090101-20090701.csv", "MB/R2 Blogs 20090701-20100101.csv",
+             "MB/R2 Blogs 20100101-20100701.csv", "MB/R2 Blogs 20100701-20110101.csv",
+             "MB/R2 Blogs 20110101-20110701.csv", "MB/R2 Blogs 20110701-20120101.csv",
+             "MB/R2 Blogs 20120101-20120701.csv", "MB/R2 Blogs 20120701-20121023.csv")
+#the database to store to
+sqlite.filename <- "TMWS Data A.sqlite"
+
 # this determines the source type: conference abstracts or blog content
-source.type="a"#a is for abstracts, b is for blogs
-sqlite.filename <- "TMWS Data A.sqlite" #set to NA for output to a CSV file
+#a is for abstracts, b is for blogs
+#auto-detect the source type from the CSV header row of the 1st set
+header<-names(read.csv(set.csv[1],nrows=1))
+if(!is.na(match("abstract",header))){
+   source.type<-"a"
+}else if(!is.na(match("content",header))){
+   source.type<-"b"  
+}else{
+      stop("Cannot detect source type from csv header:",header)
+   }
+read.csv(set.csv[1],nrows=1)
 
 # preparation for output destination
 to.sqlite<-!is.na(sqlite.filename)
@@ -91,7 +97,7 @@ if(to.sqlite){
       #first retrieve the newly added doc ids
       to.add<-dbGetQuery(db,paste(sqlDocIds,prev.id,sep=""))
       #select these (in order) from the data.frame. NB THIS MESSES UP TABLE
-      table<-table[match(to.add[,"dblp_url"], table[,"dblp_url"]),c("content","treated")]
+      table<-table[match(to.add[,"url"], table[,"url"]),c("content","treated")]
       table<-cbind(data.frame(id=to.add[,"id"]),table)
       #add to the index
       dbGetPreparedQuery(db, sqlFullText, bind.data = table)
@@ -123,6 +129,26 @@ targets.pestle<-list(econ_score=c("Econ.","ECON"), legal_score="Legal", polit_sc
 sentiment.dics.pestle<-prepareLexicons(paste(home.dir,"PESTLE Scan/InquirerPESTLE2.csv",sep="/"), targets.pestle)
 
 ##
+## Database queries and corpus mapppings are source-dependent
+##
+#"Keywords" and after are user-defined "localmetadata" properties while the rest are standard tm package document metadata fields
+if(source.type == "a"){
+   map<-list(Content="content", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url")
+   sqlTemplate<-"insert or replace into abstract (origin, year, pages, title, authors, abstract, keywords, url, dblp_url, pos_score, neg_score, subj_score, econ_score, polit_score, legal_score, doing_score, knowing_score, treated, non_stopwords, treated_words) values ($origin, $year, $pages, $title, $authors, $content, $keywords, $url, $dblp_url, $pos_score, $neg_score, $subj_score, $econ_score, $polit_score, $legal_score, $doing_score, $knowing_score, $treated, $non_stopwords, $treated_words)"
+   sqlMaxId<-"SELECT MAX(id) FROM abstract"
+   sqlDocIds<-"SELECT id, url FROM abstract where id>"
+   sqlFullText<-"INSERT OR REPLACE INTO abstract_fts4 (docid, abstract, treated) values ($id, $content, $treated)"
+   sqlCount<- "select count(1) from abstract"
+}else if(source.type == "b"){
+   map<-list(Content="content", Heading="title", Author="authors", DateTimeStamp="datestamp", Origin="origin",URL="url")
+   sqlTemplate<-"insert or replace into blog_post (content, title, authors, datestamp, origin, url, pos_score, neg_score, subj_score, econ_score, polit_score, legal_score, doing_score, knowing_score, treated, non_stopwords, treated_words) values ($content, $title, $authors, $datestamp, $origin, $url, $pos_score, $neg_score, $subj_score, $econ_score, $polit_score, $legal_score, $doing_score, $knowing_score, $treated, $non_stopwords, $treated_words)"
+   sqlMaxId<-"SELECT MAX(id) FROM blog_post"
+   sqlDocIds<-"SELECT id, url FROM blog_post where id>"
+   sqlFullText<-"INSERT OR REPLACE INTO blog_post_fts4 (docid, post, treated) values ($id, $content, $treated)"
+   sqlCount<- "select count(1) from blog_post"
+}
+
+##
 ## MAIN LOOP over the sets: Read-in, add columns of metrics and write-out
 ##
 for (src in 1:length(set.csv)){
@@ -131,8 +157,20 @@ for (src in 1:length(set.csv)){
    # read in CSV with format year,pages,title,authors,abstract,keywords,url,dblp_url.
    #There is a header row. DBLP_URL is the vital key into the author centrality data
    table<-read.csv(inFile,header=TRUE,sep=",",quote="\"",stringsAsFactors=FALSE)
-   #rename "abstract" as "content"; this is an accident of history in the source data
-   colnames(table)[colnames(table)=="abstract"]<-"content"
+   
+   #some source-specific preliminaries
+   if(source.type == "a"){
+      #remove cases where date is empty
+      table<-table[!table[,"year"]=="",]
+      #insert the "origin" as a new column
+      origin<-rep(origin.tag[src], length(table[,1]))
+      table<-cbind(origin,table)
+      #rename "abstract" as "content"; this is an accident of history in the source data
+      colnames(table)[colnames(table)=="abstract"]<-"content"
+   }else if(source.type == "b"){
+      #remove cases where date is empty
+      table<-table[!table[,"datestamp"]=="",]
+   }
    
    # do the usual treatments to remove stopwords, punctuation etc. This is NOT fed into the TM that
    # scores sentiment (this needs unstemmed) but is saved to the database for quick access in future
@@ -149,30 +187,6 @@ for (src in 1:length(set.csv)){
    treated_words<-sapply(gregexpr("\\W+", treated), length) + 1
    table<-cbind(table, treated_words)
    
-   
-   # choose an appropriate mapping and other source-specific preliminaries
-   #"Keywords" and after are user-defined "localmetadata" properties while the rest are standard tm package document metadata fields
-   if(source.type == "a"){
-      #remove cases where date is empty
-      table<-table[!table[,"year"]=="",]
-      #insert the "origin" as a new column
-      origin<-rep(origin.tag[src], length(table[,1]))
-      table<-cbind(origin,table)
-      map<-list(Content="content", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url")
-      sqlTemplate<-"insert or replace into abstract (origin, year, pages, title, authors, abstract, keywords, url, dblp_url, pos_score, neg_score, subj_score, econ_score, polit_score, legal_score, doing_score, knowing_score, treated, non_stopwords, treated_words) values ($origin, $year, $pages, $title, $authors, $content, $keywords, $url, $dblp_url, $pos_score, $neg_score, $subj_score, $econ_score, $polit_score, $legal_score, $doing_score, $knowing_score, $treated, $non_stopwords, $treated_words)"
-      sqlMaxId<-"SELECT MAX(id) FROM abstract"
-      sqlDocIds<-"SELECT id, dblp_url FROM abstract where id>"
-      sqlFullText<-"INSERT OR REPLACE INTO abstract_fts4 (docid, abstract, treated) values ($id, $content, $treated)"
-      sqlCount<- "select count(1) from abstract"
-   }else if(source.type == "b"){
-      #remove cases where date is empty
-      table<-table[!table[,"datestamp"]=="",]
-      map<-list(Content="content", Heading="title", Author="authors", DateTimeStamp="datestamp", Origin="origin",URL="url")
-      sqlTemplate<-"insert or replace into blog_post (content, title, authors, datestamp, origin, url, pos_score, neg_score, subj_score, econ_score, polit_score, legal_score, doing_score, knowing_score, treated, non_stopwords, treated_words) values ($content, $title, $authors, $datestamp, $origin, $url, $pos_score, $neg_score, $subj_score, $econ_score, $polit_score, $legal_score, $doing_score, $knowing_score, $treated, $non_stopwords, $treated_words)"
-      sqlCount<- "select count(1) from blog_post"
-   }else{
-      stop("Unknown source type:",source.type)
-   }
    # create a corpus, handling the metadata via mapping from datatable column names to PlainTextDocument attribute names
    corp<-Corpus(DataframeSource(table), readerControl=list(reader= readTabular(mapping=map)))
    ##
