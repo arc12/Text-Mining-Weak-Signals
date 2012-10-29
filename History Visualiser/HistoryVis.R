@@ -19,13 +19,77 @@ library("brew")
 library("RSQLite")
 #library("rjson")
 
+##
+## NB {data_set_name}/HV_Init.R should be run first to establish the run parameters
+##
+#source(paste(base.dir,"commonFunctions.R",sep="/"))
+
+# Filepaths
+base.dir<-"/home/arc1/R Projects/Text Mining Weak Signals"
+source.dir<-paste(base.dir,"Source Data",sep="/")
+
+##logging
+while(sink.number()>0)
+{sink()}
+sink(file="HistoryVis.log", append=FALSE, type="output", split=TRUE)
+
+
 ## SET UP DATABASE
+sqlite.filename<-"TMWS Data A.sqlite"
+use.sqlite<-!is.na(sqlite.filename)
 if(use.sqlite){
    # instantiate the SQLite driver in the R process
    sqlite<- dbDriver("SQLite")
    # open sqlite connection. db is a "connection"
    db<- dbConnect(sqlite, dbname=paste(source.dir,sqlite.filename,sep="/"))
    summary(db)
+}
+
+##
+## Choose some run parameters depending on the source type
+##    start and end dates are largely plucked from database limits
+##
+today<-as.POSIXlt(Sys.Date(), tz = "GMT")
+if(source.type=="a"){
+   slice.size<-12 #how many months in a time slice used in the analysis.
+   interpolate.size<-3 #number of months between interpolated points in the output; 1 "row" is created for each interval. No interpolation if slice.size = interpolate.size
+   minmax.years<-dbGetQuery(db,"SELECT min(year) min, max(year) max from abstract")[1,]
+   start.year<-max(2006, minmax.years$min)
+   start.month<-1 #default = 1
+   end.year<-minmax.year$max
+   if(!is.na(override.end.year)){end.year<-override.end.year}
+   end.month<-1 #default = 1. NB this determines the start of the last slice
+   
+}else if(source.type="b"){
+   slice.size<-2 #how many months in a time slice used in the analysis.
+   interpolate.size<-1 #number of months between interpolated points in the output; 1 "row" is created for each interval. No interpolation if slice.size = interpolate.size
+   minmax.dates<-dbGetQuery(db,"SELECT min(datestamp) min, max(datestamp) max from blog_post")[1,]
+   min.date<-as.POSIXlt(minmax.dates$min, tz="GMT")
+   max.date<-as.POSIXlt(minmax.dates$max, tz="GMT")
+   start.year<- min.date$year+1900
+   if(!is.na(override.start.year)){start.year<-override.start.year}
+   start.month<-min.date$mon+1#generally set to 1
+   #since we want the end.date to actually be the START of the last slice and this must be a whole number of "slice.size" slices, there is some fiddling to do
+   m.diff<-12*(max.date$year+1900-start.year)+max.date$mon-min.date$mon-1
+   if(max.date$mday<28){m.diff<-m.diff-1}#remove months that are not [almost] complete
+   end.date<-as.POSIXlt(paste(start.year,start.month,"1",sep="-"), tz = "GMT")
+   end.date$mon<- end.date$mon+floor(m.diff/slice.size)*slice.size
+   end.date<-as.POSIXlt(as.character(end.date))#otherwise $mon and $year are not changed right
+   end.year<-end.date$year+1900
+   end.month<-end.date$mon+1
+   
+}else{
+   stop(paste("Unknown source type",source.type))
+}
+
+##
+## SQL creation.
+##
+if(source.type=="a"){
+   sql<-"SELECT origin, year, pages, title, authors, abstract, keywords, url, dblp_url, pos_score, neg_score, subj_score FROM abstract WHERE year BETWEEN"
+   
+}else if(source.type="b"){
+   sql<-"SELECT content, title, authors, datestamp, origin, url, pos_score, neg_score, subj_score FROM blog_post WHERE datestamp BETWEEN"
 }
 
 ## CONVENIENT TO USE FUNCTION FOR BREWING
@@ -43,14 +107,6 @@ doBrew<-function(page.name, isGroup=FALSE){
    brew(file=paste(brew.dir,"HV Brew Template.html",sep="/"),
         output=gadget.filename,run=TRUE)
 }
-
-##
-## NB {data_set_name}/HV_Init.R should be run first to establish the run parameters
-##
-source(paste(base.dir,"commonFunctions.R",sep="/"))
-while(sink.number()>0)
-{sink()}
-sink(file="HistoryVis.log", append=FALSE, type="output", split=TRUE)
 
 ##
 ## Compute the time-slice operation parameters from the "init" values
@@ -76,21 +132,12 @@ interpolate.start.dates$mon<-interpolate.start.dates$mon+(slice.size/2)
 table<-NULL
 if(use.sqlite){
    table<-dbGetQuery(db,sql)#query, fetch all records to dataframe and clear resultset in one go
-}else{ #read csv [deprecated]
-   for (src in 1:length(sets.csv)){
-      # read in CSV with format year,pages,title,authors,abstract,keywords. There is a header row. title/authors/keywords are delimited by "
-      tmp_table<-read.csv(paste(source.dir,sets.csv[[src]],sep="/"),header=TRUE,sep=",",quote="\"",stringsAsFactors=FALSE)
-      #accumulate the table            
-      #(aside) rbinding tables is faster and better than merging corpora using tm_combine, which leads to problematical duplicate document ids.
-      table<-rbind(table,tmp_table)
-      tmp_table<-NULL
-   }
 }
 
 # now read in the possibly-cumulated table to a corpus, handling the metadata via mapping
 #create a mapping from datatable column names to PlainTextDocument attribute names
 #"Keywords" and after are user-defined "localmetadata" properties while the rest are standard tm package document metadata fields
-if(brew.type=="c"){
+if(source.type=="c"){
    table[,"year"]<-ISOdate(table[,"year"],7,1)
    map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url", Positive="pos_score", Negative="neg_score", Subjectivity="subj_score")
 }else{
