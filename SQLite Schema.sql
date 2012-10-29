@@ -1,5 +1,5 @@
-CREATE TABLE "abstract" (
-"id" INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE abstract (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
     "origin" TEXT NOT NULL,
     "year" TEXT NOT NULL,
     "pages" TEXT,
@@ -16,12 +16,15 @@ CREATE TABLE "abstract" (
     "polit_score" REAL,
     "legal_score" REAL,
     "doing_score" REAL,
-    "knowing_score" REAL);
-CREATE UNIQUE INDEX "ABSTRACT_URL_UNQ" on "abstract" (url ASC); 
+    "knowing_score" REAL,
+    "treated" TEXT,
+    "non_stopwords" INTEGER,
+    "treated_words" INTEGER
+);
+CREATE UNIQUE INDEX "ABSTRACT_URL_UNQ" on "abstract" (url ASC);
 CREATE INDEX "ABSTRACT_YEAR" on abstract (year ASC);
-
-CREATE TABLE "blog_post" (
-"id" INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE blog_post (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
     "content" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "authors" TEXT NOT NULL,
@@ -35,7 +38,14 @@ CREATE TABLE "blog_post" (
     "polit_score" REAL,
     "legal_score" REAL,
     "doing_score" REAL,
-    "knowing_score" REAL
+    "knowing_score" REAL,
+    "treated" TEXT,
+    "non_stopwords" INTEGER,
+    "treated_words" INTEGER
 );
-CREATE UNIQUE INDEX "BLOG_POST_URL_UNQ" on blog_post (url ASC); 
+CREATE UNIQUE INDEX "BLOG_POST_URL_UNQ" on blog_post (url ASC);
 CREATE INDEX "BLOG_POST_DATESTAMP" on blog_post (datestamp ASC);
+
+CREATE VIRTUAL TABLE abstract_fts4 USING fts4(content="abstract", abstract, treated);
+CREATE VIRTUAL TABLE blog_post_fts4 USING fts4(content="blog_post", post, treated);
+

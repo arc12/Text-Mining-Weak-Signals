@@ -10,14 +10,8 @@
 
 ##
 ## Pre-processing of abstracts/documents for Text Mining Weak Signals
-## Includes option to stuff data into a SQLite database
+## Stuff data into a SQLite database, including stemmed/stopworded forms and FT indexing
 ##
-## Adds the following to raw CSV files as additional columns and saves to a "...with metrics.csv" file:
-##    - subjectivity
-##    - positive sentiment score
-##    - negative sentiment score
-##
-## (these are document-specific metrics, hence "novelty" is not included since it is defined relative to a corpus)
 ##
 ## This handles conference abstracts and blog posts in slightly different ways
 ##       abstracts: each CSV is assumed to be a set of abstracts from a 
@@ -36,9 +30,8 @@ source("/home/arc1/R Projects/Text Mining Weak Signals/commonFunctions.R")
 source("/home/arc1/R Projects/Text Mining Weak Signals/sentimentFunctions.R")
 
 home.dir<-"/home/arc1/R Projects/Text Mining Weak Signals"
-output.dir<-paste(home.dir,"Source Data/MB",sep="/")
 db.dir<-paste(home.dir,"Source Data",sep="/")
-setwd(output.dir)
+
 
 #each one of these will be looped over NB the origin.tag must be in the same order as set.csv
 #set.csv <- c("ICALT Abstracts 2005-2011.csv",
@@ -51,16 +44,31 @@ setwd(output.dir)
 #                "ECTEL",
 #                "ICWL",
 #                "ICHL")#only used for abstracts
-#set.csv <- c("ICALT Abstracts 2012.csv",
-#             "ICWL Abstracts 2012.csv",
-#             "ICHL Abstracts 2012.csv")
-#origin.tag <- c("ICALT",
+
+# set.csv <- c("ICALT Abstracts 2005-2011.csv",
+#                   "CAL Abstracts 2007-2011.csv",
+#                   "ECTEL Abstracts 2006-2011.csv",
+#                   "ICWL Abstracts 2005-2011.csv",
+#                   "ICHL Abstracts 2008-2011.csv")
+# origin.tag <- c("ICALT",
+#                "CAL",
+#                "ECTEL",
 #                "ICWL",
 #                "ICHL")#only used for abstracts
+# 
+set.csv <- c("ICALT Abstracts 2012.csv",
+             "ICWL Abstracts 2012.csv",
+             "ICHL Abstracts 2012.csv",
+               "ECTEL Abstracts 2012.csv")
+origin.tag <- c("ICALT",
+                "ICWL",
+                "ICHL",
+                "ECTEL")#only used for abstracts
 
-set.csv<-  c("MB Blogs 2012-07-01 to 2012-09-11.csv","MB Blogs 20090101-20100101.csv", "MB Blogs 20100101-20120630.csv","MB Blogs Batch 2012-09-27.csv")
+
+#set.csv<-  c(R2 Blogs 20090101-20090701.csv")
 # this determines the source type: conference abstracts or blog content
-source.type="b"#a is for abstracts, b is for blogs
+source.type="a"#a is for abstracts, b is for blogs
 sqlite.filename <- "TMWS Data A.sqlite" #set to NA for output to a CSV file
 
 # preparation for output destination
@@ -74,7 +82,20 @@ if(to.sqlite){
    
    ## effectively "macros" for try/catch transaction
    doInserts <- function(){
+      #fetch the max id at the start
+      prev.id<-dbGetQuery(db, sqlMaxId)[[1]]
+      if(is.na(prev.id)){ prev.id=0}
+      #this does the main content
       dbGetPreparedQuery(db, sqlTemplate, bind.data = table)
+      #this does the FT indexes - this is a bit of a palaver for SQLite since FT is in a separate table
+      #first retrieve the newly added doc ids
+      to.add<-dbGetQuery(db,paste(sqlDocIds,prev.id,sep=""))
+      #select these (in order) from the data.frame. NB THIS MESSES UP TABLE
+      table<-table[match(to.add[,"dblp_url"], table[,"dblp_url"]),c("content","treated")]
+      table<-cbind(data.frame(id=to.add[,"id"]),table)
+      #add to the index
+      dbGetPreparedQuery(db, sqlFullText, bind.data = table)
+      
       print("Commit:")
       dbCommit(db)
    }
@@ -107,10 +128,28 @@ sentiment.dics.pestle<-prepareLexicons(paste(home.dir,"PESTLE Scan/InquirerPESTL
 for (src in 1:length(set.csv)){
    inFile<-set.csv[src]
    print(paste("Processing: ",inFile))
-   outFile<-paste(strtrim(inFile,nchar(inFile)-4),"with metrics.csv")
    # read in CSV with format year,pages,title,authors,abstract,keywords,url,dblp_url.
    #There is a header row. DBLP_URL is the vital key into the author centrality data
    table<-read.csv(inFile,header=TRUE,sep=",",quote="\"",stringsAsFactors=FALSE)
+   #rename "abstract" as "content"; this is an accident of history in the source data
+   colnames(table)[colnames(table)=="abstract"]<-"content"
+   
+   # do the usual treatments to remove stopwords, punctuation etc. This is NOT fed into the TM that
+   # scores sentiment (this needs unstemmed) but is saved to the database for quick access in future
+   stop.words<-CustomStopwords()
+   treated<-removePunctuation(removeNumbers(removeWords(tolower(table[,"content"]),stop.words)))
+   #min word length is 3
+   treated<-gsub("\\s[a-z][a-z]\\s","",treated)
+   #collapse multiple spaces
+   treated <- gsub(" {2,}"," ",treated)
+   #stemDocument only acts on the last word if just fed a text string. Next line works around this
+   treated<-unlist(lapply(treated,function(x)paste(stemDocument(unlist(strsplit(x," "))), collapse=" ")))
+   table<-cbind(table,treated)   
+   # calculate the stemmed word count for each document - not directly used but stored in database
+   treated_words<-sapply(gregexpr("\\W+", treated), length) + 1
+   table<-cbind(table, treated_words)
+   
+   
    # choose an appropriate mapping and other source-specific preliminaries
    #"Keywords" and after are user-defined "localmetadata" properties while the rest are standard tm package document metadata fields
    if(source.type == "a"){
@@ -119,14 +158,17 @@ for (src in 1:length(set.csv)){
       #insert the "origin" as a new column
       origin<-rep(origin.tag[src], length(table[,1]))
       table<-cbind(origin,table)
-      map<-list(Content="abstract", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url")
-      sqlTemplate<-"insert or replace into abstract (origin, year, pages, title, authors, abstract, keywords, url, dblp_url, pos_score, neg_score, subj_score, econ_score, polit_score, legal_score, doing_score, knowing_score) values ($origin, $year, $pages, $title, $authors, $abstract, $keywords, $url, $dblp_url, $pos_score, $neg_score, $subj_score, $econ_score, $polit_score, $legal_score, $doing_score, $knowing_score)"
+      map<-list(Content="content", Heading="title", Author="authors", DateTimeStamp="year", Origin="origin", Keywords="keywords", URL="url", DBLP_URL="dblp_url")
+      sqlTemplate<-"insert or replace into abstract (origin, year, pages, title, authors, abstract, keywords, url, dblp_url, pos_score, neg_score, subj_score, econ_score, polit_score, legal_score, doing_score, knowing_score, treated, non_stopwords, treated_words) values ($origin, $year, $pages, $title, $authors, $content, $keywords, $url, $dblp_url, $pos_score, $neg_score, $subj_score, $econ_score, $polit_score, $legal_score, $doing_score, $knowing_score, $treated, $non_stopwords, $treated_words)"
+      sqlMaxId<-"SELECT MAX(id) FROM abstract"
+      sqlDocIds<-"SELECT id, dblp_url FROM abstract where id>"
+      sqlFullText<-"INSERT OR REPLACE INTO abstract_fts4 (docid, abstract, treated) values ($id, $content, $treated)"
       sqlCount<- "select count(1) from abstract"
    }else if(source.type == "b"){
       #remove cases where date is empty
       table<-table[!table[,"datestamp"]=="",]
       map<-list(Content="content", Heading="title", Author="authors", DateTimeStamp="datestamp", Origin="origin",URL="url")
-      sqlTemplate<-"insert or replace into blog_post (content, title, authors, datestamp, origin, url, pos_score, neg_score, subj_score, econ_score, polit_score, legal_score, doing_score, knowing_score) values ($content, $title, $authors, $datestamp, $origin, $url, $pos_score, $neg_score, $subj_score, $econ_score, $polit_score, $legal_score, $doing_score, $knowing_score)"
+      sqlTemplate<-"insert or replace into blog_post (content, title, authors, datestamp, origin, url, pos_score, neg_score, subj_score, econ_score, polit_score, legal_score, doing_score, knowing_score, treated, non_stopwords, treated_words) values ($content, $title, $authors, $datestamp, $origin, $url, $pos_score, $neg_score, $subj_score, $econ_score, $polit_score, $legal_score, $doing_score, $knowing_score, $treated, $non_stopwords, $treated_words)"
       sqlCount<- "select count(1) from blog_post"
    }else{
       stop("Unknown source type:",source.type)
@@ -140,7 +182,7 @@ for (src in 1:length(set.csv)){
    # NB this is an UNSTEMMED treatment
    # Sentiment is scored as the fraction of words in the document that are listed in the relevant sentiment dictionary/lexicon. Multiple occurrences count.
    # "subjectivity" is the sum of positive and negative scores
-   stop.words<-CustomStopwords()
+   # NB: this IS doing stopword removal etc again rather than using "treated" because sentiment analysis does NOT use the stemmed forms
    # no dictionary to get the total word count
    dtm.tf.unstemmed.all<-DocumentTermMatrix(corp,
                                             control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE))
@@ -154,6 +196,8 @@ for (src in 1:length(set.csv)){
       table<-table[!empty.docs.bool,]
       print(paste("Removed document item with no text content:",paste(which(empty.docs.bool))))
    }
+   #stash the document word count (NB this is unstemmed but stop words havebeen removed)
+   table<-cbind(table,data.frame(non_stopwords=doc.term.sums))
    # -- positive scores
    dtm.tf.unstemmed.p<-DocumentTermMatrix(corp,
                                           control=list(stemming=FALSE, stopwords=stop.words, minWordLength=3, removeNumbers=TRUE, removePunctuation=FALSE,dictionary=tolower(sentiment.dics[["Positive"]])))
@@ -201,7 +245,7 @@ for (src in 1:length(set.csv)){
 
    
    ##
-   ## OUTPUT to CSV or Database
+   ## OUTPUT to Database
    ##
    if(to.sqlite){
       ##each of the input data sets is handled as an independent transaction of inserts
@@ -218,8 +262,7 @@ for (src in 1:length(set.csv)){
                   "; Replaced=",length(table[,1])-end.count+begin.count))
                   
    }else{
-      #write out the new file
-      write.csv(table, outFile, quote=TRUE, row.names=FALSE)
+      
    }
 }
 
