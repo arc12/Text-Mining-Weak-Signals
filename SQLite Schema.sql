@@ -47,5 +47,5 @@ CREATE UNIQUE INDEX "BLOG_POST_URL_UNQ" on blog_post (url ASC);
 CREATE INDEX "BLOG_POST_DATESTAMP" on blog_post (datestamp ASC);
 
 CREATE VIRTUAL TABLE abstract_fts4 USING fts4(content="abstract", abstract, treated);
-CREATE VIRTUAL TABLE blog_post_fts4 USING fts4(content="blog_post", post, treated);
+CREATE VIRTUAL TABLE blog_post_fts4 USING fts4(content="blog_post", content, treated);
 
