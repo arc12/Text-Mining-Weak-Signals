@@ -28,7 +28,10 @@ library("slam")
 library("brew")
 library("RColorBrewer")
 
+# load some functions, effectively "macros". Some day make a proper package for the whole show
 source("/home/arc1/R Projects/Text Mining Weak Signals/commonFunctions.R")
+source("/home/arc1/R Projects/Text Mining Weak Signals/sentimentFunctions.R")
+
 home.dir<-"/home/arc1/R Projects/Text Mining Weak Signals/PESTLE Scan"
 data.dir<-"/home/arc1/R Projects/Text Mining Weak Signals/Source Data"
 output.dir<-"/home/arc1/R Projects/Text Mining Weak Signals Output/PESTLE Scan"
@@ -44,17 +47,17 @@ output.dir<-"/home/arc1/R Projects/Text Mining Weak Signals Output/PESTLE Scan"
 #                    "ECTEL",
 #                    "ICWL")#only used for abstracts
 #set.csv <- c("CETIS Blogs 20110101-20120301.csv","CETIS Blogs 20090101-20120301.csv","NonCETIS Blogs 20110101-20120301.csv")
-set.csv <- c("MB/MB Blogs 20100101-20120431.csv")
+set.csv <- c("MB/MB Blogs 20100101-20120630.csv")
 # this determines the source type: conference abstracts or blog content
 source.type="b"#a is for abstracts, b is for blogs
 
 ##
 ## Sometimes it is useful to pre-filter to use only documents containing set words
 ##
-prefilter.name<-"oer"#used to name the output file.
+prefilter.name<-"-"#used to name the output file.
 #at least prefilter.thresh.1 of the the prefilter.words.1 must appear for inclusion. Use 0 to skip filtering
 #in addition, if prefilter.thresh.2>0 members of prefilter.words.2 MUST ALSO be present
-prefilter.thresh.1<-3
+prefilter.thresh.1<-0
 prefilter.words.1<-c("open", "educational", "resource", "resources", "oer", "content")
 #prefilter.words.1<-c("school","schools", "schooling","pupil","pupils","highschool","high-school","class","classroom","teacher","child","children","parent","parents","child's","parent's","teachers","teacher's","junior","infant","nursery")
 prefilter.thresh.2<-0
@@ -75,26 +78,8 @@ prefilter.words.2<-tolower(prefilter.words.2)
 # Read in the sentiment word lists (cols extracted from the Harvard Inquirer spreadsheet http://www.wjh.harvard.edu/~inquirer/)
 #The column headings MUST be unchanged (but NB data.frame colnames do not allow "@":
 #       Entry   Econ@	ECON	Legal	Polit@	POLIT	Role	SocRel
-inquirer.table<-read.csv(paste(home.dir,"InquirerPESTLE.csv",sep="/"),
-                         header=TRUE, sep=",", quote="\"", stringsAsFactors=FALSE)
-targets<-list(Economic=c("Econ.","ECON"), Legal="Legal", Political=c("Polit.", "POLIT"), Social =c("Role", "SocRel"))
-sentiment.dics<-list()
-# for each sentiment, find out which words are relevant and for cases where there is more
-# than one usage (denoted #1 in the word), select only the first one as this is the most frequent in general
-for(i in 1:length(targets)){
-   dic<-inquirer.table[,"Entry"]
-   target.cols<-targets[[i]]
-   if(length(target.cols)>1){
-      merged.filter<-row_sums(inquirer.table[,target.cols]!="")>0
-   }else{
-      merged.filter<-inquirer.table[,target.cols]!=""
-   }
-   dic<-dic[merged.filter]#limit to words for sentiment
-   dic<-sub("#1","",dic)#remove '#1' from any words containing it
-   dic<-dic[-grep("#",dic)]#remove all words still containing #
-   sentiment.dics[[i]]<-dic
-}
-names(sentiment.dics)<-names(targets)
+targets<-list(Economic=c("Econ.","ECON"), Legal="Legal", Political=c("Polit.", "POLIT"), Doing=c("Need","Goal","Try","Means","Persist","Complet","Fail"), Knowing=c("Know","Solve"))
+sentiment.dics<-prepareLexicons(paste(home.dir,"InquirerPESTLE2.csv",sep="/"), targets)
 
 ##
 ## MAIN LOOP over the sets: Read-in, add columns of metrics and write-out
