@@ -27,13 +27,14 @@ template.dir<-paste(home.dir,"Alerts",sep="/")
 
 ##
 ## RUN PARAMETERS - Often Changed
-title<-"TEL Blog Scan - Last 14 Days"
 # The date of the report. Posts up to and including this date are candidates for output
 report.date<-as.POSIXlt("2012-09-26")
 # how many days to include when seeking candidates
-report.days<-14
+report.days<-7
 # How many months to use for baseline.
 baseline.months<-12
+
+title<-paste("TEL Blog Scan - Last",report.days,"Days")
 
 ##
 ## RUN PARAMETERS - Not often changed
@@ -53,6 +54,8 @@ thresh.pval.falling<-0.005 #sometimes need to use a more lenient threshold for f
 #max frequency of term in the past set for eligibility as a weak signal.
 #Above this, sigifnicant risers are "established terms"
 max.past.freq<-0.0002
+# PREVENT any of these origins from appearing in the Zeitgeist list. They are usually just link lists!
+zg.blacklist<-c("http://www.lucygray.org/weblog")
 
 ##
 ## PRELIMINARIES - some initial setup-specific working
@@ -71,7 +74,7 @@ baseline.start<-baseline.end
 baseline.start$mon<-baseline.start$mon-baseline.months
 sql.pastIds<- paste("select id from blog_post where datestamp between",qdate(baseline.start),"and", qdate(baseline.end))
 #this query fetches the text content and metadata for both recent and past sets
-sql<- paste("select id, content, title, authors, datestamp, url from blog_post where datestamp between",qdate(baseline.start),"and", qdate(report.date))
+sql<- paste("select id, content, title, authors, datestamp, url, origin from blog_post where datestamp between",qdate(baseline.start),"and", qdate(report.date))
 
 # initialise database access
 # instantiate the SQLite driver in the R process
@@ -101,12 +104,13 @@ corpus.ids<-unlist(meta(corpus, "ID", type="local"))
 recentIds.c<-corpus.ids[db.ids %in% recentIds]
 pastIds.c<-corpus.ids[db.ids %in% pastIds]
 # compute the significant rising and falling terms
+swords<-CustomStopwords()
 rfTerms<-PearsonChanges.Corpus(corpus, pastIds.c, recentIds.c,
                                doc_count.thresh = doc_count.thresh,
                                thresh.pval = thresh.pval,
                                thresh.pval.falling = thresh.pval.falling,
                                max.past.freq = max.past.freq,
-                               stem  = TRUE, stop.words = CustomStopwords())
+                               stem  = TRUE, stop.words = swords)
 
 ##
 ## Additional work to prepare for writing the report
@@ -128,7 +132,10 @@ falling.words[is.na(falling.words)]<-stemmed[is.na(falling.words)]
 dtm.re.bin<-weightBin(rfTerms$DTM.tf[union(Docs(rfTerms$Rising$DTM),Docs(rfTerms$Established$DTM)),])
 # limit to the rising/est term set
 dtm.re.bin<-dtm.re.bin[,c(names(rfTerms$Rising$P), names(rfTerms$Established$P))]
-#find the "top n"
+#eliminate any posts from blacklisted blogs
+filter<-!(corpus.table[Docs(dtm.re.bin),"origin"]%in%zg.blacklist)
+dtm.re.bin<-dtm.re.bin[filter,]
+## find the "top n"
 term.cnt<-row_sums(dtm.re.bin)
 top.n.selector<-order(term.cnt, decreasing = TRUE)[1:top.n]
 ratings<-round(100*term.cnt[top.n.selector]/length(Terms(dtm.re.bin)))
@@ -136,7 +143,7 @@ top.doc.ids<-names(term.cnt[top.n.selector])
 #get the terms appearing in each top doc#and map these to the unstemmed words
 re.words<-c(rising.words, established.words)
 top.doc.words<-lapply(top.doc.ids,function(x){re.words[Terms(dtm.re.bin[x,col_sums(dtm.re.bin[x,])>0])]})
-# get the results to show
+# get the results to show, eliminating any black-listed blogs
 hits<-corpus.table[top.doc.ids,]
 
 ##

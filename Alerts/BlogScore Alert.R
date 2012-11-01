@@ -29,7 +29,7 @@ template.dir<-paste(home.dir,"Alerts",sep="/")
 ## RUN PARAMETERS - Often Changed
 title<-"TEL Blog Scan - Last 14 Days"
 # The date of the report. Posts up to and including this date are candidates for output
-report.date<-as.POSIXlt("2012-06-07")
+report.date<-as.POSIXlt("2012-09-26")
 # how many days to include when seeking candidates
 report.days<-14
 
