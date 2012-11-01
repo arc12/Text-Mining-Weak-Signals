@@ -74,7 +74,8 @@ CustomStopwords<-function(){
    SW<-c(stopwords(kind = "en"),"paper","studentspsila","conference",
          "january","february","march","april","may","june",
          "july","august","september","october","november","december",
-         "jan","feb","mar","apr","jun","jul","aug","sept","oct","nov","dec")
+         "jan","feb","mar","apr","jun","jul","aug","sept","oct","nov","dec",
+         "pixelmaid","onomatopoeia","pizzaro","kali","ignatius","grizzla", "iggi")
    #- some terms (and various expansions) that are relevant to the education domain
    SW<-SW[-grep("group", SW)]
    SW<-SW[-grep("problem", SW)]
@@ -137,14 +138,6 @@ PearsonChanges.Corpus<-function(corpus,
    dtm.tf.recent<-dtm.tf[recentIds,]
    
    ##
-   ##aggregate statistics before eliminating any terms according to doc_count thresh
-   ##
-   term.sums.past<-col_sums(dtm.tf.past)
-   tsp.all<-sum(term.sums.past)
-   term.sums.recent<-col_sums(dtm.tf.recent)
-   tsr.all<-sum(term.sums.recent)
-   
-   ##
    ## Make sure that there are at least doc_count.thresh docs containing any given term
    ##
    dtm.bin<-weightBin(dtm.tf)
@@ -152,17 +145,20 @@ PearsonChanges.Corpus<-function(corpus,
    dtm.tf.recent<-dtm.tf.recent[,col_sums(dtm.bin)>=doc_count.thresh]
    
    ##
+   ##aggregate statistics
+   ##
+   term.sums.past<-col_sums(dtm.tf.past)
+   tsp.all<-sum(term.sums.past)
+   term.sums.recent<-col_sums(dtm.tf.recent)
+   tsr.all<-sum(term.sums.recent)
+   
+   ##
    ## GET some boolean filters for three groups, Rising, Falling and New. No decision on significance yet!
    ##
-   #the number of docs in the new set containing >=1 occurrence of the term 
-   dtm.bin.recent<-dtm.bin[recentIds,]
-   terms.doc.cnt.recent<-col_sums(dtm.bin.recent)
-   #ONLY select those with a mininum number of document occurrences doc_count.thresh (except "falling")
    #term sums of 0 in the past must be new terms, since we know the corpus sum>0
-   new.term_ids.bool <- (term.sums.past==0) & (terms.doc.cnt.recent>=doc_count.thresh)
+   new.term_ids.bool <- (term.sums.past==0)
    #which terms should be considered in rising/falling?
-   rise.term_ids.bool <- (term.sums.recent/tsr.all>term.sums.past/tsp.all) &
-      (term.sums.past>0) & (terms.doc.cnt.recent>=doc_count.thresh)
+   rise.term_ids.bool <- (term.sums.recent/tsr.all>term.sums.past/tsp.all) & (term.sums.past>0)
    fall.term_ids.bool <- (term.sums.recent/tsr.all<term.sums.past/tsp.all)
    
    ##
