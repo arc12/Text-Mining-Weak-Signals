@@ -82,19 +82,19 @@ Each plotted value is a group of terms.
 <div class="nice">
 <%if(isGroup){%>
 <p>Group details:</p>
-<%for(i in 1:length(do.groups)){
-word.list<-word.lists[do.groups[i]]%>
-<p><em><a href="<%=do.groups[i]%>.html"><%=do.groups.pretty[i]%></a></em><br/>
+<%for(i in 1:length(word.lists)){
+word.list<-word.lists[[i]]%>
+<p><em><a href="<%=paste(file.names[i],file.postfix)%>.html"><%=titles[i]%></a></em><br/>
 (<%=paste(unlist(word.list),collapse=", ")%>)</p>
 <%}%>
 <%}else{
-if(run.name%in%do.groups){%>
-<p><a href="Groups.html">View terms as a group</a>.</p>
+if(do.groups){%>
+<p><a href="Groups <%=file.postfix%>.html">View terms as a group</a>.</p>
 <%}%>
 <p>Other sets:</p>
-<%for (other.set in 1:length(term.lists)){
+<%for (other.set in 1:length(file.names)){
 if(other.set != i.run){%>
-<p><a href="<%=names(term.lists[other.set])%>.html"><%=titles[other.set]%></a></p>
+<p><a href="<%=paste(file.names[other.set],file.postfix)%>.html"><%=titles[other.set]%></a></p>
 <%}
 }
 }%>
@@ -108,7 +108,7 @@ if(other.set != i.run){%>
 <%}else{-%>
 <a href="http://fusion.google.com/add?source=atgs&moduleurl=<%=gadget.url.encoded-%>"><img src="http://gmodules.com/ig/images/plus_google.gif" border="0" alt="Add to Google"></a>
 <p>
-This shows the history of the way certain terms have been used (related words are counted also, e.g. &quot;gaming&quot; would be counted as &quot;game&quot;). The chart loads up showing the trend in word-frequency for a term (or group of terms) with the line coloured to show the average &quot;positive sentiment&quot; of <%if(brew.type=="c"){%>abstracts<%}else{%>blog posts<%}%> containing the term. &quot;Positive sentiment&quot; is calculated as the fraction of words that generally have either a positive connotation according to the <a href="http://www.wjh.harvard.edu/~inquirer/">Harvard General Inquirer</a> dictionary. Calculations were conducted in <%=slice.size-%> month slices and the number of <%if(brew.type=="c"){%>abstracts<%}else{%>blog posts<%}%> per slice is (in date order): <%=paste(slice.docs.cnt, collapse=", ")%>. True calculated values are plotted for the mid-point of each time slice to show the aggregate value over that <%=slice.size-%> month period and spline interpolation is used to give the impression of a smooth change between these points. In total, <%=docs.used-%> <%if(brew.type=="c"){%>abstracts<%}else{%>blog posts<%}%> were used.
+This shows the history of the way certain terms have been used (related words are counted also, e.g. &quot;gaming&quot; would be counted as &quot;game&quot;). The chart loads up showing the trend in word-frequency for a term (or group of terms) with the line coloured to show the average &quot;positive sentiment&quot; of <%if(source.type=="a"){%>abstracts<%}else{%>blog posts<%}%> containing the term. &quot;Positive sentiment&quot; is calculated as the fraction of words that generally have either a positive connotation according to the <a href="http://www.wjh.harvard.edu/~inquirer/">Harvard General Inquirer</a> dictionary. For both sentiment and frequency calculations, common words such as &quot;and&quot; are ignored. The attribute &quot;Documents&quot; is an estimate of the number of <%if(source.type=="a"){%>abstracts per year<%}else{%>blog posts per month<%}%> that contain the specified term(s). Calculations were conducted in <%=slice.size-%> month slices and the number of <%if(source.type=="a"){%>abstracts<%}else{%>blog posts<%}%> per slice is (in date order): <%=paste(slice.docs.cnt, collapse=", ")%>. True calculated values are plotted for the mid-point of each time slice to show the aggregate value over that <%=slice.size-%> month period and spline interpolation is used to give the impression of a smooth change between these points. In total, <%=docs.used-%> <%if(source.type=="a"){%>abstracts<%}else{%>blog posts<%}%> were used.
 </p>
 
 <p><em>NB: be aware that insignificant fluctuations in the data may appear magnified since the plots are shown "zoomed in" (especially true for sentiment scores (or &quot;subjectivity&quot;, which is the sum of positive and negative sentiment). Also note that sentiment values are essentially meaningless when the frequency is close to the baseline.</em></p>
