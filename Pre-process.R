@@ -60,7 +60,8 @@ setwd(db.dir)
 set.csv<-  c("MB/R2 Blogs 20090101-20090701.csv", "MB/R2 Blogs 20090701-20100101.csv",
              "MB/R2 Blogs 20100101-20100701.csv", "MB/R2 Blogs 20100701-20110101.csv",
              "MB/R2 Blogs 20110101-20110701.csv", "MB/R2 Blogs 20110701-20120101.csv",
-             "MB/R2 Blogs 20120101-20120701.csv", "MB/R2 Blogs 20120701-20121023.csv")
+             "MB/R2 Blogs 20120101-20120701.csv", "MB/R2 Blogs 20120701-20121023.csv",
+             "MB/R2 Blogs 20121022-20121031.csv")
 #the database to store to
 sqlite.filename <- "TMWS Data A.sqlite"
 
@@ -74,8 +75,7 @@ if(!is.na(match("abstract",header))){
    source.type<-"b"  
 }else{
       stop("Cannot detect source type from csv header:",header)
-   }
-read.csv(set.csv[1],nrows=1)
+}
 
 # preparation for output destination
 to.sqlite<-!is.na(sqlite.filename)
@@ -144,7 +144,7 @@ if(source.type == "a"){
    sqlTemplate<-"insert or replace into blog_post (content, title, authors, datestamp, origin, url, pos_score, neg_score, subj_score, econ_score, polit_score, legal_score, doing_score, knowing_score, treated, non_stopwords, treated_words) values ($content, $title, $authors, $datestamp, $origin, $url, $pos_score, $neg_score, $subj_score, $econ_score, $polit_score, $legal_score, $doing_score, $knowing_score, $treated, $non_stopwords, $treated_words)"
    sqlMaxId<-"SELECT MAX(id) FROM blog_post"
    sqlDocIds<-"SELECT id, url FROM blog_post where id>"
-   sqlFullText<-"INSERT OR REPLACE INTO blog_post_fts4 (docid, post, treated) values ($id, $content, $treated)"
+   sqlFullText<-"INSERT OR REPLACE INTO blog_post_fts4 (docid, content, treated) values ($id, $content, $treated)"
    sqlCount<- "select count(1) from blog_post"
 }
 
