@@ -35,11 +35,11 @@ setwd(db.dir)
 
 
 #each one of these will be looped over NB the origin.tag must be in the same order as set.csv
-# set.csv <- c("ICALT Abstracts 2005-2011.csv",
-#                   "CAL Abstracts 2007-2011.csv",
-#                   "ECTEL Abstracts 2006-2011.csv",
-#                   "ICWL Abstracts 2005-2011.csv",
-#                   "ICHL Abstracts 2008-2011.csv")
+# set.csv <- c("Abstracts/ICALT Abstracts 2005-2011.csv",
+#                   "Abstracts/CAL Abstracts 2007-2011.csv",
+#                   "Abstracts/ECTEL Abstracts 2006-2011.csv",
+#                   "Abstracts/ICWL Abstracts 2005-2011.csv",
+#                   "Abstracts/ICHL Abstracts 2008-2011.csv")
 # origin.tag <- c("ICALT",
 #                "CAL",
 #                "ECTEL",
@@ -47,10 +47,10 @@ setwd(db.dir)
 #                "ICHL")#only used for abstracts
 
 # 
-# set.csv <- c("ICALT Abstracts 2012.csv",
-#              "ICWL Abstracts 2012.csv",
-#              "ICHL Abstracts 2012.csv",
-#                "ECTEL Abstracts 2012.csv")
+# set.csv <- c("Abstracts/ICALT Abstracts 2012.csv",
+#              "Abstracts/ICWL Abstracts 2012.csv",
+#              "Abstracts/ICHL Abstracts 2012.csv",
+#                "Abstracts/ECTEL Abstracts 2012.csv")
 # origin.tag <- c("ICALT",
 #                 "ICWL",
 #                 "ICHL",
@@ -99,6 +99,8 @@ if(to.sqlite){
       #select these (in order) from the data.frame. NB THIS MESSES UP TABLE
       table<-table[match(to.add[,"url"], table[,"url"]),c("content","treated")]
       table<-cbind(data.frame(id=to.add[,"id"]),table)
+      #remove "-" characters since we need to find terms like "e-book" but putting "e-book" in a FTS4 query searches for "e" NOT "book". i.e. we will also need to strip "-" from query terms.  
+      table[,"content"] <- gsub("-","",table[,"content"])
       #add to the index
       dbGetPreparedQuery(db, sqlFullText, bind.data = table)
       
@@ -175,7 +177,7 @@ for (src in 1:length(set.csv)){
    # do the usual treatments to remove stopwords, punctuation etc. This is NOT fed into the TM that
    # scores sentiment (this needs unstemmed) but is saved to the database for quick access in future
    stop.words<-CustomStopwords()
-   treated<-removePunctuation(removeNumbers(removeWords(tolower(table[,"content"]),stop.words)))
+   treated<-removeNumbers(removeWords(tolower(removePunctuation(table[,"content"])),stop.words))
    #min word length is 3
    treated<-gsub("\\s[a-z][a-z]\\s","",treated)
    #collapse multiple spaces
