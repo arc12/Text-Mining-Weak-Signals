@@ -4,9 +4,44 @@
 library("igraph")
 library("RSQLite")
 
-## TO DO refactor to use database queries for year-splitting
+## TO DO refactor to use database queries for year-splitting?????
 
-## SET UP DATABASE
+if(profile){
+   Rprof()
+}
+# filesystem setup
+base.dir<-"/home/arc1/R Projects/Text Mining Weak Signals"
+source.dir<-paste(base.dir,"Source Data",sep="/")
+output.dir<-paste("/home/arc1/R Projects/Text Mining Weak Signals Output/Adjacent Words",set.name,sep="/")
+#brew.dir<-paste(base.dir,"AdjacentWords",sep="/")
+dir.create(output.dir, showWarnings=FALSE)
+setwd(output.dir)
+
+## Preliminaries to get the run parameters ready
+if(source.type=="a"){
+   ## ADJUST THESE to get "nice" results (otherwise may be over-sparse, "no useful results" or over-dense)
+   #the quantile to be applied to adjacent word frequency when visualising (only cases above the cut appear)
+   cut.quantile<-0.95
+   cut.quantile.split<-0.9 #used for a split-off year. should be smaller than cut.quantile otherwise they are sparse
+   title<-"Conference Proceedings from ICALT, ECTEL, CAL, ICHL and ICWL"
+   short.title<-"Conferences"
+   filename.postfix<-"conf"
+}else if(source.type=="b"){
+   cut.quantile<-0.99
+   cut.quantile.split<-0.95
+   title<-"TEL Blogs Jan 2009-"
+   short.title<-"TEL Blogs"
+   filename.postfix<-"blog"
+}else{
+   stop(paste("Unknown Source Type:",source.type))
+}
+if(is.na(focus.placeholder)){
+   focus.placeholder<-focus.words[1]
+}
+   
+## SET UP DATABASE and SQL according to source type
+sqlite.filename<-"TMWS Data A.sqlite"
+use.sqlite<-!is.na(sqlite.filename)
 if(use.sqlite){
    # instantiate the SQLite driver in the R process
    sqlite<- dbDriver("SQLite")
@@ -14,7 +49,20 @@ if(use.sqlite){
    db<- dbConnect(sqlite, dbname=paste(source.dir,sqlite.filename,sep="/"))
    summary(db)
 }
+#must not have a "-" in query because it means Boolean NOT
+queryTerms<-unique(gsub("-","",focus.words))
+if(source.type=="a"){
+   sql<-"SELECT year, title, abstract as content FROM abstract WHERE year > '2006'"
+   sql<-paste(sql," AND id in(SELECT docid from abstract_fts4 where abstract match '",
+              paste(queryTerms, collapse=" OR "),"')",sep="")
+}else{
+   sql<-"SELECT content,datestamp FROM blog_post WHERE datestamp > '2009-01-01'"
+   sql<-paste(sql," AND id in(SELECT docid from blog_post_fts4 where content match '",
+              paste(queryTerms, collapse=" OR "),"')",sep="")
+}
 
+
+## USEFUL FUNCTIONS
 make.table<-function(x){
    t<- table(as.factor(x))
    return(t)
@@ -36,33 +84,15 @@ if(split.years){
 cat(file = log.file, sep = "\n")
 
 ##
-## Read in the documents. from SQLite (the way ahead) or vectors of csv file names
+## Read in the documents. from SQLite
 ##
-source.table<-NULL
-if(use.sqlite){
-   source.table<-dbGetQuery(db,sql)#query, fetch all records to dataframe and clear resultset in one go
-}else{
-   for (src in 1:length(sets.csv)){
-      # read in CSV with format year,pages,title,authors,abstract,keywords. There is a header row. title/authors/keywords are delimited by "
-      tmp_table<-read.csv(paste(source.dir,sets.csv[[src]],sep="/"),header=TRUE,sep=",",quote="\"",stringsAsFactors=FALSE)
-      #accumulate the table            
-      source.table<-rbind(source.table,tmp_table)
-      tmp_table<-NULL
-   }
-}
+source.table<-dbGetQuery(db,sql)#query, fetch all records to dataframe and clear resultset in one go
 
 #some massaging depending on the source
-#I really should fix things up at source!!!!!!!!!! (or do this in SQL once direct CSV read removed)
-if(data.type=="a"){
-   colnames(source.table)[colnames(source.table)=="abstract"]<-"content"
-}else if (data.type=="b"){
+if (source.type=="b"){
    if(split.years){
       source.table<-cbind(source.table, data.frame(year=substr(source.table[,"datestamp"],1,4)))# for splitting
    }
-}else{
-   #test case
-   source.table<-data.frame(content=c("The Cat sat on the mat","The Cat sat and ate a mouse on the sandy mat","The cat sat on the carpet","The cat sat. On the red mat was a dog mat", "On the mat there was a cat","On the mat","The cat sat. On the mat was a dog. Mat and me went to London on a flying mat. the mat"))
-   split.years<-FALSE
 }
 
 #prepare to split by years
@@ -93,6 +123,8 @@ for(y.filter in levels(y)){
    
    #kill remaining punctuation
    p<- gsub(pattern="[[:punct:]]", replacement="", p)
+   #force lower case since we do not care about case differences
+   p<-tolower(p)
    
    
    # find words before the given one. Convention is "b" means before, "a" means after
@@ -123,8 +155,8 @@ for(y.filter in levels(y)){
    }else{
       q<-cut.quantile.split
    }
-   cut.b<-quantile(t.b, probs=q)
-   cut.a<-quantile(t.a, probs=q)
+   cut.b<-floor(quantile(t.b, probs=q))
+   cut.a<-floor(quantile(t.a, probs=q))
    t.b.sel<- t.b[t.b>=cut.a]
    t.a.sel<- t.a[t.a>=cut.b]
    
@@ -133,7 +165,8 @@ for(y.filter in levels(y)){
       cat("No useful results", file=log.file, sep="\n")
    }else{
       #print/log actual word counts as these are sometimes useful
-      cat(paste("Word count equivalent to 100% is:",sum(t.a)) ,file = log.file, sep = "\n")
+      total.count<-sum(t.a)
+      cat(paste("Word count equivalent to 100% is:",total.count) ,file = log.file, sep = "\n")
       print("Word frequencies (before):")
       print(t.b.sel)
       print("Word frequencies (after):")
@@ -144,7 +177,7 @@ for(y.filter in levels(y)){
       names(t.b.sel)[names(t.b.sel)=="eos"]<-"."
       
       #scale factor -> percentages as weights
-      scale<-100.0 / sum(t.a)
+      scale<-100.0 / total.count
       
       ##
       ## VISUALISATION
@@ -162,8 +195,8 @@ for(y.filter in levels(y)){
       df.edges<-rbind(df.edges,data.frame(Source=rep(focus.id,length(after.ids)), Target=after.ids, Type=rep("Directed", length(after.ids)), Weight=scale*as.numeric(t.a.sel)))
       
       #scale size to area for node weight before writing out
-      write.csv(df.nodes, file=paste("AdjacentWord Nodes - ",name.suffix, y.filter, ".csv",sep=""), row.names=FALSE)
-      write.csv(df.edges, file=paste("AdjacentWord Edges - ",name.suffix, y.filter, ".csv",sep=""), row.names=FALSE)
+      write.csv(df.nodes, file=paste(name.suffix, y.filter, filename.postfix, "AdjacentWord Nodes.csv",sep=" "), row.names=FALSE)
+      write.csv(df.edges, file=paste(name.suffix, y.filter, filename.postfix, " AdjacentWord Edges.csv",sep=" "), row.names=FALSE)
       
       df.nodes
       df.edges
@@ -176,9 +209,10 @@ for(y.filter in levels(y)){
       df.edges<-cbind(df.edges, data.frame(label = paste(round(df.edges[,"Weight"]),"%", sep="")))
       df.nodes[,"size"]<-df.nodes[,"size"]*10*sqrt(scale) #make disaply easier to look at!
       g <- graph.data.frame(df.edges, directed=TRUE, vertices=df.nodes)
-      plot.igraph(g)
-      png(file=paste("Graph - ",name.suffix, y.filter,".png", sep=""), width=1000, height=1000,pointsize=12, res=150)
-      plot.igraph(g)
+      subText<-paste(total.count,"words = 100%")
+      plot.igraph(g, main=paste(short.title,y.filter), sub=subText, edge.arrow.size=2)
+      png(file=paste(name.suffix," ", y.filter, " ", filename.postfix,".png", sep=""), width=1000, height=1000,pointsize=12, res=150)
+      plot.igraph(g, main=paste(short.title,y.filter), xlab=subText, xlim=c(-0.8,0.8),ylim=c(-0.8,0.8), edge.arrow.size=2)
       ad<-dev.off()
    }# end if useful results
    
@@ -190,4 +224,9 @@ close(log.file)
 # properly terminate database use
 if(use.sqlite){
    dbDisconnect(db)
+}
+
+if(profile){
+   Rprof(NULL)
+   #   summaryRprof("Rprof.out")$by.self
 }
