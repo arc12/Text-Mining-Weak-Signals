@@ -144,10 +144,15 @@ confidence.band = function(model, levels=0.95, segments=50, col.points=palette()
 
 # convienience for plotting - incl linear fit and indication of confidence band if there is >= an approx fit
 do.plot<-function(outFile, xdates,xvals,yvals,main.txt,sub.txt,y.txt, hiPts1=NULL, hiPts2=NULL){
+   #set any leading zeros to NA in order to omit them from plot and linear model so that we fit the line after the term is first seen
+   first.non.zero<-match(T,yvals>0)
+   if(first.non.zero>1){
+      yvals[1:(first.non.zero-1)]<-NA
+   }
    png(file=outFile, width=1000, height=1000,pointsize=12, res=150)
    plot(xdates, yvals, main=main.txt, sub=sub.txt, xlab="", ylab=y.txt, type="b")
-   if(sum(yvals>0)>2){
-      model<-lm(yvals ~ xvals)# +I(xvals^2))
+   if(sum(yvals>0, na.rm=T)>2){
+      model<-lm(yvals ~ xvals, na.action=na.omit)# +I(xvals^2))
       r.squared<-summary(model)$r.squared
       if(r.squared>0.3){
          yy <- model$coef %*% rbind(1,xvals)#,xvals^2)
