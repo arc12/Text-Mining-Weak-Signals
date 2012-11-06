@@ -8,7 +8,7 @@
 <strong><%=hits[kk,"authors"]%></strong><br/>
 <a href="<%=hits[kk,"url"]%>"><%=hits[kk,"title"]%></a><br/>
 <%=strtrim(hits[kk,"content"], 500)%>...</td>
-<td align="center"><img src="http://chart.googleapis.com/chart?chs=200x125&cht=gom&chd=t:<%=ratings.capped[kk]%>&chco=00FFFF,0000FF,800080,FF0000,FF8040&chxt=x,y&chxl=0:|<%=ratings[kk]%>|1:|unusual|notable|wild"/>
+<td align="center"><img src="http://chart.googleapis.com/chart?chs=200x125&cht=gom&chd=t:<%=ratings.capped[kk]%>&chco=00FFFF,0000FF,800080,FF0000,FF8040&chxt=x,y&chxl=0:|<%=ratings[kk]%>|1:|low|medium|high"/>
 <br/>
 (raw score=<%=format(scores[kk],digits=3)%>)</td>
 </tr>
