@@ -9,6 +9,15 @@ library("RSQLite")
 if(profile){
    Rprof()
 }
+
+## USEFUL FUNCTIONS
+make.table<-function(x){
+   t<- table(as.factor(x))
+   return(t)
+}
+source("~/R Projects/Text Mining Weak Signals/Common Functions/CustomStopwords.R")
+
+
 # filesystem setup
 base.dir<-"/home/arc1/R Projects/Text Mining Weak Signals"
 source.dir<-paste(base.dir,"Source Data",sep="/")
@@ -21,14 +30,14 @@ setwd(output.dir)
 if(source.type=="a"){
    ## ADJUST THESE to get "nice" results (otherwise may be over-sparse, "no useful results" or over-dense)
    #the quantile to be applied to adjacent word frequency when visualising (only cases above the cut appear)
-   cut.quantile<-0.95
-   cut.quantile.split<-0.9 #used for a split-off year. should be smaller than cut.quantile otherwise they are sparse
+   cut.quantile<-0.85
+   cut.quantile.split<-0.75 #used for a split-off year. should be smaller than cut.quantile otherwise they are sparse
    title<-"Conference Proceedings from ICALT, ECTEL, CAL, ICHL and ICWL"
    short.title<-"Conferences"
    filename.postfix<-"conf"
 }else if(source.type=="b"){
-   cut.quantile<-0.99
-   cut.quantile.split<-0.95
+   cut.quantile<-0.95
+   cut.quantile.split<-0.85
    title<-"TEL Blogs Jan 2009-"
    short.title<-"TEL Blogs"
    filename.postfix<-"blog"
@@ -37,6 +46,9 @@ if(source.type=="a"){
 }
 if(is.na(focus.placeholder)){
    focus.placeholder<-focus.words[1]
+}
+if(hide.stopwords){
+   stop.words<-CustomStopwords()
 }
    
 ## SET UP DATABASE and SQL according to source type
@@ -61,12 +73,6 @@ if(source.type=="a"){
               paste(queryTerms, collapse=" OR "),"')",sep="")
 }
 
-
-## USEFUL FUNCTIONS
-make.table<-function(x){
-   t<- table(as.factor(x))
-   return(t)
-}
 
 ##
 ## Log run info and stats
@@ -121,6 +127,8 @@ for(y.filter in levels(y)){
    #make sure we start and end with markers
    p<-gsub(pattern="\\A|\\Z", replacement = sent.mark, p, perl=T)
    
+   #kill any stray HTML entities that may have got through
+   p<-gsub(pattern="&#[0-9]+;", replacement = "", p, perl=T)
    #kill remaining punctuation
    p<- gsub(pattern="[[:punct:]]", replacement="", p)
    #force lower case since we do not care about case differences
@@ -143,6 +151,8 @@ for(y.filter in levels(y)){
    # - tabulation of the word occurrences
    t.b<-make.table(words.b) 
    t.a<-make.table(words.a)
+   #this should equal the number of focus words. NB: this is before removing stopwords or selecting
+   total.count<-sum(t.a)
    
    # ABORT if nothing found - i.e. if the focus words never appear in a matchable context
    if(y.filter=="" && (sum(t.a)==0 || sum(t.b)==0)){
@@ -159,23 +169,34 @@ for(y.filter in levels(y)){
    cut.a<-floor(quantile(t.a, probs=q))
    t.b.sel<- t.b[t.b>=cut.a]
    t.a.sel<- t.a[t.a>=cut.b]
+   #additionally always suppress words with <1.5% freq
+   f.cut<-total.count*0.015
+   t.b.sel<- t.b.sel[t.b.sel>f.cut]
+   t.a.sel<- t.a.sel[t.a.sel>f.cut]
    
-   if(length(t.a.sel)==0 || length(t.b.sel)==0){
+   #remove stopwords if required, and also remove the "end of sentence" tag in this case
+   if(hide.stopwords){
+      t.a.sel<-t.a.sel[!(names(t.a.sel)%in% stop.words)]
+      t.b.sel<-t.b.sel[!(names(t.b.sel)%in% stop.words)]
+      t.a.sel<-t.a.sel[(names(t.a.sel)!="eos")]
+      t.b.sel<-t.b.sel[(names(t.b.sel)!="eos")]
+   }else{
+      #revert the "eos" placeholder to a full stop for display
+      names(t.a.sel)[names(t.a.sel)=="eos"]<-"."
+      names(t.b.sel)[names(t.b.sel)=="eos"]<-"."
+   }
+   
+   if(length(t.a.sel)==0 && length(t.b.sel)==0){
       print(paste("No useful results for", y.filter," - skipping"))
       cat("No useful results", file=log.file, sep="\n")
    }else{
       #print/log actual word counts as these are sometimes useful
-      total.count<-sum(t.a)
       cat(paste("Word count equivalent to 100% is:",total.count) ,file = log.file, sep = "\n")
       print("Word frequencies (before):")
       print(t.b.sel)
       print("Word frequencies (after):")
       print(t.a.sel)
-      
-      #revert the "eos" placeholder to a full stop for display
-      names(t.a.sel)[names(t.a.sel)=="eos"]<-"."
-      names(t.b.sel)[names(t.b.sel)=="eos"]<-"."
-      
+        
       #scale factor -> percentages as weights
       scale<-100.0 / total.count
       
@@ -186,13 +207,18 @@ for(y.filter in levels(y)){
       #node output for Gephi. NB: weight is sqrt((freq)
       focus.id<-"_focus_"
       df.nodes<-data.frame(Id=focus.id, Label=focus.placeholder, Weight=sqrt(sum(t.a)))
-      before.ids<-paste(names(t.b.sel), "_", sep="")
-      df.nodes<-rbind(df.nodes, data.frame(Id=before.ids, Label=names(t.b.sel), Weight=sqrt(as.numeric(t.b.sel))))
-      after.ids<-paste("_", names(t.a.sel), sep="")
-      df.nodes<-rbind(df.nodes, data.frame(Id=after.ids, Label=names(t.a.sel), Weight=sqrt(as.numeric(t.a.sel))))
-      #edges. NB: weight = freq, scaled to %
-      df.edges<-data.frame(Source=before.ids, Target=rep(focus.id,length(before.ids)), Type=rep("Directed", length(before.ids)), Weight=scale*as.numeric(t.b.sel))
-      df.edges<-rbind(df.edges,data.frame(Source=rep(focus.id,length(after.ids)), Target=after.ids, Type=rep("Directed", length(after.ids)), Weight=scale*as.numeric(t.a.sel)))
+      df.edges<-data.frame()
+      if(length(t.b.sel)>0){
+         before.ids<-paste(names(t.b.sel), "_", sep="")
+         df.nodes<-rbind(df.nodes, data.frame(Id=before.ids, Label=names(t.b.sel), Weight=sqrt(as.numeric(t.b.sel))))
+         #edges. NB: weight = freq, scaled to %
+         df.edges<-data.frame(Source=before.ids, Target=rep(focus.id,length(before.ids)), Type=rep("Directed", length(before.ids)), Weight=scale*as.numeric(t.b.sel))
+      }
+      if(length(t.a.sel)>0){
+         after.ids<-paste("_", names(t.a.sel), sep="")
+         df.nodes<-rbind(df.nodes, data.frame(Id=after.ids, Label=names(t.a.sel), Weight=sqrt(as.numeric(t.a.sel))))
+         df.edges<-rbind(df.edges,data.frame(Source=rep(focus.id,length(after.ids)), Target=after.ids, Type=rep("Directed", length(after.ids)), Weight=scale*as.numeric(t.a.sel)))
+      }
       
       #scale size to area for node weight before writing out
       write.csv(df.nodes, file=paste(name.suffix, y.filter, filename.postfix, "AdjacentWord Nodes.csv",sep=" "), row.names=FALSE)
@@ -209,6 +235,7 @@ for(y.filter in levels(y)){
       df.edges<-cbind(df.edges, data.frame(label = paste(round(df.edges[,"Weight"]),"%", sep="")))
       df.nodes[,"size"]<-df.nodes[,"size"]*10*sqrt(scale) #make disaply easier to look at!
       g <- graph.data.frame(df.edges, directed=TRUE, vertices=df.nodes)
+      write.graph(g, file=paste(name.suffix," ", y.filter, " ", filename.postfix,".graphml", sep=""), format="graphml")
       subText<-paste(total.count,"words = 100%")
       plot.igraph(g, main=paste(short.title,y.filter), sub=subText, edge.arrow.size=2)
       png(file=paste(name.suffix," ", y.filter, " ", filename.postfix,".png", sep=""), width=1000, height=1000,pointsize=12, res=150)
