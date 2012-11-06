@@ -8,6 +8,8 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ## ************ end licence ***************
 
+source("~/R Projects/Text Mining Weak Signals/Common Functions/CustomStopwords.R")
+
 ##
 ## common functions for RF_Terms. No attempt is made to make these generic utility functions (a job for a rainy day or another life)
 ##
@@ -69,20 +71,7 @@ LogTerms<-function(fileName, terms, words=NULL){
       {sink()}
 }
 
-CustomStopwords<-function(){
-   #+  "paper" (which is common in journal/proceedings abstracts!)
-   SW<-c(stopwords(kind = "en"),"paper","studentspsila","conference",
-         "january","february","march","april","may","june",
-         "july","august","september","october","november","december",
-         "jan","feb","mar","apr","jun","jul","aug","sept","oct","nov","dec",
-         "pixelmaid","onomatopoeia","pizzaro","kali","ignatius","grizzla", "iggi")
-   #- some terms (and various expansions) that are relevant to the education domain
-   SW<-SW[-grep("group", SW)]
-   SW<-SW[-grep("problem", SW)]
-   SW<-SW[-grep("present", SW)]
-   SW<-SW[-grep("work", SW)]
-   return(SW)
-}
+
 
 ##
 ## Apply Pearson Chi^2 test to term distribution in the documents of 2 corpora to identify
